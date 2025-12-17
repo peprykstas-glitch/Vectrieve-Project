@@ -4,7 +4,7 @@ import time
 
 # Configuration
 API_URL = "http://127.0.0.1:8000"
-st.set_page_config(page_title="CoreMind v2.1", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="CoreMind AI", page_icon="🧠", layout="wide")
 
 # --- Custom CSS (Cyberpunk/Pro) ---
 st.markdown("""
@@ -22,7 +22,8 @@ st.markdown("""
     .metric-box {
         font-size: 0.8em;
         color: #10b981;
-        margin-bottom: 5px;
+        margin-top: 5px;
+        font-family: monospace;
     }
 
     /* Sidebar tweaks */
@@ -39,7 +40,7 @@ with st.sidebar:
     
     # 1. LLM Settings
     st.subheader("⚙️ Generation Settings")
-    temperature = st.slider("Creativity (Temperature)", 0.0, 1.0, 0.3, 0.1, help="0.0 = Precise/Factual, 1.0 = Creative/Random")
+    temperature = st.slider("Creativity", 0.0, 1.0, 0.3, 0.1, help="0.0 = Precise, 1.0 = Creative")
     
     # 2. Document Upload
     st.subheader("📂 Knowledge Base")
@@ -50,8 +51,11 @@ with st.sidebar:
             try:
                 files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
                 res = requests.post(f"{API_URL}/upload", files=files)
+                
                 if res.status_code == 200:
-                    st.success(f"Indexed! ID: {res.json()['doc_id'][:8]}...")
+                    data = res.json()
+                    # 👇 ВИПРАВЛЕНО: Виводимо реальні дані з бекенду
+                    st.success(f"Indexed! {data['chunks_count']} chunks in {data['duration']:.2f}s")
                 else:
                     st.error(f"Error: {res.text}")
             except Exception as e:
@@ -72,7 +76,7 @@ with st.sidebar:
         st.caption("🔴 System Offline")
 
 # --- Main Interface ---
-st.title("CoreMind Assistant")
+st.title("CoreMind Assistant v1.1")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -93,16 +97,18 @@ for msg in st.session_state.messages:
 
 # Input
 if prompt := st.chat_input("Type your query..."):
+    # 1. Додаємо повідомлення юзера в історію
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # 2. Отримуємо відповідь бота
     with st.chat_message("assistant"):
         placeholder = st.empty()
         placeholder.markdown("Thinking...")
         
         try:
-            # Prepare payload with Temperature
+            # Формуємо історію для відправки
             payload = {
                 "messages": [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] != "system"],
                 "temperature": temperature
@@ -117,14 +123,16 @@ if prompt := st.chat_input("Type your query..."):
                 
                 placeholder.markdown(bot_text)
                 
-                # Update history with full metadata
+                # 3. Зберігаємо відповідь і метадані в історію
                 st.session_state.messages.append({
                     "role": "assistant", 
                     "content": bot_text,
                     "sources": data.get("sources", []),
                     "latency": data.get("latency", 0.0)
                 })
-                st.rerun() # Refresh to show metrics cleanly
+                
+                # Перезавантажуємо сторінку, щоб показати метрики під повідомленням
+                st.rerun() 
             else:
                 placeholder.error(f"API Error: {response.text}")
                 

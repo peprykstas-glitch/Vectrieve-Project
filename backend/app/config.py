@@ -1,23 +1,31 @@
 import os
+from dotenv import load_dotenv
 
-class Settings:
-    PROJECT_NAME: str = "CoreMind API"
-    VERSION: str = "2.2.0 (Groq Edition)"
-    API_V1_STR: str = "/api/v1"
-    
-    # --- GROQ CLOUD SETTINGS ---
-    # We using protocol by OpenAI, but we knok to Groq
-    OLLAMA_HOST: str = "https://api.groq.com/openai/v1"
-    
-    # The most powerfull LLM model for the moment
-    OLLAMA_MODEL: str = "llama-3.3-70b-versatile" 
-    
-    # API key
-    GROQ_API_KEY = "YOUR_API_KEY_HERE"
-    
-    # --- VECTOR DB SETTINGS ---
-    QDRANT_HOST: str = "localhost"
-    QDRANT_PORT: int = 6333
-    COLLECTION_NAME: str = "coremind_knowledge"
+# Завантажуємо змінні з файлу .env
+load_dotenv()
 
-settings = Settings()
+class Config:
+    # ----------------------------------------
+    # 1. Налаштування Проєкту (Цього не вистачало)python backend/main.py
+    # ----------------------------------------
+    PROJECT_NAME = "CoreMind AI"
+    VERSION = "1.0.0"
+
+    # ----------------------------------------
+    # 2. Ключі та Безпека
+    # ----------------------------------------
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    
+    if not GROQ_API_KEY:
+        raise ValueError("❌ ПОМИЛКА: Не знайдено GROQ_API_KEY у файлі .env!")
+
+    # ----------------------------------------
+    # 3. База Даних та Модель
+    # ----------------------------------------
+    QDRANT_HOST = "localhost"
+    QDRANT_PORT = 6333
+    COLLECTION_NAME = "coremind_knowledge"
+    MODEL_NAME = "llama-3.3-70b-versatile"
+
+# Створюємо об'єкт налаштувань
+settings = Config()

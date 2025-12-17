@@ -2,14 +2,14 @@ import time
 import traceback
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from openai import AsyncOpenAI
-import uuid #for generating uniq ID
+from groq import AsyncGroq  # 👈 Використовуємо Groq замість OpenAI/Ollama
 
-# Project modules
+# Project modules (твої існуючі файли)
 from app.vector_store import vector_db
 from app.config import settings
 from app.schemas import QueryRequest, QueryResponse
-from app.parser import parse_file
+# ⚠️ Переконайся, що у тебе є файл backend/app/parser.py, інакше видали цей рядок і функцію upload
+from app.parser import parse_file 
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
@@ -22,17 +22,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print(f"🔌 Connecting to Ollama at: {settings.OLLAMA_HOST}")
-print(f"🤖 Using Model: {settings.OLLAMA_MODEL}")
+print(f"🔌 Connecting to Groq LPU...")
+print(f"🤖 Using Model: {settings.MODEL_NAME}")
 
-client = AsyncOpenAI(
-    base_url=settings.OLLAMA_HOST,
-    api_key=settings.OLLAMA_API_KEY 
+# Ініціалізація клієнта Groq (Асинхронний)
+client = AsyncGroq(
+    api_key=settings.GROQ_API_KEY
 )
 
-# --- 🔪 CHUNKING FUNCTION ---
+# --- 🔪 CHUNKING FUNCTION (Твоя стара функція) ---
 def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 200):
-    """text cutter."""
+    """Розрізає текст на шматки."""
     chunks = []
     start = 0
     text_len = len(text)
@@ -41,15 +41,15 @@ def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 200):
         end = start + chunk_size
         chunk = text[start:end]
         chunks.append(chunk)
-
         start += chunk_size - overlap
     
     return chunks
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint to verify backend and DB status."""
+    """Перевірка статусу бази та сервера."""
     try:
+        # Отримуємо інформацію про колекцію Qdrant
         info = vector_db.client.get_collection(vector_db.collection_name)
         db_status = f"Connected. Docs count: {info.points_count}"
     except Exception as e:
@@ -57,28 +57,34 @@ async def health_check():
 
     return {
         "status": "ok", 
-        "model": settings.OLLAMA_MODEL,
+        "model": settings.MODEL_NAME,
         "database": db_status
     }
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    """Uploads, CHUNKS and indexes a file into the Vector DB."""
+    """Завантажує файл, нарізає його і кладе в базу."""
     start_time = time.time()
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
     print(f"📥 Uploading file: {file.filename}")
-    text_content = await parse_file(file)
+    
+    # Використовуємо твій парсер
+    try:
+        text_content = await parse_file(file)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Parsing error: {e}")
     
     if not text_content.strip():
         raise HTTPException(status_code=400, detail="Empty file or parse error")
 
-
+    # Нарізаємо текст
     chunks = chunk_text(text_content, chunk_size=2000, overlap=200)
     print(f"🔪 Split into {len(chunks)} chunks.")
 
     try:
+        # Заливаємо в Qdrant
         for i, chunk in enumerate(chunks):
             vector_db.add_document(
                 text=chunk, 
@@ -105,20 +111,26 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.post("/query", response_model=QueryResponse)
 async def handle_query(request: QueryRequest):
-    """Processes user query using RAG pipeline."""
+    """Обробка запиту користувача (RAG Pipeline)."""
     start_time = time.time()
-    user_query = request.messages[-1].content
+    
+    # ⚠️ Якщо request.messages це список об'єктів, беремо останній
+    # Якщо структура змінилася, можливо треба request.query_text
+    # Але судячи з твого старого коду, там був список повідомлень
+    user_query = request.messages[-1].content 
+    
     print(f"💬 Query received: {user_query}")
     
     try:
-        # 1. Retrieve context from Qdrant (limit=3 is safe now because chunks are small)
-        search_results = vector_db.search(user_query, limit=3)
+        # 1. Пошук у Qdrant
+        search_results = vector_db.search(user_query, limit=5) # Збільшив ліміт до 5, бо чанки малі
         
         context_parts = []
         for hit in search_results:
             source = hit.payload.get('filename', 'Unknown')
-            text = hit.payload.get('content', '')
+            text = hit.payload.get('text', hit.payload.get('content', '')) # Захист від різних назв полів
             context_parts.append(f"Source ({source}): {text}")
+        
         context_str = "\n\n".join(context_parts)
         
         if not context_str:
@@ -131,7 +143,7 @@ async def handle_query(request: QueryRequest):
         context_str = "Error retrieving context."
         search_results = []
 
-    # 2. System Prompt
+    # 2. System Prompt (Твій фірмовий!)
     system_prompt = (
         "You are CoreMind, an advanced AI assistant. "
         "CONTEXT AWARENESS: "
@@ -145,25 +157,27 @@ async def handle_query(request: QueryRequest):
         f"--- CONTEXT ---\n{context_str}"
     )
     
+    # Формуємо історію для Groq
     llm_messages = [{"role": "system", "content": system_prompt}]
+    
+    # Додаємо історію чату, якщо вона є в запиті
     for m in request.messages:
         if m.role != "system":
             llm_messages.append(m.model_dump())
 
     try:
-        # 3. LLM Generation
-        print("⏳ Sending request to Ollama...")
+        # 3. Генерація через Groq
+        print("⏳ Sending request to Groq...")
         
-        temp = request.temperature if request.temperature is not None else 0.3
-        target_model = request.model if request.model else settings.OLLAMA_MODEL
-
         completion = await client.chat.completions.create(
-            model=target_model,
+            model=settings.MODEL_NAME,
             messages=llm_messages,
-            temperature=temp
+            temperature=request.temperature if request.temperature else 0.3,
+            max_tokens=1024
         )
+        
         response_text = completion.choices[0].message.content
-        print("✅ Response received from Ollama.")
+        print("✅ Response received from Groq.")
         
     except Exception as e:
         print(f"❌ LLM GENERATION ERROR: {e}")
@@ -172,9 +186,10 @@ async def handle_query(request: QueryRequest):
 
     latency = time.time() - start_time
     
-    sources = [
+    # Формуємо список джерел для відповіді
+    sources_data = [
         {
-            "content": hit.payload['content'][:150] + "...", 
+            "content": hit.payload.get('text', '')[:150] + "...", 
             "score": hit.score,
             "filename": hit.payload.get('filename', 'Unknown')
         } 
@@ -183,10 +198,11 @@ async def handle_query(request: QueryRequest):
     
     return QueryResponse(
         response_text=response_text,
-        sources=sources,
+        sources=sources_data,
         latency=latency
     )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Запуск сервера
+    uvicorn.run(app, host="0.0.0.0", port=8000)
