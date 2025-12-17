@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import os
+import time
 
 # Configuration
 API_URL = "http://127.0.0.1:8000"
@@ -18,6 +19,9 @@ st.markdown("""
     
     /* Metrics Style */
     div[data-testid="stMetricValue"] { font-size: 24px; color: #10b981; }
+
+    /* Buttons in sidebar */
+    .stButton button { width: 100%; border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -26,37 +30,74 @@ with st.sidebar:
     st.title("🧠 CoreMind Admin")
     
     # NAVIGATION SWITCHER
-    page = st.radio("Navigation", ["💬 Chat Interface", "📊 Analytics Dashboard"])
+    page = st.radio("Navigation", ["💬 Chat Interface", "📊 Analytics Dashboard"], label_visibility="collapsed")
     
     st.divider()
 
-    if page == "💬 Chat Interface":
-        st.subheader("⚙️ Settings")
+    # 👇 НОВЕ: Вкладки для кращої організації
+    tab1, tab2 = st.tabs(["⚙️ Config", "📂 Memory"])
+
+    # Вкладка 1: Налаштування
+    with tab1:
+        st.subheader("Generation Settings")
         temperature = st.slider("Temperature", 0.0, 1.0, 0.3)
         
-        st.subheader("📂 Knowledge Base")
-        uploaded_file = st.file_uploader("Add Context", type=["pdf", "txt", "md"])
-        if uploaded_file and st.button("🚀 Index"):
-            with st.spinner("Indexing..."):
+        st.write("") # Spacer
+        if st.button("🗑️ Clear Chat History"):
+            st.session_state.messages = []
+            st.rerun()
+
+    # Вкладка 2: Управління Пам'яттю (НОВЕ)
+    with tab2:
+        st.subheader("Add Context")
+        uploaded_file = st.file_uploader("Upload File", type=["pdf", "txt", "md", "png", "jpg", "jpeg"], label_visibility="collapsed")
+        
+        if uploaded_file and st.button("🚀 Index File"):
+            with st.spinner("Processing & OCR..."):
                 try:
                     files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
                     res = requests.post(f"{API_URL}/upload", files=files)
                     if res.status_code == 200:
                         st.success("Indexed!")
+                        time.sleep(1)
+                        st.rerun()
                     else:
                         st.error(f"Error: {res.text}")
                 except Exception as e:
                     st.error(f"Error: {e}")
         
-        if st.button("🗑️ Clear History"):
-            st.session_state.messages = []
-            st.rerun()
+        st.divider()
+        st.subheader("Managed Files")
+        
+        # Отримуємо список файлів з бекенду
+        try:
+            res = requests.get(f"{API_URL}/files")
+            if res.status_code == 200:
+                file_list = res.json().get("files", [])
+                
+                if not file_list:
+                    st.caption("Database is empty.")
+                
+                for fname in file_list:
+                    c1, c2 = st.columns([3, 1])
+                    c1.text(f"📄 {fname}")
+                    # Кнопка видалення для кожного файлу
+                    if c2.button("🗑️", key=f"del_{fname}"):
+                        with st.spinner("Deleting..."):
+                            requests.post(f"{API_URL}/delete_file", json={"filename": fname})
+                            st.toast(f"Deleted {fname}")
+                            time.sleep(1)
+                            st.rerun()
+            else:
+                st.error("Failed to fetch file list")
+        except:
+            st.caption("🔴 DB Disconnected")
 
 # ==========================================
 # PAGE 1: CHAT INTERFACE
 # ==========================================
 if page == "💬 Chat Interface":
-    st.title("CoreMind Assistant v1.2")
+    st.title("CoreMind Assistant v1.4")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []

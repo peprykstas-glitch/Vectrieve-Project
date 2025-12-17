@@ -6,7 +6,9 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from groq import AsyncGroq 
+from groq import AsyncGroq
+# 👇 НОВИЙ ІМПОРТ: Потрібен для фільтрації при видаленні файлів
+from qdrant_client.http import models 
 
 # Project modules
 from app.vector_store import vector_db
@@ -45,18 +47,16 @@ client = AsyncGroq(
 )
 
 # --- DATA SCHEMAS ---
-# We need to update QueryResponse to include query_id, 
-# but since it's imported from app.schemas, we can just return it in the dict 
-# or update app/schemas.py. For simplicity, we will assume QueryResponse accepts extra fields
-# or we just return a dictionary if Pydantic complains. 
-# Better approach: Define Feedback Schema here.
-
 class FeedbackRequest(BaseModel):
     query_id: str
     feedback: str # "positive" or "negative"
     query: str
     response: str
     latency: float
+
+# 👇 НОВА СХЕМА: Для запиту на видалення файлу
+class DeleteFileRequest(BaseModel):
+    filename: str
 
 # --- 🔪 CHUNKING FUNCTION ---
 def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 200):
@@ -137,7 +137,63 @@ async def upload_file(file: UploadFile = File(...)):
         "duration": duration
     }
 
-@app.post("/query") # Removed response_model to allow returning extra 'query_id' easily
+# 👇 НОВИЙ ЕНДПОІНТ: Отримання списку файлів
+@app.get("/files")
+async def list_files():
+    """Повертає повний список унікальних файлів (сканує всю базу)."""
+    try:
+        unique_files = set()
+        next_offset = None
+        
+        # Цикл: витягуємо дані порціями по 2000, поки не переберемо все
+        while True:
+            res = vector_db.client.scroll(
+                collection_name=vector_db.collection_name,
+                limit=2000,  # Беремо великими шматками
+                with_payload=True,
+                with_vectors=False, # Вектори нам не треба, це економить пам'ять
+                offset=next_offset
+            )
+            points, next_offset = res
+            
+            for point in points:
+                if point.payload and "filename" in point.payload:
+                    unique_files.add(point.payload["filename"])
+            
+            # Якщо далі нічого немає - виходимо
+            if next_offset is None:
+                break
+        
+        return {"files": list(unique_files)}
+    except Exception as e:
+        print(f"❌ Error listing files: {e}")
+        return {"files": [], "error": str(e)}
+
+# 👇 НОВИЙ ЕНДПОІНТ: Видалення файлу
+@app.post("/delete_file")
+async def delete_file(request: DeleteFileRequest):
+    """Видаляє всі чанки, пов'язані з конкретним файлом."""
+    try:
+        vector_db.client.delete(
+            collection_name=vector_db.collection_name,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="filename",
+                            match=models.MatchValue(value=request.filename),
+                        ),
+                    ],
+                )
+            ),
+        )
+        print(f"🗑️ Deleted file: {request.filename}")
+        return {"status": "deleted", "filename": request.filename}
+    except Exception as e:
+        print(f"❌ Delete Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/query")
 async def handle_query(request: QueryRequest):
     """Processes user query (RAG Pipeline)."""
     start_time = time.time()
@@ -170,15 +226,13 @@ async def handle_query(request: QueryRequest):
         context_str = "Error retrieving context."
         search_results = []
 
-    # 2. System Prompt (Your specific Zombie/Sweater logic)
+    # 2. System Prompt (Твій оригінальний промпт!)
     system_prompt = (
         "You are CoreMind, an advanced AI assistant. "
         "CONTEXT AWARENESS: "
         "1. If the user asks a technical question based on documents, be professional, precise, and strict (PM/Developer mode). "
         "2. If the user asks a philosophical, absurd, or hypothetical question (e.g., about souls, sweaters, zombies), DO NOT moralize. "
         "Instead, engage in the hypothetical scenario with wit, sarcasm, and creativity. Treat it as a creative writing task. "
-        "3. ALWAYS answer in the language of the user (Ukrainian/English). "
-        "IMPORTANT: When answering in Ukrainian, use natural, fluent, and grammatically correct Ukrainian. "
         "Do NOT mix English, Spanish, or Russian words (no 'surzhyk' or code-switching). "
         "4. Base technical answers ONLY on the provided context below, but use general knowledge for creative chit-chat.\n"
         f"--- CONTEXT ---\n{context_str}"
@@ -225,7 +279,6 @@ async def handle_query(request: QueryRequest):
         for hit in search_results
     ]
     
-    # Return dictionary to include query_id without changing strict schemas
     return {
         "response_text": response_text,
         "sources": sources_data,
@@ -239,7 +292,6 @@ async def log_feedback(data: FeedbackRequest):
     try:
         with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            # Timestamp, Query, Response, Latency, Model, Feedback, QueryID
             writer.writerow([
                 datetime.now().isoformat(), 
                 data.query, 
