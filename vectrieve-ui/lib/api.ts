@@ -1,87 +1,83 @@
-import axios from 'axios';
+const API_URL = 'http://localhost:8000'; // Або твоя IP адреса, якщо запускаєш на іншому пристрої
 
-// Backend URL
-const API_URL = 'http://localhost:8000';
-
-const api = axios.create({
-  baseURL: API_URL,
-});
-
-// TYPES
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  sources?: { filename: string; content: string; score: number }[];
+  sources?: Source[];
   latency?: number;
-  query_id?: string; // NEW: For feedback tracking
-  last_query?: string; // NEW: Context for feedback
+  query_id?: string;
+  last_query?: string;
 }
 
-export interface AnalyticsData {
-  total: number;
-  avg_latency: number;
-  likes: number;
-  dislikes: number;
-  history: { Timestamp: string; Latency: number }[];
-  models: Record<string, number>;
+export interface Source {
+  filename: string;
+  content: string;
+  score: number;
 }
 
-// ENDPOINTS
-
-export const checkHealth = async () => {
+export async function checkHealth() {
   try {
-    const res = await api.get('/health');
-    return res.data;
+    const res = await fetch(`${API_URL}/health`);
+    return res.json();
   } catch (error) {
-    console.error("Health Check Failed:", error);
+    console.error("Health check failed:", error);
+    return { status: "error" };
+  }
+}
+
+// 👇 ОНОВЛЕНА ФУНКЦІЯ: Тепер приймає mode
+export async function sendMessage(messages: Message[], temperature: number, mode: 'cloud' | 'local') {
+  const response = await fetch(`${API_URL}/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        messages, 
+        temperature,
+        mode // <--- Передаємо режим на бекенд
+    }),
+  });
+  if (!response.ok) throw new Error('Network response was not ok');
+  return response.json();
+}
+
+export async function getAnalytics() {
+  try {
+    const res = await fetch(`${API_URL}/analytics`);
+    return res.json();
+  } catch (error) {
+    console.error("Analytics failed:", error);
     return null;
   }
-};
+}
 
-export const sendMessage = async (messages: Message[], temperature: number = 0.3) => {
-  const res = await api.post('/query', { 
-    messages,
-    temperature 
-  });
-  return res.data;
-};
-
-export const uploadFile = async (file: File) => {
+export async function uploadFile(file: File) {
   const formData = new FormData();
   formData.append('file', file);
-  const res = await api.post('/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+
+  const response = await fetch(`${API_URL}/upload`, {
+    method: 'POST',
+    body: formData,
   });
-  return res.data;
-};
+  return response.json();
+}
 
-export const getFiles = async () => {
-  const res = await api.get('/files');
-  return res.data.files || [];
-};
+export async function getFiles() {
+  const response = await fetch(`${API_URL}/files`);
+  return response.json().then((data) => data.files || []);
+}
 
-export const deleteFile = async (filename: string) => {
-  const res = await api.post('/delete_file', { filename });
-  return res.data;
-};
+export async function deleteFile(filename: string) {
+  await fetch(`${API_URL}/delete_file`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename }),
+  });
+}
 
-// 👇 NEW FUNCTIONS (Fixes your errors)
-export const sendFeedback = async (data: {
-    query_id: string;
-    feedback: 'positive' | 'negative';
-    query: string;
-    response: string;
-    latency: number;
-}) => {
-    await api.post('/feedback', data);
-};
-
-export const getAnalytics = async (): Promise<AnalyticsData | null> => {
-    try {
-        const res = await api.get('/analytics');
-        return res.data;
-    } catch (error) {
-        console.error("Analytics Error:", error);
-        return null;
-    }
-};
+export async function sendFeedback(data: { query_id: string; feedback: 'positive' | 'negative'; query: string; response: string; latency: number }) {
+  await fetch(`${API_URL}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}

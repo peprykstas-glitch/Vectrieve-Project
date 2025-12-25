@@ -1,45 +1,48 @@
 @echo off
-TITLE Vectrieve Launcher v3.1 (Safe Mode) 🛡️
-chcp 65001 >nul
+title Vectrieve Hybrid Launcher 🚀
+color 0A
 cls
 
-echo ===================================================
-echo   🛡️ STARTING VECTRIEVE (SAFE MODE)
-echo ===================================================
-
-:: 1. CLEANUP
-echo [1/5] 🧹 Killing zombies...
-taskkill /F /IM node.exe /T >nul 2>&1
-taskkill /F /IM python.exe /T >nul 2>&1
-:: Не вбиваємо Docker, хай живе, якщо вже запущений
-
-:: 2. DATABASE
-echo [2/5] 🗄️  Starting Database...
-docker-compose up -d
+echo ========================================================
+echo   V E C T R I E V E   H Y B R I D   S Y S T E M   v2.0
+echo ========================================================
+echo.
+echo  [1] 🧠 Starting OLLAMA (Local Brain)...
+start "OLLAMA SERVICE" /min cmd /k "ollama serve"
 
 echo.
-echo ⏳ WAITING 15 SECONDS for Qdrant to wake up...
-echo    (Seriously, let it load, or Python will freeze)
-:: 👇 ЗБІЛЬШЕНИЙ ТАЙМЕР
-timeout /t 15 /nobreak >nul
+echo  [2] ⚙️ Starting BACKEND (Python API)...
+:: Заходимо в папку, активуємо віртуальне середовище з кореня, запускаємо
+start "BACKEND - PYTHON" cmd /k "cd backend && ..\venv\Scripts\activate && python main.py"
 
-:: 3. BACKEND
-echo [3/5] 🧠 Starting Backend...
-:: Додаємо --reload, щоб бачити логи краще
-start "Vectrieve BRAIN" cmd /k "call venv\Scripts\activate && python backend\main.py"
+echo.
+echo  [3] 🎨 Starting FRONTEND (Next.js UI)...
+:: Заходимо в правильну папку vectrieve-ui
+start "FRONTEND - NEXTJS" cmd /k "cd vectrieve-ui && npm run dev"
 
-:: Чекаємо ще 5 секунд, щоб бекенд завантажив бібліотеки
-timeout /t 5 /nobreak >nul
+echo.
+echo ========================================================
+echo   🚀 LAUNCHING COMPLETE!
+echo   Opening browser in 5 seconds...
+echo ========================================================
 
-:: 4. FRONTEND
-echo [4/5] 💎 Starting Frontend...
-start "Vectrieve FACE" cmd /k "cd vectrieve-ui && npm run dev"
-
-:: 5. BROWSER
-echo [5/5] 🌐 Launching Browser...
-timeout /t 5 /nobreak >nul
+:: Чекаємо 5 секунд, щоб сервери встигли прокинутись
+timeout /t 5 >nul
 start http://localhost:3000
 
 echo.
-echo ✅ DONE. If it hangs, check Docker RAM usage.
-pause
+echo   Press any key to KILL ALL PROCESSES and close Vectrieve.
+pause >nul
+
+:: --- KILL SWITCH (Коли натиснеш кнопку в цьому вікні) ---
+echo.
+echo   🔻 SHUTTING DOWN SYSTEM...
+taskkill /IM node.exe /F >nul 2>&1
+taskkill /IM python.exe /F >nul 2>&1
+taskkill /IM ollama.exe /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq BACKEND - PYTHON" /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq FRONTEND - NEXTJS" /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq OLLAMA SERVICE" /F >nul 2>&1
+echo   ✅ System stopped. Bye!
+timeout /t 2 >nul
+exit

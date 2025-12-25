@@ -1,0 +1,186 @@
+Timestamp,Query,Response,Latency,Model,Feedback,QueryID
+2025-12-25T19:38:15.178456,hi,No relevant context provided. Please provide context for a meaningful response.,0.61,llama-3.3-70b-versatile,,1766687895177
+2025-12-25T19:50:38.155262,hi,Hello. It's nice to meet you. Is there something I can help you with or would you like to chat?,0.85,llama-3.3-70b-versatile,,1766688638153
+2025-12-25T19:59:34.191361,hi,Hello. It's nice to meet you. Is there something I can help you with or would you like to chat?,0.74,llama-3.3-70b-versatile,,1766689174190
+2025-12-25T20:23:32.471253,hi,Hello. It's nice to meet you. Is there something I can help you with or would you like to chat?,0.93,llama-3.3-70b-versatile,,1766690612470
+2025-12-25T20:31:09.594651,hi,Hello! How can I assist you today?,10.86,qwen2.5-coder:7b,,1766691069586
+2025-12-25T20:31:17.145285,hi,It seems like we're off to a friendly start. Is there something I can help you with or would you like to chat?,1.65,llama-3.3-70b-versatile,,1766691077144
+2025-12-25T20:35:49.669551,what about this document,"You're referring to the document about McDonald's marketing strategy in Poland. It appears to be a detailed analysis of the company's approach to the Polish market, including their competitors, target audience, and marketing tactics.
+
+Would you like me to summarize the key points from the document or is there something specific you'd like to know or discuss about McDonald's marketing strategy?",0.92,llama-3.3-70b-versatile,,1766691349667
+2025-12-25T20:36:10.803632,what about this document,"I'm sorry, but I can't access or view documents directly. However, if you could provide some specific details or questions based on the content of the document, I'd be happy to help!",9.95,qwen2.5-coder:7b,,1766691370802
+2025-12-25T20:37:06.373184,what about this file,"It seems like there might have been a misunderstanding. If you're referring to a file that's not accessible through our current interaction, could you please describe its contents or provide more details so I can assist you better?",8.47,qwen2.5-coder:7b,,1766691426369
+2025-12-25T20:39:29.749818,"How does the hybrid mode switching work in handle_query?"" (Має розповісти про змінну force_local і перевірку клієнта Groq).","I apologize, but as a text-based AI, I don't have access to specific code files or detailed information about the internal workings of applications. However, based on your question, it seems you're interested in understanding how hybrid mode switching works in a function called `handle_query`, and specifically focusing on variables like `force_local` and client checks for Groq.
+
+If you can provide more context or details about what you're looking for, I'd be happy to try and offer some general guidance or explanations based on that information. Alternatively, if you have access to the code itself, you might want to look at where these variables are defined and how they interact within the `handle_query` function to understand their role in hybrid mode switching.",19.63,qwen2.5-coder:7b,,1766691569745
+2025-12-25T20:40:29.313211,How does the hybrid mode switching work in handle_query?,"I apologize for any confusion, but as a text-based AI, I don't have access to specific code files or detailed information about applications like Vectrieve. However, I can provide a general explanation of how hybrid mode switching might work based on common practices.
+
+In many systems, hybrid mode switching allows the system to switch between different modes (e.g., local and remote) based on certain conditions or preferences. This is often controlled by variables that dictate whether to use local resources or external services.
+
+For instance, in a function like `handle_query`, you might have a variable such as `force_local` which determines whether to process the query locally or send it to an external service. Additionally, there could be checks for specific clients (like Groq) that might override this behavior based on their requirements or preferences.
+
+Here's a simplified example of what the code might look like:
+
+```python
+def handle_query(query, force_local=False):
+    if force_local:
+        # Process query locally
+        result = process_locally(query)
+    else:
+        client = get_client()
+        if client == 'Groq':
+            # Handle Groq-specific logic
+            result = handle_groq(query)
+        else:
+            # Process query using external service
+            result = process_with_service(query)
+    
+    return result
+
+def process_locally(query):
+    # Logic to process the query locally
+    pass
+
+def handle_groq(query):
+    # Logic specific to Groq client
+    pass
+
+def process_with_service(query):
+    # Logic to process the query using an external service
+    pass
+
+def get_client():
+    # Logic to determine which client is being used
+    return 'Groq'  # Example return value
+```
+
+In this example:
+- The `force_local` variable determines whether to process the query locally.
+- There's a check for the client type, and if it's Groq, specific logic is executed.
+
+This is a simplified illustration, and actual implementations can vary based on the specific requirements and architecture of the system. If you have access to the code, I recommend reviewing the `handle_query` function and any related variables and conditions to understand how hybrid mode switching works in your context.",50.30,qwen2.5-coder:7b,,1766691629307
+2025-12-25T20:43:32.659896,Analyze the provided context code from main.py. specifically the handle_query function. What variables control the switching between local and cloud models?,"To analyze the `handle_query` function and identify which variables control the switching between local and cloud models, I'll need to look at the specific implementation of this function in your codebase. However, based on common practices and typical structure, here's a general approach you might take:
+
+1. **Identify Variables**: Look for variables that explicitly control whether to use a local or cloud model. Common names include `use_local_model`, `local_only`, `force_local`, etc.
+
+2. **Check Conditions**: Examine the conditions within the function where these variables are checked. For example, you might see something like:
+   ```python
+   if use_local_model:
+       # Use local model
+   else:
+       # Use cloud model
+   ```
+
+3. **Client-Specific Logic**: Check for any client-specific logic that might affect the model selection. This could involve checking environment variables, configuration files, or specific client identifiers.
+
+4. **Configuration Files**: Look at configuration files (e.g., `config.yaml`, `.env`) to see if there are settings controlling model usage.
+
+5. **API Calls**: If your application interacts with external APIs for model inference, check how these API calls are made and whether they include parameters that control the model selection.
+
+Here's a hypothetical example of what the `handle_query` function might look like based on these considerations:
+
+```python
+def handle_query(query):
+    # Load configuration settings
+    config = load_config()
+    
+    # Check if local model should be used
+    use_local_model = config.get('use_local_model', False)
+    
+    # Check for client-specific logic
+    client = get_client()
+    if client == 'Groq':
+        use_local_model = True  # Groq always uses the local model
+    
+    # Select model based on configuration and client logic
+    if use_local_model:
+        result = process_locally(query)
+    else:
+        result = process_with_cloud_model(query)
+    
+    return result
+
+def load_config():
+    # Load configuration from a file or environment variables
+    config = {
+        'use_local_model': False  # Default to using cloud model
+    }
+    return config
+
+def get_client():
+    # Logic to determine which client is being used
+    return 'Groq'  # Example return value
+
+def process_locally(query):
+    # Logic to process the query locally
+    pass
+
+def process_with_cloud_model(query):
+    # Logic to process the query using a cloud model
+    pass
+```
+
+In this example:
+- The `use_local_model` variable controls whether to use the local or cloud model.
+- There's a check for the client type, and if it's Groq, the local model is always used.
+
+If you have access to the actual codebase, I recommend reviewing the `handle_query` function and any related variables and conditions to understand how hybrid mode switching works in your specific context.",67.34,qwen2.5-coder:7b,,1766691812653
+2025-12-25T20:47:08.320960,Analyze the provided context code from main.py. specifically the handle_query function. What variables control the switching between local and cloud models?,"After analyzing the provided context code from `main.py`, I found that the `handle_query` function is not explicitly defined in the given code snippet. However, I can infer that the query handling logic is embedded within the Streamlit application.
+
+The code snippet provided shows a Streamlit application with a chat interface, where user input is sent to a backend API for processing. The API URL is defined as `http://127.0.0.1:8000`, and the application uses the `requests` library to send POST requests to the API.
+
+To determine the variables that control the switching between local and cloud models, I would look for any configuration settings or environment variables that influence the API endpoint or the processing logic.
+
+In the provided code, I noticed the following variables that might be relevant:
+
+* `API_URL`: This variable defines the URL of the backend API. If this URL points to a local endpoint, it might use a local model. If it points to a cloud-based endpoint, it might use a cloud model.
+* `temperature`: This variable is used as a parameter in the API request. It might influence the model's behavior or the processing logic, but it's not directly related to switching between local and cloud models.
+
+However, without more information about the backend API and its implementation, it's challenging to determine the exact variables that control the switching between local and cloud models.
+
+If you have access to the backend API code or more context about the application, I can try to provide a more detailed analysis.",2.43,llama-3.3-70b-versatile,,1766692028318
+2025-12-25T20:50:17.975818,Analyze backend_brain.py. How does handle_query determine which model to use?,"After analyzing the provided context code from `main.py`, I found that the `handle_query` function is not explicitly defined in the given code snippet. However, I can infer that the query handling logic is embedded within the application.
+
+The code snippet provided shows a FastAPI application with a chat interface, where user input is sent to the backend for processing. The application uses the `ollama` library for local model inference and the `groq` library for cloud-based model inference.
+
+To determine which model to use, the `handle_query` function checks the following variables:
+
+* `force_local`: This variable is set to `True` if the `mode` parameter in the `QueryRequest` is set to `""local""` or if the `client` is not initialized. If `force_local` is `True`, the function uses the local model.
+* `client`: This variable represents the Groq client. If the `client` is initialized and `force_local` is `False`, the function attempts to use the cloud-based model. If the cloud-based model fails, it falls back to the local model.
+
+Here's a simplified example of how the `handle_query` function determines which model to use:
+```python
+force_local = (request.mode == ""local"") or (not client)
+
+if force_local:
+    # Use local model
+    response = ollama.chat(
+        model=LOCAL_MODEL_NAME,
+        messages=llm_messages,
+        options={'temperature': temp}
+    )
+    response_text = response['message']['content']
+    used_model = LOCAL_MODEL_NAME
+else:
+    try:
+        # Use cloud-based model
+        completion = await client.chat.completions.create(
+            model=settings.MODEL_NAME,
+            messages=llm_messages,
+            temperature=temp,
+            max_tokens=1024
+        )
+        response_text = completion.choices[0].message.content
+        used_model = settings.MODEL_NAME
+    except Exception as e:
+        # Fall back to local model if cloud-based model fails
+        print(f""⚠️ Cloud failed ({e}). Switching to LOCAL..."")
+        response = ollama.chat(
+            model=LOCAL_MODEL_NAME,
+            messages=llm_messages,
+            options={'temperature': temp}
+        )
+        response_text = response['message']['content']
+        used_model = LOCAL_MODEL_NAME + "" (Fallback)""
+```
+In this example, the `force_local` variable determines whether to use the local model or attempt to use the cloud-based model. If the cloud-based model fails, it falls back to the local model.",2.23,llama-3.3-70b-versatile,,1766692217974
