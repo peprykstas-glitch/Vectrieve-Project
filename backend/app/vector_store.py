@@ -1,75 +1,83 @@
+import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 from fastembed import TextEmbedding
 from app.config import settings
-import uuid
-import time
 
 class VectorStore:
     def __init__(self):
-        print("Connecting to Qdrant...")
+        print("🔌 Connecting to Qdrant...")
         self.client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
         self.collection_name = settings.COLLECTION_NAME
         
-        print("Loading Embedding Model (this might take a moment on first run)...")
-        # Використовуємо легку і швидку модель 'bge-small-en-v1.5' (або мультимовну)
-        # Вона автоматично завантажиться при першому запуску
-        self.embedding_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+        print("🚀 Loading FastEmbed (High-Speed Local Embeddings)...")
+        # bge-small-en-v1.5 забезпечує найкращу точність для пошуку по коду та документах
+        self.model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
         
         self._ensure_collection_exists()
 
     def _ensure_collection_exists(self):
         try:
             self.client.get_collection(self.collection_name)
-        except (UnexpectedResponse, Exception):
-            print(f"Creating collection '{self.collection_name}'...")
+        except Exception:
+            print(f"🔨 Creating collection '{self.collection_name}'...")
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=models.VectorParams(
-                    size=384, # Розмір векторів для моделі bge-small
+                    size=384, 
                     distance=models.Distance.COSINE
                 )
             )
 
     def add_document(self, text: str, meta: dict = None):
-        """Перетворює текст на вектор і зберігає в Qdrant"""
+        """Додає документ до бази"""
         doc_id = str(uuid.uuid4())
-        
-        # 1. Генерація реального вектора
-        # fastembed повертає генератор, тому беремо перший елемент
-        vector = list(self.embedding_model.embed([text]))[0]
+        vector = list(self.model.embed([text]))[0].tolist()
 
         payload = {"content": text}
-        if meta:
-            payload.update(meta)
+        if meta: payload.update(meta)
 
-        # 2. Запис у базу
         self.client.upsert(
             collection_name=self.collection_name,
-            points=[
-                models.PointStruct(
-                    id=doc_id,
-                    vector=vector.tolist(),
-                    payload=payload
-                )
-            ]
+            points=[models.PointStruct(id=doc_id, vector=vector, payload=payload)]
         )
-        print(f"Document {doc_id} indexed.")
         return doc_id
 
     def search(self, query: str, limit: int = 3):
-        """Шукає схожі документи за текстом запиту"""
-        # 1. Векторизуємо запит
-        query_vector = list(self.embedding_model.embed([query]))[0]
+        """Адекватний пошук: повертає контекст тільки якщо він дійсно є"""
+        try:
+            # 1. Перевірка: чи є в базі взагалі хоч один файл?
+            collection_info = self.client.get_collection(self.collection_name)
+            if collection_info.points_count == 0:
+                return [] # База порожня — повертаємо пустий список, щоб ШІ не вигадував дурниць
 
-        # 2. Шукаємо в Qdrant
-        hits = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_vector.tolist(),
-            limit=limit
-        )
-        return hits
+            # 2. Генерація вектора запиту
+            query_vector = list(self.model.embed([query]))[0].tolist()
 
-# Ініціалізація
+            # 3. Пошук з використанням query_points (найсучасніший метод)
+            # score_threshold=0.5 — відсікає нерелевантний "шум", щоб не було галюцинацій
+            results = self.client.query_points(
+                collection_name=self.collection_name,
+                query=query_vector,
+                limit=limit,
+                score_threshold=0.5 
+            ).points
+
+            # Якщо результати є, але вони дуже слабкі (не схожі на запит) — ігноруємо їх
+            return results
+
+        except Exception as e:
+            # Якщо метод query_points не підтримується, спробуємо старий search
+            try:
+                query_vector = list(self.model.embed([query]))[0].tolist()
+                return self.client.search(
+                    collection_name=self.collection_name,
+                    query_vector=query_vector,
+                    limit=limit
+                )
+            except Exception as e2:
+                print(f"ℹ️ Search skipped: {e2}")
+                return []
+
 vector_db = VectorStore()

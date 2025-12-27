@@ -22,12 +22,31 @@ app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 # --- CONFIGURATION ---
 LOCAL_MODEL_NAME = "qwen2.5-coder:7b"
 
+# --- SMART MODES CONFIGURATION ([FEAT-005]) ---
+THINKING_MODES = {
+    "auditor": {
+        "role": "You are a strict Code Auditor and Security Expert.",
+        "instruction": "Be critical. Focus on security vulnerabilities, potential bugs, and strict adherence to the provided context. Do not assume; verify. Output should be dry and factual.",
+        "temp": 0.1
+    },
+    "mentor": {
+        "role": "You are a helpful Senior Developer acting as a Mentor.",
+        "instruction": "Explain concepts simply and clearly. If the code is complex, break it down. Encourage best practices. Be patient and supportive.",
+        "temp": 0.4
+    },
+    "architect": {
+        "role": "You are a creative Software Architect and Tech Lead.",
+        "instruction": "Propose architectural improvements, optimizations, and alternative solutions. Think outside the box. Suggest patterns and refactoring ideas.",
+        "temp": 0.7
+    }
+}
+
 # --- LOGGING ---
 LOG_FILE = "chat_logs.csv"
 if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow(["Timestamp", "Query", "Response", "Latency", "Model", "Feedback", "QueryID"])
+        writer.writerow(["Timestamp", "Query", "Response", "Latency", "Model", "Feedback", "QueryID", "Mode"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,8 +69,8 @@ print(f"🤖 Local Model Configured: {LOCAL_MODEL_NAME}")
 # --- DATA SCHEMAS ---
 class QueryRequest(BaseModel):
     messages: list
-    temperature: float = 0.3
-    mode: str = "hybrid"  # "cloud" або "local"
+    mode: str = "hybrid"   # "cloud" або "local"
+    thinking_mode: str = "mentor" # "auditor", "mentor", "architect"
 
 class FeedbackRequest(BaseModel):
     query_id: str
@@ -189,7 +208,7 @@ async def delete_file(request: DeleteFileRequest):
 
 @app.post("/query")
 async def handle_query(request: QueryRequest):
-    """🧠 HYBRID BRAIN: Vector Search -> Switch (Local/Cloud) -> Response"""
+    """🧠 HYBRID BRAIN: Vector Search -> Persona Selection -> Generation"""
     start_time = time.time()
     
     # Отримуємо останнє повідомлення користувача
@@ -197,54 +216,85 @@ async def handle_query(request: QueryRequest):
         user_query = request.messages[-1]['content']
     else:
         user_query = request.messages[-1].content
+
+    # [FEAT-005] Визначаємо режим мислення
+    selected_mode = request.thinking_mode.lower()
+    if selected_mode not in THINKING_MODES:
+        selected_mode = "mentor" # Default fallback
+    
+    persona = THINKING_MODES[selected_mode]
+    current_temp = persona["temp"]
         
-    print(f"💬 Query: {user_query} | Mode: {request.mode}")
+    print(f"💬 Query: {user_query} | Mode: {request.mode} | Persona: {selected_mode} (Temp: {current_temp})")
     
     # 1. Search Vector DB
+    search_results = []
+    context_str = ""
+    
     try:
         search_results = vector_db.search(user_query, limit=5)
-        context_parts = []
-        for hit in search_results:
-            source = hit.payload.get('filename', 'Unknown')
-            text = hit.payload.get('text', hit.payload.get('content', '')) 
-            context_parts.append(f"Source ({source}): {text}")
-        context_str = "\n\n".join(context_parts) if context_parts else "No relevant context found."
+        
+        if search_results:
+            context_parts = []
+            for hit in search_results:
+                text = hit.payload.get('text') or hit.payload.get('content') or ''
+                source = hit.payload.get('filename') or 'Unknown'
+                context_parts.append(f"Source ({source}): {text}")
+            
+            context_str = "\n\n".join(context_parts)
+        else:
+            context_str = ""
+            
     except Exception as e:
-        print(f"❌ Search Error: {e}")
-        context_str = "Error retrieving context."
+        print(f"⚠️ Search warning: {e}")
+        context_str = ""
         search_results = []
 
-    # 2. System Prompt (ОНОВЛЕНО: Більш гнучкий, дозволяє small talk)
-    system_prompt = (
-        "You are a code analysis assistant. "
-        "Your task is to answer the user's question using ONLY the provided CONTEXT below. "
-        "Do not apologize. Do not say you are an AI. Do not use outside knowledge. "
-        "If the answer is in the Context, extract it. "
-        f"--- CONTEXT ---\n{context_str}"
-    )
+    # 2. System Prompt Generation (Dynamic Construction)
+    base_prompt = f"{persona['role']} {persona['instruction']}"
     
-    # 3. Message Sanitization (ВАЖЛИВО: Очищаємо повідомлення від сміття для Groq)
+    if context_str:
+        # Є контекст: додаємо його до промпта
+        if selected_mode == "auditor":
+            # Аудитор дуже суворий до контексту
+            system_prompt = (
+                f"{base_prompt} "
+                "Answer the user's question using ONLY the provided CONTEXT below. "
+                "Do not use outside knowledge. If the answer is not in the Context, state that clearly. "
+                f"--- CONTEXT ---\n{context_str}"
+            )
+        else:
+            # Ментор і Архітектор можуть бути гнучкішими
+            system_prompt = (
+                f"{base_prompt} "
+                "Use the provided CONTEXT below as your primary source of truth, but you may expand with general knowledge if necessary to explain better. "
+                f"--- CONTEXT ---\n{context_str}"
+            )
+    else:
+        # Немає контексту: загальні знання
+        system_prompt = (
+            f"{base_prompt} "
+            "Currently, no specific document context is provided (or the database is empty). "
+            "Answer using your general knowledge."
+        )
+    
+    # 3. Message Sanitization
     llm_messages = [{"role": "system", "content": system_prompt}]
     
     for m in request.messages:
-        # Отримуємо сирі дані
         raw_msg = m if isinstance(m, dict) else m.model_dump()
-        
-        # Створюємо чистий об'єкт тільки з role і content
-        # Це виправляє помилку Error 400 у Groq
         clean_msg = {
             "role": raw_msg.get("role"),
             "content": raw_msg.get("content")
         }
-        
         if clean_msg["role"] != "system":
             llm_messages.append(clean_msg)
 
-    # 4. GENERATE RESPONSE (The Magic Switch) 🎚️
+    # 4. GENERATE RESPONSE
     response_text = ""
     used_model = "Unknown"
-    temp = request.temperature if request.temperature is not None else 0.3
-
+    
+    # Визначаємо, чи юзаємо локалку
     force_local = (request.mode == "local") or (not client)
 
     try:
@@ -254,7 +304,7 @@ async def handle_query(request: QueryRequest):
             response = ollama.chat(
                 model=LOCAL_MODEL_NAME,
                 messages=llm_messages,
-                options={'temperature': temp}
+                options={'temperature': current_temp} # Використовуємо температуру персони
             )
             response_text = response['message']['content']
             used_model = LOCAL_MODEL_NAME
@@ -262,44 +312,41 @@ async def handle_query(request: QueryRequest):
         # === STRATEGY 2: CLOUD (GROQ) ===
         else:
             try:
-                # Спробувати Groq
                 if not client: raise Exception("Groq client not initialized")
                 print(f"☁️ [CLOUD] Trying Groq ({settings.MODEL_NAME})...")
                 completion = await client.chat.completions.create(
                     model=settings.MODEL_NAME,
                     messages=llm_messages,
-                    temperature=temp,
+                    temperature=current_temp, # Використовуємо температуру персони
                     max_tokens=1024
                 )
                 response_text = completion.choices[0].message.content
                 used_model = settings.MODEL_NAME
             except Exception as e:
-                # Якщо помилка (немає інтернету), перемкнутись на Local
                 print(f"⚠️ Cloud failed ({e}). Switching to LOCAL...")
                 print(f"🔒 [FALLBACK] Using Local Model: {LOCAL_MODEL_NAME}...")
                 response = ollama.chat(
                     model=LOCAL_MODEL_NAME,
                     messages=llm_messages,
-                    options={'temperature': temp}
+                    options={'temperature': current_temp}
                 )
                 response_text = response['message']['content']
                 used_model = LOCAL_MODEL_NAME + " (Fallback)"
 
     except Exception as e:
         print(f"❌ Generation Error: {e}")
-        # Якщо впало і це, повертаємо помилку користувачеві
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
 
     latency = time.time() - start_time
     query_id = str(int(time.time() * 1000))
 
-    # Log used model for analytics
     print(f"✅ Response generated using: {used_model} in {latency:.2f}s")
 
     try:
         with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow([datetime.now().isoformat(), user_query, response_text, f"{latency:.2f}", used_model, "", query_id])
+            # Додали selected_mode в логування
+            writer.writerow([datetime.now().isoformat(), user_query, response_text, f"{latency:.2f}", used_model, "", query_id, selected_mode])
     except Exception as log_err:
         print(f"⚠️ Logging Error: {log_err}")
 
@@ -312,7 +359,8 @@ async def handle_query(request: QueryRequest):
         "response_text": response_text,
         "sources": sources_data,
         "latency": latency,
-        "query_id": query_id
+        "query_id": query_id,
+        "mode_used": selected_mode
     }
 
 @app.post("/feedback")
@@ -320,7 +368,7 @@ async def log_feedback(data: FeedbackRequest):
     try:
         with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow([datetime.now().isoformat(), data.query, data.response, f"{data.latency:.2f}", settings.MODEL_NAME, data.feedback, data.query_id])
+            writer.writerow([datetime.now().isoformat(), data.query, data.response, f"{data.latency:.2f}", settings.MODEL_NAME, data.feedback, data.query_id, "feedback_entry"])
         return {"status": "logged"}
     except Exception as e:
         print(f"❌ Feedback Error: {e}")

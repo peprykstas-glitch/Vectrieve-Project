@@ -184,3 +184,292 @@ else:
         used_model = LOCAL_MODEL_NAME + "" (Fallback)""
 ```
 In this example, the `force_local` variable determines whether to use the local model or attempt to use the cloud-based model. If the cloud-based model fails, it falls back to the local model.",2.23,llama-3.3-70b-versatile,,1766692217974
+2025-12-25T22:45:30.467653,hi,Error retrieving context.,5.74,llama-3.3-70b-versatile,,1766699130466
+2025-12-25T22:45:47.124220,hi,Hello! How can I assist you today?,11.70,qwen2.5-coder:7b,,1766699147107
+2025-12-25T22:46:05.110589,how was your day,Error retrieving context.,5.23,llama-3.3-70b-versatile,,1766699165109
+2025-12-25T23:06:55.670046,hi,Error retrieving context.,1.01,llama-3.3-70b-versatile,,1766700415670
+2025-12-25T23:07:10.650436,hi,Hello! How can I assist you today?,12.15,qwen2.5-coder:7b,,1766700430645
+2025-12-25T23:07:48.876823,what do you think about this code,Error retrieving context.,0.62,llama-3.3-70b-versatile,,1766700468873
+2025-12-25T23:07:56.908370,explain me,There is no context to explain.,0.74,llama-3.3-70b-versatile,,1766700476901
+2025-12-25T23:10:40.560464,hi,Error retrieving context.,1.34,llama-3.3-70b-versatile,,1766700640556
+2025-12-25T23:11:35.792370,WHAT DO YOU THINK ABOUT THIS CODE,Error retrieving context.,0.59,llama-3.3-70b-versatile,,1766700695782
+2025-12-25T23:13:44.781100,hi,Error retrieving context.,0.75,llama-3.3-70b-versatile,,1766700824781
+2025-12-25T23:26:22.787665,hi,Error retrieving context.,3.79,llama-3.3-70b-versatile,,1766701582787
+2025-12-25T23:26:36.383552,hi,Hello! How can I assist you today?,10.76,qwen2.5-coder:7b,,1766701596376
+2025-12-25T23:28:09.237262,hi,Error retrieving context.,4.79,llama-3.3-70b-versatile,,1766701689235
+2025-12-25T23:28:19.291852,hi,Error retrieving context.,0.51,llama-3.3-70b-versatile,,1766701699290
+2025-12-25T23:28:23.405893,efbeg,Error retrieving context.,1.71,llama-3.3-70b-versatile,,1766701703404
+2025-12-25T23:29:52.139979,hi,Error retrieving context.,0.59,llama-3.3-70b-versatile,,1766701792137
+2025-12-25T23:30:11.295434,hi,No relevant information is available.,0.87,llama-3.3-70b-versatile,,1766701811295
+2025-12-25T23:31:40.338998,what the book is it?,"The book is Goldstein's book. It is described as a peculiarly beautiful book with smooth creamy paper that is a little yellowed by age. The book contains a description of the programme set forth by the Brotherhood, which includes the secret accumulation of knowledge, a gradual spread of enlightenment, and ultimately a proletarian rebellion to overthrow the Party. However, O'Brien claims that this programme is nonsense and that the book is actually a product of the Party's own creation.",0.89,llama-3.3-70b-versatile,,1766701900332
+2025-12-25T23:33:04.320506,okay,There is no information available to provide an answer.,0.76,llama-3.3-70b-versatile,,1766701984320
+2025-12-25T23:33:41.940486,hi,No relevant information is available.,0.45,llama-3.3-70b-versatile,,1766702021937
+2025-12-25T23:36:54.614731,hi,No relevant information is available.,0.81,llama-3.3-70b-versatile,,1766702214609
+2025-12-25T23:37:25.935683,hi,No relevant information is available.,0.79,llama-3.3-70b-versatile,,1766702245933
+2025-12-25T23:37:54.264566,please tell me  something about you,No information is available.,0.39,llama-3.3-70b-versatile,,1766702274264
+2025-12-25T23:38:00.614617,without context,No information is available.,0.38,llama-3.3-70b-versatile,,1766702280614
+2025-12-25T23:38:12.014532,"just say ""hi""",hi,0.62,llama-3.3-70b-versatile,,1766702292014
+2025-12-25T23:38:21.623729,and something alse,"hi, nothing else is available.",0.53,llama-3.3-70b-versatile,,1766702301623
+2025-12-25T23:38:33.030323,why you so rude?,No information is available to provide a response.,0.49,llama-3.3-70b-versatile,,1766702313029
+2025-12-25T23:44:31.450124,hi,hi,0.54,llama-3.3-70b-versatile,,1766702671443
+2025-12-25T23:44:40.306365,how are you?,No information is available.,0.39,llama-3.3-70b-versatile,,1766702680306
+2025-12-25T23:44:54.211298,tell me something about you,No information is available.,0.46,llama-3.3-70b-versatile,,1766702694210
+2025-12-25T23:45:00.489220,who are you?,No information is available.,0.41,llama-3.3-70b-versatile,,1766702700489
+2025-12-25T23:45:29.613030,are you kind?,No information is available.,0.57,llama-3.3-70b-versatile,,1766702729611
+2025-12-25T23:45:52.547776,are you kind?,No relevant context found.,11.32,qwen2.5-coder:7b,,1766702752541
+2025-12-25T23:47:54.941515,what doing this code?,"This code is a batch script that launches a hybrid system called ""Vectrieve"" with multiple components. 
+
+Here's a step-by-step breakdown:
+
+1. It starts the ""OLLAMA (Local Brain)"" service by running the command ""ollama serve"" in a new command prompt window.
+
+2. It starts the ""BACKEND (Python API)"" by navigating to the ""backend"" folder, activating a virtual environment, and running the ""main.py"" Python script.
+
+3. It starts the ""FRONTEND (Next.js UI)"" by navigating to the ""vectrieve-ui"" folder and running the command ""npm run dev"".
+
+4. After launching all components, it waits for 5 seconds to allow the servers to start.
+
+5. It opens a web browser and navigates to ""http://localhost:3000"".
+
+6. The script then waits for a key press. When a key is pressed, it shuts down the system by:
+
+   - Killing all ""node.exe"" processes (related to the frontend).
+   - Killing all ""python.exe"" processes (related to the backend).
+   - Killing all ""ollama.exe"" processes (related to the OLLAMA service).
+   - Killing all command prompt windows with specific titles (""BACKEND - PYTHON"", ""FRONTEND - NEXTJS"", ""OLLAMA SERVICE"").
+
+7. Finally, the script waits for 2 seconds and then exits.",2.67,llama-3.3-70b-versatile,,1766702874938
+2025-12-25T23:52:36.185774,Analyze this code for security vulnerabilities,"Based on the provided code, here are some potential security vulnerabilities:
+
+1. **Unsecured Command Execution**: The script uses the `start` command to execute other commands, which can be vulnerable to command injection attacks if the input is not properly sanitized.
+
+2. **Unvalidated Input**: The script assumes that the `backend` and `vectrieve-ui` folders exist in the current directory, and that the `ollama serve`, `python main.py`, and `npm run dev` commands will work as expected. If these assumptions are not met, the script may fail or behave unexpectedly.
+
+3. **Insecure Virtual Environment Activation**: The script activates a virtual environment using `..\venv\Scripts\activate`, which may not be secure if the virtual environment is not properly configured or if the activation script is not trusted.
+
+4. **Unrestricted Process Termination**: The script uses `taskkill` to terminate processes with specific names or titles, which can be vulnerable to denial-of-service attacks if an attacker creates processes with the same names or titles.
+
+5. **Potential for Privilege Escalation**: The script runs commands with elevated privileges (e.g., `taskkill /F`), which can be exploited by an attacker to gain elevated access to the system.
+
+6. **Lack of Error Handling**: The script does not handle errors that may occur during execution, which can lead to unexpected behavior or security vulnerabilities if an error occurs.
+
+7. **Hardcoded Paths and Commands**: The script uses hardcoded paths and commands, which can make it vulnerable to path traversal attacks or command injection attacks if an attacker can manipulate the script's input.
+
+8. **Unsecured Browser Launch**: The script launches a web browser using `start http://localhost:3000`, which can be vulnerable to phishing attacks or other types of attacks if the URL is not properly validated.
+
+9. **Potential for Data Exposure**: The script may expose sensitive data, such as environment variables or command-line arguments, if an attacker can access the script's output or logs.
+
+10. **Lack of Secure Coding Practices**: The script does not appear to follow secure coding practices, such as input validation, error handling, and secure command execution, which can increase the risk of security vulnerabilities.",2.00,llama-3.3-70b-versatile,,1766703156177
+2025-12-25T23:55:17.337754,Analyze this code for security vulnerabilities,"Based on the provided code, here are some potential security vulnerabilities:
+
+1. **Unsecured Command Execution**: The script uses the `start` command to execute other commands, which can be vulnerable to command injection attacks if the input is not properly sanitized.
+
+2. **Unvalidated Input**: The script assumes that the `backend` and `vectrieve-ui` folders exist in the current directory, and that the `ollama serve`, `python main.py`, and `npm run dev` commands will work as expected. If these assumptions are not met, the script may fail or behave unexpectedly.
+
+3. **Insecure Virtual Environment Activation**: The script activates a virtual environment using `..\venv\Scripts\activate`, which may not be secure if the virtual environment is not properly configured or if the activation script is not trusted.
+
+4. **Unrestricted Process Termination**: The script uses `taskkill` to terminate processes with specific names or titles, which can be vulnerable to denial-of-service attacks if an attacker creates processes with the same names or titles.
+
+5. **Potential for Privilege Escalation**: The script runs commands with elevated privileges (e.g., `taskkill /F`), which can be exploited by an attacker to gain elevated access to the system.
+
+6. **Lack of Error Handling**: The script does not handle errors that may occur during execution, which can lead to unexpected behavior or security vulnerabilities if an error occurs.
+
+7. **Hardcoded Paths and Commands**: The script uses hardcoded paths and commands, which can make it vulnerable to path traversal attacks or command injection attacks if an attacker can manipulate the script's input.
+
+8. **Unsecured Browser Launch**: The script launches a web browser using `start http://localhost:3000`, which can be vulnerable to phishing attacks or other types of attacks if the URL is not properly validated.
+
+9. **Potential for Data Exposure**: The script may expose sensitive data, such as environment variables or command-line arguments, if an attacker can access the script's output or logs.
+
+10. **Lack of Secure Coding Practices**: The script does not appear to follow secure coding practices, such as input validation, error handling, and secure command execution, which can increase the risk of security vulnerabilities.",55.07,qwen2.5-coder:7b,,1766703317329
+2025-12-27T00:35:30.315753,hi,Hello. How can I assist you with your IT or coding needs today?,1.43,llama-3.3-70b-versatile,,1766792130314
+2025-12-27T00:36:10.941824,do you can help with features in RAG systems?,"RAG (Retrieve, Augment, Generate) systems are a type of AI model. I can help with understanding and implementing various features in RAG systems, such as:
+
+* Retrieval mechanisms (e.g., dense retrieval, sparse retrieval)
+* Augmentation techniques (e.g., data augmentation, knowledge graph integration)
+* Generation models (e.g., language models, sequence-to-sequence models)
+* Training and fine-tuning methods
+
+What specific feature or aspect of RAG systems would you like help with?",0.81,llama-3.3-70b-versatile,,1766792170940
+2025-12-27T00:46:12.607584,"List the exact list of columns that are created in the log file, and explain under what condition a new file is created.","The log file is created with the following columns:
+
+1. ""Timestamp""
+2. ""Query""
+3. ""Response""
+4. ""Latency""
+5. ""Model""
+6. ""Feedback""
+7. ""QueryID""
+
+A new log file is created under the condition that the log file does not already exist. This is implemented in the code as follows:
+
+```python
+if not os.path.exists(LOG_FILE):
+    with open(LOG_FILE, mode=""w"", newline="""", encoding=""utf-8"") as file:
+        writer = csv.writer(file)
+        writer.writerow([""Timestamp"", ""Query"", ""Response"", ""Latency"", ""Model"", ""Feedback"", ""QueryID""])
+```
+
+This code checks if the log file exists, and if it does not, it creates a new file and writes the column headers to it. If the log file already exists, it is not recreated, and new log entries are appended to the existing file.",1.32,llama-3.3-70b-versatile,,1766792772604
+2025-12-27T01:47:12.037753,Analyze the upload_file endpoint in main.py. Are there any security risks or potential runtime errors regarding file handling and input validation?,"The `upload_file` endpoint in `main.py` handles file uploads and performs the following operations:
+
+1.  Checks if a filename is provided. If not, it raises an `HTTPException` with a 400 status code.
+2.  Attempts to parse the uploaded file using the `parse_file` function. If parsing fails, it raises an `HTTPException` with a 400 status code.
+3.  Checks if the parsed file content is empty. If it is, it raises an `HTTPException` with a 400 status code.
+4.  Splits the file content into chunks using the `chunk_text` function.
+5.  Adds each chunk to a vector database using the `vector_db.add_document` method.
+
+**Security Risks:**
+
+1.  **Arbitrary File Upload**: The endpoint does not validate the file type or content, which could lead to arbitrary file upload vulnerabilities. An attacker could potentially upload malicious files, such as executable scripts or malware.
+2.  **Denial of Service (DoS)**: The endpoint does not limit the size of the uploaded file, which could lead to a DoS attack. An attacker could upload a large file, causing the server to consume excessive resources and potentially leading to a crash.
+3.  **Path Traversal**: Although the endpoint does not store the uploaded file on the server's file system, it still uses the filename to store metadata in the vector database. An attacker could potentially manipulate the filename to inject malicious data or overwrite existing data.
+
+**Potential Runtime Errors:**
+
+1.  **File Parsing Errors**: The `parse_file` function may throw exceptions if the uploaded file is corrupted or has an unsupported format. The endpoint catches these exceptions and raises an `HTTPException`, but it does not provide detailed error messages that could help with debugging.
+2.  **Chunking Errors**: The `chunk_text` function may throw exceptions if the file content is too large or if the chunk size is not properly configured. The endpoint does not handle these exceptions explicitly.
+3.  **Database Errors**: The `vector_db.add_document` method may throw exceptions if the database is not properly configured or if there are issues with the chunk data. The endpoint catches these exceptions and raises an `HTTPException` with a 500 status code, but it does not provide detailed error messages.
+
+**Recommendations:**
+
+1.  **Validate File Type and Content**: Implement file type and content validation to prevent arbitrary file upload vulnerabilities.
+2.  **Limit File Size**: Implement file size limits to prevent DoS attacks.
+3.  **Sanitize Filenames**: Sanitize filenames to prevent path traversal attacks.
+4.  **Handle Parsing and Chunking Errors**: Implement explicit error handling for file parsing and chunking errors to provide detailed error messages and improve debugging.
+5.  **Implement Database Error Handling**: Implement explicit error handling for database errors to provide detailed error messages and improve debugging.
+
+By addressing these security risks and potential runtime errors, you can improve the security and reliability of the `upload_file` endpoint.",3.93,llama-3.3-70b-versatile,,1766796432034,auditor
+2025-12-27T01:47:38.674289,"Can you explain step-by-step how the handle_query function works? Specifically, clarify how the 'Hybrid Brain' logic decides between local and cloud models.","The `handle_query` function is a critical component of the application, responsible for processing user queries and generating responses. Here's a step-by-step breakdown of how it works:
+
+**Step 1: Initialize Variables and Set Up**
+
+*   The function takes a `request` object as input, which contains the user's query and other relevant information.
+*   It initializes several variables, including `start_time`, `user_query`, `search_results`, and `response_text`.
+*   It also sets up the `llm_messages` list, which will store the system prompt and user query.
+
+**Step 2: Search for Relevant Documents (Optional)**
+
+*   The function checks if the `mode` parameter is set to `""hybrid""` (default) or `""local""`.
+*   If `mode` is `""hybrid""`, it searches for relevant documents in the vector database using the `vector_db.search` method.
+*   The search results are stored in the `search_results` variable.
+*   If no documents are found, the `search_results` variable will be empty.
+
+**Step 3: Determine the System Prompt**
+
+*   Based on the presence or absence of search results, the function determines the system prompt.
+*   If search results are found, the system prompt is set to `""You are a code analysis assistant. ...""` ( Analyst mode).
+*   If no search results are found, the system prompt is set to `""You are a helpful IT specialist and code assistant. ...""` (Helper mode).
+
+**Step 4: Prepare the LLM Messages**
+
+*   The function creates a new `llm_messages` list containing the system prompt and user query.
+*   It sanitizes the user query to prevent any potential issues with the LLM model.
+
+**Step 5: Hybrid Brain Logic (Local vs. Cloud Model)**
+
+*   The function checks if the `mode` parameter is set to `""hybrid""` (default) or `""local""`.
+*   If `mode` is `""hybrid""`, it attempts to use the cloud model (Groq) to generate a response.
+*   If the cloud model fails (e.g., due to internet connectivity issues), it falls back to the local model (Ollama).
+*   If `mode` is `""local""`, it directly uses the local model (Ollama) to generate a response.
+
+**Step 6: Generate Response and Log Results**
+
+*   The function generates a response using the chosen model (cloud or local).
+*   It logs the response, latency, and other relevant information to the `chat_logs.csv` file.
+*   It returns a dictionary containing the response text, sources, latency, and query ID.
+
+**Hybrid Brain Logic:**
+
+The hybrid brain logic is designed to provide a fallback mechanism in case the cloud model (Groq) is unavailable. Here's how it works:
+
+1.  **Cloud Model (Groq) Attempt**: The function first attempts to use the cloud model (Groq) to generate a response. If the cloud model is available and functioning correctly, it will return a response.
+2.  **Cloud Model Failure**: If the cloud model fails (e.g., due to internet connectivity issues), the function catches the exception and falls back to the local model (Ollama).
+3.  **Local Model (Ollama) Fallback**: The function uses the local model (Ollama) to generate a response. This ensures that the application can still provide a response even if the cloud model is unavailable.
+
+By using this hybrid approach, the application can provide a more robust and reliable experience for users, even in situations where the cloud model is not available.",2.67,llama-3.3-70b-versatile,,1766796458672,mentor
+2025-12-27T01:47:58.158507,Review the current structure of main.py. Provide 3 specific recommendations to refactor this code for better scalability and maintainability as the project grows.,"After reviewing the current structure of `main.py`, I've identified several areas that can be improved for better scalability and maintainability. Here are three specific recommendations to refactor this code:
+
+**Recommendation 1: Separate Concerns into Independent Modules**
+
+The current `main.py` file contains a mix of concerns, including:
+
+*   API endpoint definitions
+*   Database interactions
+*   File parsing and uploading
+*   Logging and analytics
+
+To improve scalability and maintainability, I recommend separating these concerns into independent modules. For example:
+
+*   Create a `routes.py` module to define API endpoints
+*   Create a `database.py` module to handle database interactions
+*   Create a `file_utils.py` module to handle file parsing and uploading
+*   Create a `logging.py` module to handle logging and analytics
+
+This separation will make it easier to update and maintain individual components without affecting the entire application.
+
+**Recommendation 2: Introduce a Service Layer for Business Logic**
+
+The current `main.py` file contains a mix of business logic and API endpoint definitions. To improve scalability and maintainability, I recommend introducing a service layer to encapsulate business logic.
+
+For example, you can create a `services.py` module that contains classes or functions responsible for handling specific business logic, such as:
+
+*   `QueryService`: handles query processing and response generation
+*   `FileService`: handles file uploading and parsing
+*   `AnalyticsService`: handles logging and analytics
+
+This service layer will provide a clear separation of concerns and make it easier to update and maintain business logic without affecting the API endpoint definitions.
+
+**Recommendation 3: Use a Configurable and Modular Approach for Dependencies**
+
+The current `main.py` file contains hardcoded dependencies, such as the `GROQ_API_KEY` and `MODEL_NAME`. To improve scalability and maintainability, I recommend using a configurable and modular approach for dependencies.
+
+For example, you can create a `config.py` module that contains a dictionary of configurable dependencies, such as:
+
+```python
+import os
+
+CONFIG = {
+    'GROQ_API_KEY': os.environ.get('GROQ_API_KEY'),
+    'MODEL_NAME': os.environ.get('MODEL_NAME'),
+    'DATABASE_URL': os.environ.get('DATABASE_URL')
+}
+```
+
+You can then import this `CONFIG` dictionary in other modules and use it to access dependencies. This approach will make it easier to update and maintain dependencies without affecting the entire application.
+
+By implementing these recommendations, you can improve the scalability and maintainability of your project and make it easier to add new features and components in the future.
+
+Here is an example of how the directory structure could look like after refactoring:
+```python
+project/
+    main.py
+    config.py
+    routes/
+        __init__.py
+        query.py
+        file.py
+        analytics.py
+    services/
+        __init__.py
+        query_service.py
+        file_service.py
+        analytics_service.py
+    database/
+        __init__.py
+        database.py
+    file_utils/
+        __init__.py
+        file_utils.py
+    logging/
+        __init__.py
+        logging.py
+    models/
+        __init__.py
+        query_request.py
+        feedback_request.py
+    requirements.txt
+    venv/
+```
+Note that this is just one possible way to refactor the code, and you may need to adjust the directory structure and module names based on your specific use case.",2.85,llama-3.3-70b-versatile,,1766796478158,architect
+2025-12-27T01:56:51.935011,what do you see in image?,"There is no image provided in the context. The context only contains text from a Python script. If you would like to provide an image or describe it, I can try to assist you.",1.16,llama-3.3-70b-versatile,,1766797011934,auditor
+2025-12-27T01:57:38.139737,Poruwnanie cen.png you must have it in database now,"I don't have the ability to access or store images, including ""Poruwnanie cen.png"". The context provided earlier mentioned that the system was unable to index the content of the image due to an unsupported file type. Therefore, I don't have any information about the image.",1.05,llama-3.3-70b-versatile,,1766797058134,auditor

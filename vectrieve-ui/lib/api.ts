@@ -7,6 +7,7 @@ export interface Message {
   latency?: number;
   query_id?: string;
   last_query?: string;
+  mode_used?: string; // 👇 Додали це поле для відображення режиму в історії
 }
 
 export interface Source {
@@ -25,15 +26,15 @@ export async function checkHealth() {
   }
 }
 
-// 👇 ОНОВЛЕНА ФУНКЦІЯ: Тепер приймає mode
-export async function sendMessage(messages: Message[], temperature: number, mode: 'cloud' | 'local') {
+// 👇 ОНОВЛЕНА ФУНКЦІЯ: Приймає thinking_mode замість temperature
+export async function sendMessage(messages: Message[], thinking_mode: string, mode: 'cloud' | 'local') {
   const response = await fetch(`${API_URL}/query`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
         messages, 
-        temperature,
-        mode // <--- Передаємо режим на бекенд
+        thinking_mode, // <--- Тепер відправляємо назву режиму ("auditor", "mentor"...)
+        mode 
     }),
   });
   if (!response.ok) throw new Error('Network response was not ok');

@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "lucide-react": "^0.562.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.6.0"
   }
 }

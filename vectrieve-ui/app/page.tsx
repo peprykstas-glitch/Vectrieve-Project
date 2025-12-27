@@ -2,13 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { 
-  Send, Paperclip, Bot, User, Trash2, Menu, X, FileText, 
+  Send, Paperclip, Bot, Trash2, Menu, FileText, 
   Sparkles, BarChart2, MessageSquare, ThumbsUp, ThumbsDown, 
-  Settings, RefreshCw, ChevronLeft, Cloud, Lock // <--- Додали нові іконки
+  RefreshCw, ChevronLeft, Cloud, Lock, 
+  ShieldCheck, BookOpen, Lightbulb 
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { checkHealth, sendMessage, uploadFile, getFiles, deleteFile, sendFeedback, getAnalytics, Message } from '@/lib/api';
+
+// Типізація для режимів мислення
+type ThinkingMode = 'auditor' | 'mentor' | 'architect';
 
 export default function Home() {
   // === STATE ===
@@ -18,9 +22,11 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [temperature, setTemperature] = useState(0.3);
   
-  // 👇 НОВИЙ СТАН: Режим роботи (Local vs Cloud)
+  // 👇 НОВИЙ СТАН: Thinking Mode замість температури
+  const [thinkingMode, setThinkingMode] = useState<ThinkingMode>('mentor');
+  
+  // Режим роботи (Local vs Cloud)
   const [isLocalMode, setIsLocalMode] = useState(true); 
 
   const [analytics, setAnalytics] = useState<any>(null);
@@ -60,10 +66,10 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // 👇 ВАЖЛИВО: Передаємо режим (local/cloud) у функцію API
+      // 👇 ВАЖЛИВО: Передаємо thinkingMode та режим (Local/Cloud)
       const response = await sendMessage(
           [...messages, userMsg], 
-          temperature, 
+          thinkingMode, // <-- Передаємо режим ('auditor' | 'mentor' | 'architect')
           isLocalMode ? 'local' : 'cloud'
       );
 
@@ -73,10 +79,12 @@ export default function Home() {
         sources: response.sources,
         latency: response.latency,
         query_id: response.query_id,
-        last_query: input
+        last_query: input,
+        mode_used: response.mode_used // Якщо бекенд повертає це поле
       };
       setMessages(prev => [...prev, botMsg]);
     } catch (error) {
+      console.error(error);
       setMessages(prev => [...prev, { role: 'assistant', content: '❌ Connection Error. Is backend running?' }]);
     } finally {
       setIsLoading(false);
@@ -121,16 +129,44 @@ export default function Home() {
     }
   };
 
+  // --- UI CONFIG FOR MODES ---
+  const modesConfig = [
+    {
+      id: 'auditor',
+      label: 'Auditor',
+      icon: ShieldCheck,
+      color: 'text-red-400',
+      activeBg: 'bg-red-500/10 border-red-500/30',
+      desc: 'Strict & Critical. Focuses on security and bugs.'
+    },
+    {
+      id: 'mentor',
+      label: 'Mentor',
+      icon: BookOpen,
+      color: 'text-blue-400',
+      activeBg: 'bg-blue-500/10 border-blue-500/30',
+      desc: 'Patient & Helpful. Explains concepts simply.'
+    },
+    {
+      id: 'architect',
+      label: 'Architect',
+      icon: Lightbulb,
+      color: 'text-yellow-400',
+      activeBg: 'bg-yellow-500/10 border-yellow-500/30',
+      desc: 'Creative. Proposes optimizations and patterns.'
+    }
+  ];
+
   return (
     <div className="flex h-screen bg-[#121212] text-gray-100 font-sans overflow-hidden">
       
       {/* === SIDEBAR (Collapsible) === */}
       <div 
-        className={`${isSidebarOpen ? 'w-[280px] opacity-100 p-0' : 'w-0 opacity-0 overflow-hidden'} bg-[#0a0a0a] flex flex-col transition-all duration-300 ease-in-out border-r border-white/5 relative z-20`}
+        className={`${isSidebarOpen ? 'w-[300px] opacity-100 p-0' : 'w-0 opacity-0 overflow-hidden'} bg-[#0a0a0a] flex flex-col transition-all duration-300 ease-in-out border-r border-white/5 relative z-20 shrink-0`}
       >
         
         {/* Sidebar Header */}
-        <div className="p-5 flex items-center justify-between min-w-[280px]">
+        <div className="p-5 flex items-center justify-between min-w-[300px]">
           <div className="flex items-center gap-2 font-bold text-lg tracking-tight bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">
             <Sparkles size={20} className="text-green-500" />
             VECTRIEVE
@@ -141,7 +177,7 @@ export default function Home() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-3 pb-4 border-b border-white/5 space-y-1 min-w-[280px]">
+        <div className="px-3 pb-4 border-b border-white/5 space-y-1 min-w-[300px]">
             <button 
                 onClick={() => setActiveTab('chat')}
                 className={`flex items-center gap-3 w-full p-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'chat' ? 'bg-[#212121] text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
@@ -157,72 +193,94 @@ export default function Home() {
         </div>
 
         {/* File List & Settings */}
-        <div className="flex-1 overflow-y-auto p-4 min-w-[280px]">
+        <div className="flex-1 overflow-y-auto p-4 min-w-[300px] scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+            
+            {/* 1. CLOUD / LOCAL SWITCH */}
+            <div className="mb-6 bg-white/5 p-3 rounded-xl border border-white/5">
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    Processing Brain
+                </div>
+                <div className="flex bg-black/40 p-1 rounded-lg mb-2">
+                    <button 
+                        onClick={() => setIsLocalMode(false)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-md transition-all ${!isLocalMode ? 'bg-blue-600 text-white shadow-lg font-medium' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        <Cloud size={12} /> Cloud
+                    </button>
+                    <button 
+                        onClick={() => setIsLocalMode(true)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-md transition-all ${isLocalMode ? 'bg-green-600 text-white shadow-lg font-medium' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        <Lock size={12} /> Secure
+                    </button>
+                </div>
+                <div className="text-[10px] text-gray-500 leading-tight px-1">
+                    {isLocalMode 
+                        ? "Running offline on local Qwen 2.5." 
+                        : "Running on Groq Cloud Llama-3."}
+                </div>
+            </div>
+
+            {/* 2. SMART THINKING MODES (FIXED: CARD STYLE) */}
+            <div className="mb-6">
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    Thinking Mode
+                </div>
+                <div className="space-y-2">
+                    {modesConfig.map((mode) => (
+                        <button
+                            key={mode.id}
+                            onClick={() => setThinkingMode(mode.id as ThinkingMode)}
+                            className={`w-full flex flex-col items-start p-3 rounded-xl border transition-all duration-200 text-left ${
+                                thinkingMode === mode.id 
+                                    ? `${mode.activeBg} bg-opacity-20 shadow-md` 
+                                    : 'bg-white/5 border-transparent hover:bg-white/10'
+                            }`}
+                        >
+                            <div className="flex items-center justify-between w-full mb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className={`${thinkingMode === mode.id ? mode.color : 'text-gray-500'}`}>
+                                        <mode.icon size={16} />
+                                    </div>
+                                    <span className={`text-sm font-medium ${thinkingMode === mode.id ? 'text-white' : 'text-gray-400'}`}>
+                                        {mode.label}
+                                    </span>
+                                </div>
+                                {thinkingMode === mode.id && (
+                                    <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor] ${mode.color.replace('text-', 'bg-')}`} />
+                                )}
+                            </div>
+                            
+                            {/* Опис тепер всередині кнопки, його не обріже скрол */}
+                            <p className={`text-[11px] leading-relaxed pl-[24px] ${thinkingMode === mode.id ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {mode.desc}
+                            </p>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {/* Files */}
             <div className="mb-6">
                 <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Knowledge Base</div>
-                {files.length === 0 && <div className="text-xs text-gray-600 italic">No context added yet.</div>}
+                {files.length === 0 && <div className="text-xs text-gray-600 italic pl-1">No context added yet.</div>}
                 {files.map(f => (
                     <div key={f} className="group flex justify-between items-center py-2 px-2 rounded hover:bg-white/5 text-sm text-gray-400 transition cursor-pointer">
                     <div className="flex items-center gap-2 truncate">
-                        <FileText size={14} className="text-blue-500" />
-                        <span className="truncate">{f}</span>
+                        <FileText size={14} className="text-blue-500 shrink-0" />
+                        <span className="truncate text-xs">{f}</span>
                     </div>
                     <button onClick={() => handleDelete(f)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500 transition"><Trash2 size={14} /></button>
                     </div>
                 ))}
             </div>
 
-            {/* Settings Area */}
-            <div className="mt-4 pt-4 border-t border-white/5">
-                
-                {/* 👇 НОВИЙ КОМПОНЕНТ: ПЕРЕМИКАЧ РЕЖИМІВ */}
-                <div className="mb-6 bg-white/5 p-3 rounded-xl border border-white/5">
-                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                        Processing Brain
-                    </div>
-                    <div className="flex bg-black/40 p-1 rounded-lg">
-                        <button 
-                            onClick={() => setIsLocalMode(false)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-md transition-all ${!isLocalMode ? 'bg-blue-600 text-white shadow-lg font-medium' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Cloud size={12} /> Cloud
-                        </button>
-                        <button 
-                            onClick={() => setIsLocalMode(true)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-md transition-all ${isLocalMode ? 'bg-green-600 text-white shadow-lg font-medium' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Lock size={12} /> Secure
-                        </button>
-                    </div>
-                    <div className="mt-2 text-[10px] text-gray-500 leading-tight px-1">
-                        {isLocalMode 
-                            ? "Running offline on local Qwen 2.5. Data never leaves this device." 
-                            : "Running on Groq Cloud Llama-3. High speed, requires internet."}
-                    </div>
-                </div>
-
-                {/* Temperature */}
-                <div className="mb-4">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>Creativity (Temp)</span>
-                        <span className="text-green-400">{temperature}</span>
-                    </div>
-                    <input 
-                        type="range" min="0" max="1" step="0.1" 
-                        value={temperature} 
-                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
-                    />
-                </div>
-
-                <button 
-                    onClick={clearHistory}
-                    className="flex items-center gap-2 w-full p-2 text-xs text-red-400 hover:bg-red-900/20 rounded transition border border-red-900/30 justify-center"
-                >
-                    <Trash2 size={14} /> Clear History
-                </button>
-            </div>
+            <button 
+                onClick={clearHistory}
+                className="flex items-center gap-2 w-full p-2 text-xs text-red-400 hover:bg-red-900/20 rounded transition border border-red-900/30 justify-center mt-4"
+            >
+                <Trash2 size={14} /> Clear History
+            </button>
         </div>
 
         {/* Hidden File Input (Shared) */}
@@ -255,11 +313,22 @@ export default function Home() {
                                 <p className="text-gray-400 max-w-md mb-6">Upload code or documents to get started.</p>
                                 
                                 {/* Status Indicator in Empty State */}
-                                <div className="flex items-center gap-2 text-sm bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-                                    <span className={`w-2 h-2 rounded-full ${isLocalMode ? 'bg-green-500' : 'bg-blue-500'}`}></span>
-                                    <span className="text-gray-300">
-                                        Current Mode: <span className="font-bold">{isLocalMode ? 'Secure Offline' : 'Cloud Speed'}</span>
-                                    </span>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2 text-sm bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+                                        <span className={`w-2 h-2 rounded-full ${isLocalMode ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                                        <span className="text-gray-300">
+                                            Mode: <span className="font-bold">{isLocalMode ? 'Local' : 'Cloud'}</span>
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+                                        {/* Dynamic Icon based on mode */}
+                                        {thinkingMode === 'auditor' && <ShieldCheck size={12} className="text-red-400" />}
+                                        {thinkingMode === 'mentor' && <BookOpen size={12} className="text-blue-400" />}
+                                        {thinkingMode === 'architect' && <Lightbulb size={12} className="text-yellow-400" />}
+                                        <span className="text-gray-300 capitalize">
+                                            Role: <span className="font-bold">{thinkingMode}</span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -338,7 +407,7 @@ export default function Home() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
-                                placeholder={isLocalMode ? "Message Secure AI (Offline)..." : "Message Cloud AI (Fast)..."}
+                                placeholder={isLocalMode ? `Ask ${thinkingMode}... (Secure Mode)` : `Ask ${thinkingMode}... (Cloud Mode)`}
                                 className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 resize-none py-3 max-h-32 focus:outline-none"
                                 rows={1}
                             />
@@ -406,7 +475,6 @@ export default function Home() {
                                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><Bot size={48} /></div>
                                     <div className="text-gray-500 text-xs uppercase font-bold tracking-wider">Top Model</div>
                                     <div className="text-xl font-bold text-purple-400 mt-2 truncate">
-                                        {/* Simple check to show most used model */}
                                         {Object.entries(analytics.models).sort(([,a]:any, [,b]:any) => b-a)[0]?.[0] || "N/A"}
                                     </div>
                                 </div>
