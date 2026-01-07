@@ -13,5 +13,5 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     response_text: str
-    sources: List[Any] = []
+    sources: List[Any] = [] 
     latency: float
