@@ -473,3 +473,121 @@ project/
 Note that this is just one possible way to refactor the code, and you may need to adjust the directory structure and module names based on your specific use case.",2.85,llama-3.3-70b-versatile,,1766796478158,architect
 2025-12-27T01:56:51.935011,what do you see in image?,"There is no image provided in the context. The context only contains text from a Python script. If you would like to provide an image or describe it, I can try to assist you.",1.16,llama-3.3-70b-versatile,,1766797011934,auditor
 2025-12-27T01:57:38.139737,Poruwnanie cen.png you must have it in database now,"I don't have the ability to access or store images, including ""Poruwnanie cen.png"". The context provided earlier mentioned that the system was unable to index the content of the image due to an unsupported file type. Therefore, I don't have any information about the image.",1.05,llama-3.3-70b-versatile,,1766797058134,auditor
+2026-01-08T20:00:11.095328,string,"The provided code is a Python script that appears to be part of a larger application for handling user queries, performing searches, generating responses, and logging feedback. Let's break down the key components and functionalities:
+
+### Key Components
+
+1. **Search Functionality**:
+   - The script uses a `vector_db.search` method to retrieve search results based on a user query.
+   - It processes these results to extract relevant text and source information.
+
+2. **System Prompt Generation**:
+   - Depending on whether the search results are available, it generates different system prompts for the language model (LLM). If results are found, it switches to an ""Analyst"" mode; otherwise, it operates in a ""Helper"" mode.
+
+3. **Language Model Interaction**:
+   - The script interacts with two LLMs: one cloud-based and one local.
+   - It attempts to use the cloud-based model first but falls back to the local model if the cloud service is unavailable.
+
+4. **Feedback Logging**:
+   - The script logs user feedback, including query details, response text, latency, model used, and feedback type.
+
+5. **File Upload and Indexing**:
+   - It allows users to upload files, processes the content, splits it into chunks, and indexes these chunks in a vector database for later search.
+
+6. **Health Check and Analytics**:
+   - Provides endpoints to check the health of the application (database connection, LLM status) and retrieve analytics data from logs.
+
+### Best Practices and Recommendations
+
+1. **Error Handling**:
+   - The script includes basic error handling but could be improved by logging errors more comprehensively and providing more informative messages.
+   - Consider using structured exception handling to differentiate between different types of errors (e.g., network issues vs. database issues).
+
+2. **Configuration Management**:
+   - Use environment variables or a configuration file for settings like model names, log file paths, etc. This makes the code more flexible and easier to manage across different environments.
+
+3. **Security**:
+   - Ensure that user inputs are properly sanitized to prevent injection attacks.
+   - Consider implementing rate limiting to protect against abuse.
+
+4. **Performance Optimization**:
+   - For large files or high volumes of data, consider optimizing the chunking and indexing process.
+   - Use efficient data structures and algorithms for search operations.
+
+5. **Logging**:
+   - Improve logging by using a structured logging library (e.g., `structlog`) to make logs more readable and searchable.
+   - Consider implementing log rotation to avoid filling up disk space.
+
+6. **Documentation**:
+   - Add comments and documentation to explain the purpose of each function and key logic points.
+   - Use docstrings for public functions to describe their parameters and return values.
+
+### Example Improvements
+
+Here's a simplified example of how you might improve error handling and logging:
+
+```python
+import logging
+from fastapi import HTTPException, FastAPI
+from pydantic import BaseModel
+import pandas as pd
+import time
+import os
+
+app = FastAPI()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class FeedbackRequest(BaseModel):
+    query: str
+    response: str
+    latency: float
+    feedback: str
+    query_id: str
+
+LOG_FILE = ""feedback.csv""
+
+@app.post(""/feedback"")
+async def log_feedback(data: FeedbackRequest):
+    try:
+        with open(LOG_FILE, mode=""a"", newline="""", encoding=""utf-8"") as file:
+            writer = csv.writer(file)
+            writer.writerow([datetime.now().isoformat(), data.query, data.response, f""{data.latency:.2f}"", settings.MODEL_NAME, data.feedback, data.query_id])
+        return {""status"": ""logged""}
+    except Exception as e:
+        logger.error(f""❌ Feedback Error: {e}"")
+        return {""status"": ""error"", ""detail"": str(e)}
+
+@app.get(""/analytics"")
+async def get_analytics():
+    if not os.path.exists(LOG_FILE):
+        return {""total"": 0, ""avg_latency"": 0, ""likes"": 0, ""dislikes"": 0, ""history"": [], ""models"": {}}
+    try:
+        df = pd.read_csv(LOG_FILE)
+        if df.empty: return {""total"": 0, ""avg_latency"": 0, ""likes"": 0, ""dislikes"": 0, ""history"": [], ""models"": {}}
+        
+        total = len(df)
+        avg_lat = df[""Latency""].mean() if ""Latency"" in df and pd.to_numeric(df[""Latency""], errors='coerce').notnull().all() else 0
+        likes = len(df[df[""Feedback""] == ""positive""]) if ""Feedback"" in df else 0
+        dislikes = len(df[df[""Feedback""] == ""negative""]) if ""Feedback"" in df else 0
+        
+        history = []
+        if ""Timestamp"" in df and ""Latency"" in df:
+            history = df[[""Timestamp"", ""Latency""]].tail(50).fillna(0).to_dict(orient=""records"")
+        
+        models_stats = df[""Model""].value_counts().to_dict() if ""Model"" in df else {}
+
+        return {
+            ""total"": total,
+            ""avg_latency"": round(float(avg_lat), 2),
+            ""likes"": likes,
+            ""dislikes"": dislikes,
+            ""history"": history,
+            ""models"": models_stats
+        }
+    except Exception as e:
+        logger.error(f""❌ Analytics Error: {e}"")
+        return {""error"": str(e)}
+```
+
+This example uses Python's built-in `logging` module for better error handling and logging. It also includes more descriptive error messages and logs errors at the `ERROR` level using `logger.error`.",264.42,qwen2.5-coder:7b,,1767898811081,mentor

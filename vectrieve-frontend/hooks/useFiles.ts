@@ -1,0 +1,139 @@
+import { useState, useEffect, useMemo, useRef } from "react";
+import { apiClient } from "@/lib/api/client";
+
+export interface Document {
+  id: number;
+  filename: string;
+  file_size?: number;
+  chunk_count?: number;
+  upload_timestamp: string;
+  status: string;
+  error_log?: string;
+}
+
+export function useFiles() {
+  const [files, setFiles] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchFiles = async () => {
+    try {
+      const data = await apiClient<Document[]>('/upload');
+      setFiles(data);
+    } catch (error) {
+      console.error("Failed to fetch files", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout;
+
+    const connectWebSocket = async () => {
+      try {
+        const res = await fetch('/api/ws-token');
+        if (!res.ok) return;
+        const { token } = await res.json();
+        
+        ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL || 'ws://localhost:8000'}/ws?token=${token}`);
+        
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'file_status') {
+              setFiles((prev) => 
+                prev.map((f) => 
+                  f.id === msg.doc_id 
+                    ? { 
+                        ...f, 
+                        status: msg.status, 
+                        error_log: msg.error || f.error_log, 
+                        chunk_count: msg.chunk_count !== undefined ? msg.chunk_count : f.chunk_count,
+                        file_size: msg.file_size !== undefined ? msg.file_size : f.file_size
+                      }
+                    : f
+                )
+              );
+            }
+          } catch (e) {
+            console.error("WS parse error", e);
+          }
+        };
+
+        ws.onclose = () => {
+          reconnectTimeout = setTimeout(connectWebSocket, 5000);
+        };
+      } catch (err) {
+        console.error("Failed to setup WebSocket", err);
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      clearTimeout(reconnectTimeout);
+      if (ws) ws.close();
+    };
+  }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    setIsUploading(true);
+    try {
+      for (const file of Array.from(e.target.files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        await apiClient('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+      }
+      await fetchFiles();
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      alert('Error uploading file');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await apiClient(`/upload/${id}`, { method: 'DELETE' });
+      setFiles(prev => prev.filter(f => f.id !== id));
+    } catch (error) {
+      console.error("Failed to delete file", error);
+      alert("Error deleting file.");
+      throw error;
+    }
+  };
+
+  const filteredFiles = useMemo(() => {
+    if (!searchQuery) return files;
+    return files.filter(f => f.filename.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [files, searchQuery]);
+
+  return {
+    files,
+    filteredFiles,
+    isLoading,
+    isUploading,
+    searchQuery,
+    setSearchQuery,
+    fileInputRef,
+    handleFileUpload,
+    handleDelete
+  };
+}

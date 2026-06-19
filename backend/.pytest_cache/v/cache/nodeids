@@ -1,0 +1,12 @@
+[
+  "tests/test_api.py::test_health_check",
+  "tests/test_api.py::test_upload_endpoint_exists",
+  "tests/test_features.py::test_analytics_stats",
+  "tests/test_features.py::test_chat_query_creates_session",
+  "tests/test_features.py::test_delete_session",
+  "tests/test_features.py::test_export_chat_json_and_csv",
+  "tests/test_features.py::test_get_sessions_list",
+  "tests/test_features.py::test_login_user",
+  "tests/test_features.py::test_register_user",
+  "tests/test_features.py::test_upload_document"
+]

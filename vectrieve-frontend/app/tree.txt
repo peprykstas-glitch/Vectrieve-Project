@@ -1,0 +1,38 @@
+Folder PATH listing for volume Windows
+Volume serial number is 8838-595B
+C:.
+|   globals.css
+|   layout.tsx
+|   tree.txt
+|   
++---(auth)
+|   |   layout.tsx
+|   |   
+|   +---login
+|   |       page.tsx
+|   |       
+|   \---register
+|           page.tsx
+|           
++---(dashboard)
+|   |   layout.tsx
+|   |   page.tsx
+|   |   
+|   \---analytics
+|           page.tsx
+|           
+\---api
+    +---auth
+    |   +---login
+    |   |       route.ts
+    |   |       
+    |   +---logout
+    |   |       route.ts
+    |   |       
+    |   \---register
+    |           route.ts
+    |           
+    \---proxy
+        \---[...path]
+                route.ts
+                

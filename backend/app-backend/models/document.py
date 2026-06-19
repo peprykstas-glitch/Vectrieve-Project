@@ -1,0 +1,34 @@
+from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from sqlmodel import Field, SQLModel
+
+
+class DocumentStatus(str, Enum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class Document(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    filename: str
+    file_size: Optional[int] = Field(default=None)
+    chunk_count: Optional[int] = Field(default=None)
+    upload_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    status: str = Field(default=DocumentStatus.PENDING.value)
+    error_log: Optional[str] = Field(default=None)
+
+
+class DocumentRead(SQLModel):
+    id: Optional[int] = None
+    user_id: int
+    filename: str
+    file_size: Optional[int] = None
+    chunk_count: Optional[int] = None
+    upload_timestamp: datetime
+    status: str
+    error_log: Optional[str] = None
