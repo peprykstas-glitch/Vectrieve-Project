@@ -5,13 +5,17 @@ from core.database import get_session
 from models.sql_models import ChatHistory, ChatSession
 from models.document import Document
 from models.user import User
+from api.deps import get_current_user
 from collections import defaultdict
 import calendar
 
 router = APIRouter()
 
 @router.get("/stats")
-async def get_analytics_stats(session: AsyncSession = Depends(get_session)):
+async def get_analytics_stats(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     # 1. Total queries
     statement = select(func.count(ChatHistory.id)).where(ChatHistory.role == "user")
     result = await session.execute(statement)

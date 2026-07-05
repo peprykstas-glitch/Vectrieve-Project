@@ -128,3 +128,32 @@
     color: var(--foreground);
   }
 }
+
+/* Sleek Premium Dark-Mode Scrollbars — Forced Global Overrides */
+::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(82, 82, 91, 0.45) !important; /* zinc-600 */
+  border-radius: 9999px !important;
+  border: 2px solid transparent !important; /* creates padding around scrollbar thumb */
+  background-clip: padding-box !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6) !important; /* indigo-500 */
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+/* Firefox Scrollbar Fallback */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(82, 82, 91, 0.45) transparent !important;
+}

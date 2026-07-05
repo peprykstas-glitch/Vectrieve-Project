@@ -30,12 +30,15 @@ class QueryResponse(BaseModel):
     
     # 👇 НОВЕ ПОЛЕ: Повертаємо ID сесії назад
     session_id: Optional[str] = None
+    suggested_prompts: List[str] = []
 
 # --- 2. Feedback Models ---
 
 class FeedbackRequest(BaseModel):
     query_id: str
-    rating: int 
+    rating: int
+    user_query: str = ""
+    ai_response: str = ""
     comment: Optional[str] = None
 
 # --- 3. File Models ---

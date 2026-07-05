@@ -59,7 +59,7 @@ export function RegisterForm() {
           form.setError(field, { type: 'server', message: err.msg });
         });
       } else if (error.status === 409) {
-        setGlobalError('An enterprise workspace associated with this corporate email already exists.');
+        form.setError('email', { type: 'server', message: 'An enterprise workspace associated with this corporate email already exists.' });
       } else {
         setGlobalError(error.message || 'Workspace provisioning failed. Please contact your system administrator.');
       }

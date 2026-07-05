@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, delete as sql_delete
 from typing import List, Optional
 from pydantic import BaseModel
+import json
 
 from models.sql_models import ChatSession, ChatHistory
 from models.user import User
@@ -17,6 +18,7 @@ class ChatHistoryRead(BaseModel):
     role: str
     content: str
     timestamp: datetime
+    sources: Optional[List[dict]] = None
 
 class ChatSessionRead(BaseModel):
     id: str
@@ -87,7 +89,13 @@ async def get_session_details(
         "title": chat_session.title or "New Chat",
         "created_at": chat_session.created_at,
         "messages": [
-            {"id": m.id, "role": m.role, "content": m.content, "timestamp": m.timestamp}
+            {
+                "id": m.id,
+                "role": m.role,
+                "content": m.content,
+                "timestamp": m.timestamp,
+                "sources": json.loads(m.sources) if getattr(m, "sources", None) else None
+            }
             for m in messages
         ],
     }

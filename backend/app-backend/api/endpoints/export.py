@@ -7,15 +7,24 @@ from sqlmodel import select
 
 from core.database import get_session
 from models.sql_models import ChatHistory, ChatSession
+from models.user import User
+from api.deps import get_current_user
 
 router = APIRouter()
 
 
 @router.get("/chat/{session_id}/json")
-async def export_chat_json(session_id: str, session: AsyncSession = Depends(get_session)):
-    """Export a chat session as JSON"""
-    # Verify session exists
-    stmt = select(ChatSession).where(ChatSession.id == session_id)
+async def export_chat_json(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Export a chat session as JSON. Only the session owner can export it."""
+    # Verify session exists AND belongs to the current user
+    stmt = select(ChatSession).where(
+        ChatSession.id == session_id,
+        ChatSession.user_id == current_user.id,
+    )
     result = await session.execute(stmt)
     chat_session = result.scalar_one_or_none()
     if not chat_session:
@@ -44,9 +53,16 @@ async def export_chat_json(session_id: str, session: AsyncSession = Depends(get_
 
 
 @router.get("/chat/{session_id}/csv")
-async def export_chat_csv(session_id: str, session: AsyncSession = Depends(get_session)):
-    """Export a chat session as CSV"""
-    stmt = select(ChatSession).where(ChatSession.id == session_id)
+async def export_chat_csv(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Export a chat session as CSV. Only the session owner can export it."""
+    stmt = select(ChatSession).where(
+        ChatSession.id == session_id,
+        ChatSession.user_id == current_user.id,
+    )
     result = await session.execute(stmt)
     chat_session = result.scalar_one_or_none()
     if not chat_session:

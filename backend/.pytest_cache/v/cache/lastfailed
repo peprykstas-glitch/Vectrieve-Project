@@ -1,4 +1,1 @@
-{
-  "tests/test_api.py::test_health_check": true,
-  "tests/test_api.py::test_upload_endpoint_exists": true
-}
+{}

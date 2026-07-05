@@ -83,6 +83,18 @@ export function useFiles() {
     };
   }, []);
 
+  // Intelligent polling fallback: if any file is processing (e.g. over ngrok where local WS might be unreachable)
+  useEffect(() => {
+    const hasProcessing = files.some(f => f.status === "PROCESSING");
+    if (!hasProcessing) return;
+
+    const interval = setInterval(() => {
+      fetchFiles();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [files]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
@@ -120,6 +132,18 @@ export function useFiles() {
     }
   };
 
+  const handleReindex = async (id: number) => {
+    try {
+      // Set the document status locally to PROCESSING immediately for instant visual response
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'PROCESSING' } : f));
+      await apiClient(`/upload/${id}/reindex`, { method: 'POST' });
+    } catch (error) {
+      console.error("Failed to reindex file", error);
+      alert("Error re-indexing file.");
+      throw error;
+    }
+  };
+
   const filteredFiles = useMemo(() => {
     if (!searchQuery) return files;
     return files.filter(f => f.filename.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -134,6 +158,7 @@ export function useFiles() {
     setSearchQuery,
     fileInputRef,
     handleFileUpload,
-    handleDelete
+    handleDelete,
+    handleReindex
   };
 }

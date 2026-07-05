@@ -1,39 +1,53 @@
+"""
+Integration tests for the file upload endpoint.
+These tests use an in-memory SQLite DB and mock out background processing.
+"""
 import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, AsyncMock, MagicMock
-from.main import app
+from httpx import AsyncClient
+from unittest.mock import patch, AsyncMock
 
-client = TestClient(app)
 
-def test_upload_file_endpoint_success():
+pytestmark = pytest.mark.asyncio
+
+
+async def test_upload_file_endpoint_success(client: AsyncClient):
     """
-    Тестуємо повний шлях завантаження файлу.
-    URL згідно з check_routes.py: /upload/
+    POST /upload returns 202 Accepted with the document record.
+    Background processing (PDF parse + vector upsert) is mocked.
     """
     file_content = b"print('Hello Integration')"
-    files = {
-        "file": ("test_script.py", file_content, "text/plain")
-    }
+    files = {"file": ("test_script.py", file_content, "text/plain")}
 
-    with patch("app.api.endpoints.upload.parse_file", new_callable=AsyncMock) as mock_parser, \
-         patch("app.api.endpoints.upload.vector_service") as mock_vs:
-        
-        mock_parser.return_value = "Parsed content code"
-        mock_vs.add_document.return_value = "test-uuid-12345"
+    with patch("api.endpoints.upload.process_pdf_background", new_callable=AsyncMock) as mock_bg:
+        response = await client.post("/upload", files=files)
 
-        # ✅ БУЛО: /api/v1/upload/
-        # ✅ СТАЛО: /upload/ (так каже твій сервер)
-        response = client.post("/upload/", files=files)
-
-        if response.status_code != 200:
-            print(f"DEBUG ERROR: {response.json()}")
-
-        assert response.status_code == 200
+        assert response.status_code == 202, response.text
         data = response.json()
         assert data["filename"] == "test_script.py"
 
-def test_upload_no_file():
-    # ✅ БУЛО: /api/v1/upload/
-    # ✅ СТАЛО: /upload/
-    response = client.post("/upload/") 
+        # Verify background task was scheduled
+        assert mock_bg.called
+
+
+async def test_upload_no_file(client: AsyncClient):
+    """POST /upload without a file returns 422 Unprocessable Entity."""
+    response = await client.post("/upload")
     assert response.status_code == 422
+
+
+async def test_upload_and_list_files(client: AsyncClient):
+    """
+    After uploading a file the GET /upload endpoint lists it.
+    The file status starts as PROCESSING (background job not run).
+    """
+    file_content = b"# hello"
+    files = {"file": ("hello.py", file_content, "text/plain")}
+
+    with patch("api.endpoints.upload.process_pdf_background", new_callable=AsyncMock):
+        upload_resp = await client.post("/upload", files=files)
+        assert upload_resp.status_code == 202
+
+    list_resp = await client.get("/upload")
+    assert list_resp.status_code == 200
+    filenames = [d["filename"] for d in list_resp.json()]
+    assert "hello.py" in filenames

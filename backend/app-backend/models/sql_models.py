@@ -16,6 +16,7 @@ class ChatHistory(SQLModel, table=True):
     role: str  # user / assistant
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+    sources: Optional[str] = Field(default=None)
 
 class FeedbackLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -29,7 +29,14 @@ export default function LoginPage() {
         <LoginForm />
         
         <p className="mt-8 text-sm text-zinc-500 text-center text-balance">
-          By authenticating, you acknowledge and accept our Enterprise Terms of Service and comprehensive Privacy Policy.
+          By authenticating, you acknowledge and accept our{' '}
+          <a href="/terms" className="text-zinc-400 hover:text-white underline underline-offset-2 transition-colors">
+            Enterprise Terms of Service
+          </a>{' '}
+          and comprehensive{' '}
+          <a href="/privacy" className="text-zinc-400 hover:text-white underline underline-offset-2 transition-colors">
+            Privacy Policy
+          </a>.
         </p>
       </div>
     </div>

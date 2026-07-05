@@ -17,3 +17,5 @@ __pycache__/
 # Generated Data Files (created by the app)
 my_faiss.index
 my_notes.json
+postgres_data/
+qdrant_data/

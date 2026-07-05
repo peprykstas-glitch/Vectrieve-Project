@@ -21,6 +21,7 @@ class Document(SQLModel, table=True):
     upload_timestamp: datetime = Field(default_factory=datetime.utcnow)
     status: str = Field(default=DocumentStatus.PENDING.value)
     error_log: Optional[str] = Field(default=None)
+    summary: Optional[str] = Field(default=None)
 
 
 class DocumentRead(SQLModel):
@@ -32,3 +33,12 @@ class DocumentRead(SQLModel):
     upload_timestamp: datetime
     status: str
     error_log: Optional[str] = None
+    summary: Optional[str] = None
+
+
+class DocumentChunk(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="document.id", index=True)
+    user_id: int = Field(index=True)
+    content: str
+    chunk_index: int

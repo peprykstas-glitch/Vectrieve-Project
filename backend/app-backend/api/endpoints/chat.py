@@ -1,21 +1,26 @@
 import uuid
+import json
 import time
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-# ПРАВИЛЬНІ ІМПОРТИ
 from models.schemas import QueryRequest, QueryResponse, FeedbackRequest
-from models.sql_models import ChatHistory, ChatSession
+from models.sql_models import ChatHistory, ChatSession, FeedbackLog
+from models.user import User
 from core.database import get_session, engine
+from api.deps import get_current_user
 from services.llm_service import llm_service
 from services.vector_service import vector_service
 
 router = APIRouter()
 
-# --- ФОНОВА ЗАДАЧА ---
+
+# --- BACKGROUND TASK: Auto-generate session title after first message ---
 async def generate_chat_title_background(session_id: str, user_query: str, ai_response: str):
+    """Generates a short title for a new chat session using the LLM."""
     try:
         title = await llm_service.generate_title(user_query, ai_response)
         async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -30,31 +35,24 @@ async def generate_chat_title_background(session_id: str, user_query: str, ai_re
     except Exception as e:
         print(f"Error generating title: {e}")
 
-from models.user import User
-from api.deps import get_current_user
 
-@router.post("/query", response_model=QueryResponse)
-async def handle_query(
+async def _prepare_rag_context(
     request: QueryRequest,
-    background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User,
+    session: AsyncSession
 ):
-    start_time = time.time()
-    query_id = str(int(time.time() * 1000))
-    
-    # 1. Сесія
+    """Shared logic: resolves/creates session, saves user message, runs RAG search, fetches history."""
+    # 1. Resolve or create chat session
     is_new_session = False
     if request.session_id:
         session_id = request.session_id
-        # Перевірка чи існує та належить користувачу
         chk = await session.execute(
             select(ChatSession)
             .where(ChatSession.id == session_id)
             .where(ChatSession.user_id == current_user.id)
         )
         if not chk.scalar_one_or_none():
-             is_new_session = True
+            is_new_session = True
     else:
         session_id = str(uuid.uuid4())
         is_new_session = True
@@ -66,64 +64,130 @@ async def handle_query(
 
     user_query = request.messages[-1].content
 
-    # 2. Зберігаємо питання юзера
-    user_msg_db = ChatHistory(session_id=session_id, user_id=current_user.id, role="user", content=user_query)
+    # 2. Persist user message
+    user_msg_db = ChatHistory(
+        session_id=session_id,
+        user_id=current_user.id,
+        role="user",
+        content=user_query,
+    )
     session.add(user_msg_db)
     await session.commit()
 
-    # 3. Пошук (RAG)
+    # 3. RAG vector search
     try:
-        search_results = await vector_service.search(user_query, user_id=current_user.id, limit=5, mode=request.mode)
+        search_results = await vector_service.search(
+            user_query, user_id=current_user.id, limit=8, mode=request.mode
+        )
     except Exception as e:
         print(f"⚠️ Vector search failed (RAG skipped): {e}")
         search_results = []
-    
-    # --- ВИПРАВЛЕННЯ: Обробка результатів як словника (dict) ---
+
     rag_context = ""
     sources_data = []
-    
     if search_results:
-        parts = []
+        # Group sources by filename for clarity
+        file_groups: dict[str, list[str]] = {}
         for hit in search_results:
-            # Тепер це dict, а не об'єкт
-            filename = hit.get('filename', 'Unknown')
-            content = hit.get('text', '')
-            score = hit.get('score', 0)
-            
-            parts.append(f"Source File ({filename}):\n```\n{content}\n```")
-            
+            filename = hit.get("filename", "Unknown")
+            content = hit.get("text", "")
+            score = hit.get("score", 0)
+            if filename not in file_groups:
+                file_groups[filename] = []
+            file_groups[filename].append(content)
             sources_data.append({
-                "content": content[:150] + "...",
+                "content": content,
                 "score": score,
-                "filename": filename
+                "filename": filename,
             })
+        
+        parts = []
+        for fn, chunks in file_groups.items():
+            file_section = f"=== Source File: {fn} ===\n"
+            for i, chunk in enumerate(chunks, 1):
+                file_section += f"[Segment {i}]\n```\n{chunk}\n```\n"
+            parts.append(file_section)
         rag_context = "\n\n".join(parts)
-    # -----------------------------------------------------------
 
-    full_context = f"--- DOCUMENT CONTEXT ---\n{rag_context}"
+    num_unique_files = len(set(s["filename"] for s in sources_data)) if sources_data else 0
+    multi_source_instruction = ""
+    if num_unique_files > 1:
+        filenames_list = ", ".join(set(s["filename"] for s in sources_data))
+        multi_source_instruction = (
+            f"\n\nIMPORTANT: The context contains segments from {num_unique_files} different files ({filenames_list}). "
+            "You MUST reference and cite information from ALL relevant source files in your answer. "
+            "When citing, mention the source filename. Do NOT focus exclusively on one file while ignoring others. "
+            "If the user's question is relevant to multiple files, compare and contrast information across them."
+        )
 
-    # 4. Fetch History for native message array
-    statement = select(ChatHistory).where(ChatHistory.session_id == session_id).order_by(ChatHistory.timestamp.desc()).limit(10)
-    result = await session.execute(statement)
+    full_context = f"--- DOCUMENT CONTEXT ---\n{rag_context}{multi_source_instruction}"
+
+    # 4. Fetch recent conversation history (last 10 turns)
+    stmt = (
+        select(ChatHistory)
+        .where(ChatHistory.session_id == session_id)
+        .order_by(ChatHistory.timestamp.desc())
+        .limit(10)
+    )
+    result = await session.execute(stmt)
     history_records = result.scalars().all()
-    # history_records includes the user message we just saved, so it's at the end (when reversed)
-    history_messages = [{"role": m.role, "content": m.content} for m in reversed(history_records)]
+    history_messages = [
+        {"role": m.role, "content": m.content} for m in reversed(history_records)
+    ]
 
-    # 5. Генерація відповіді
+    return session_id, is_new_session, user_query, full_context, sources_data, history_messages
+
+
+# ---------------------------------------------------------------------------
+# POST /chat/query  (non-streaming, returns full JSON response)
+# ---------------------------------------------------------------------------
+@router.post("/query", response_model=QueryResponse)
+async def handle_query(
+    request: QueryRequest,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    start_time = time.time()
+    query_id = str(int(time.time() * 1000))
+
+    session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
+        await _prepare_rag_context(request, current_user, session)
+    )
+
+    # Generate full response
     try:
-        response_text, used_model = await llm_service.generate_response(request, full_context, history_messages)
+        response_text, used_model = await llm_service.generate_response(
+            request, full_context, history_messages
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
 
     latency = time.time() - start_time
 
-    # 6. Зберігаємо відповідь AI
-    ai_msg_db = ChatHistory(session_id=session_id, user_id=current_user.id, role="assistant", content=response_text)
+    # Generate dynamic follow-up suggestions
+    try:
+        suggested_prompts = await llm_service.generate_suggestions(
+            user_query, response_text, request.mode, request.model
+        )
+    except Exception:
+        suggested_prompts = []
+
+    # Persist AI response
+    ai_msg_db = ChatHistory(
+        session_id=session_id,
+        user_id=current_user.id,
+        role="assistant",
+        content=response_text,
+        sources=json.dumps(sources_data) if sources_data else None
+    )
     session.add(ai_msg_db)
     await session.commit()
 
     if is_new_session:
-        background_tasks.add_task(generate_chat_title_background, session_id, user_query, response_text)
+        background_tasks.add_task(
+            generate_chat_title_background, session_id, user_query, response_text
+        )
 
     return QueryResponse(
         response_text=response_text,
@@ -131,9 +195,117 @@ async def handle_query(
         latency=latency,
         query_id=query_id,
         mode_used=request.thinking_mode,
-        session_id=session_id
+        session_id=session_id,
+        suggested_prompts=suggested_prompts,
     )
 
+
+# ---------------------------------------------------------------------------
+# POST /chat/stream  (SSE streaming endpoint)
+# Emits Server-Sent Events in this order:
+#   1. data: {"type":"session","session_id":"...","sources":[...]}
+#   2. data: {"type":"token","text":"hello "}   (repeated)
+#   3. data: {"type":"done"}
+# ---------------------------------------------------------------------------
+@router.post("/stream")
+async def handle_query_stream(
+    request: QueryRequest,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
+        await _prepare_rag_context(request, current_user, session)
+    )
+
+    async def event_generator():
+        full_response = []
+        try:
+            # --- Event 1: Send session info + sources before first token ---
+            meta_event = json.dumps({
+                "type": "session",
+                "session_id": session_id,
+                "sources": sources_data,
+            })
+            yield f"data: {meta_event}\n\n"
+
+            # --- Events 2+: Stream tokens ---
+            async for token in llm_service.generate_response_stream(
+                request, full_context, history_messages
+            ):
+                full_response.append(token)
+                token_event = json.dumps({"type": "token", "text": token})
+                yield f"data: {token_event}\n\n"
+
+            # --- Event 3: Send dynamic follow-up suggestions ---
+            response_text = "".join(full_response)
+            try:
+                suggested_prompts = await llm_service.generate_suggestions(
+                    user_query, response_text, request.mode, request.model
+                )
+            except Exception:
+                suggested_prompts = []
+            
+            suggestions_event = json.dumps({
+                "type": "suggestions",
+                "prompts": suggested_prompts
+            })
+            yield f"data: {suggestions_event}\n\n"
+
+            # --- Event: Done ---
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        except Exception as e:
+            error_event = json.dumps({"type": "error", "message": str(e)})
+            yield f"data: {error_event}\n\n"
+            return
+
+        # --- Post-stream: Persist AI response & schedule title generation ---
+        response_text = "".join(full_response)
+        try:
+            async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+            async with async_session_factory() as db:
+                ai_msg_db = ChatHistory(
+                    session_id=session_id,
+                    user_id=current_user.id,
+                    role="assistant",
+                    content=response_text,
+                    sources=json.dumps(sources_data) if sources_data else None
+                )
+                db.add(ai_msg_db)
+                await db.commit()
+        except Exception as e:
+            print(f"⚠️ Failed to persist streamed AI response: {e}")
+
+        if is_new_session and response_text:
+            background_tasks.add_task(
+                generate_chat_title_background, session_id, user_query, response_text
+            )
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @router.post("/feedback")
-async def log_feedback(data: FeedbackRequest):
-    return {"status": "logged"}
+async def log_feedback(
+    data: FeedbackRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Persist user feedback (thumbs up/down) for a query to the FeedbackLog table."""
+    feedback_entry = FeedbackLog(
+        query_id=data.query_id,
+        user_query=data.user_query,
+        ai_response=data.ai_response,
+        rating=data.rating,
+        comment=data.comment,
+    )
+    session.add(feedback_entry)
+    await session.commit()
+    return {"status": "logged", "query_id": data.query_id}

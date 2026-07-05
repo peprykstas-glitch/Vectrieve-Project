@@ -20,7 +20,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
             
         session_factory = get_session_factory()
         async with session_factory() as session:
-            stmt = select(User).where(User.email == user_email)
+            stmt = select(User).where(User.username == user_email)
             result = await session.execute(stmt)
             user = result.scalar_one_or_none()
             if not user:

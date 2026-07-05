@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, MoreVertical, Trash2, Eye, RefreshCw } from "lucide-react";
+import { FileText, MoreVertical, Trash2, Eye, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document } from "@/hooks/useFiles";
 
@@ -10,6 +10,7 @@ interface FileTableProps {
   handleSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectFile: (id: number) => void;
   handleDelete: (id: number) => void;
+  handleReindex: (id: number) => void;
   setViewDetailsDoc: (doc: Document | null) => void;
 }
 
@@ -20,6 +21,7 @@ export function FileTable({
   handleSelectAll,
   handleSelectFile,
   handleDelete,
+  handleReindex,
   setViewDetailsDoc 
 }: FileTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -41,13 +43,18 @@ export function FileTable({
         <thead className="uppercase tracking-wider border-b border-zinc-800 bg-zinc-900/80 text-[10px] text-zinc-500 font-bold">
           <tr>
             <th className="px-6 py-4 w-12 text-center">
-              <input 
-                type="checkbox" 
-                onChange={handleSelectAll}
-                checked={allFilteredSelected}
-                aria-label="Select all files" 
-                className="appearance-none w-4 h-4 rounded border border-zinc-700 bg-zinc-900/50 checked:bg-indigo-600 checked:border-indigo-600 cursor-pointer transition-colors relative after:content-[''] after:absolute after:hidden checked:after:block after:w-1.5 after:h-2.5 after:border-r-[2px] after:border-b-[2px] after:border-white after:rotate-45 after:left-[4.5px] after:top-[1px] m-0 drop-shadow-sm"
-              />
+              <label className="relative flex h-4 w-4 cursor-pointer items-center justify-center mx-auto">
+                <input 
+                  type="checkbox" 
+                  onChange={handleSelectAll}
+                  checked={allFilteredSelected}
+                  aria-label="Select all files" 
+                  className="sr-only peer"
+                />
+                <div className="w-4 h-4 rounded border border-zinc-700 bg-zinc-900/50 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-white hidden peer-checked:block" />
+                </div>
+              </label>
             </th>
             <th className="px-6 py-4">Filename</th>
             <th className="px-6 py-4">Type</th>
@@ -58,19 +65,25 @@ export function FileTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-800/50">
-          {files.map((file) => {
+          {files.map((file, idx) => {
             const ext = file.filename.split('.').pop()?.toUpperCase() || 'FILE';
             const dateStr = new Date(file.upload_timestamp).toLocaleString();
+            const isNearBottom = idx >= files.length - 2 && files.length > 3;
             return (
               <tr key={file.id} className="hover:bg-zinc-800/30 transition-colors group">
                 <td className="px-6 py-4 w-12 text-center">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedFileIds.has(file.id)}
-                    onChange={() => handleSelectFile(file.id)}
-                    aria-label={`Select ${file.filename}`} 
-                    className="appearance-none w-4 h-4 rounded border border-zinc-700 bg-zinc-900/50 checked:bg-indigo-600 checked:border-indigo-600 cursor-pointer transition-colors relative after:content-[''] after:absolute after:hidden checked:after:block after:w-1.5 after:h-2.5 after:border-r-[2px] after:border-b-[2px] after:border-white after:rotate-45 after:left-[4.5px] after:top-[1px] m-0 drop-shadow-sm" 
-                  />
+                  <label className="relative flex h-4 w-4 cursor-pointer items-center justify-center mx-auto">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedFileIds.has(file.id)}
+                      onChange={() => handleSelectFile(file.id)}
+                      aria-label={`Select ${file.filename}`} 
+                      className="sr-only peer"
+                    />
+                    <div className="w-4 h-4 rounded border border-zinc-700 bg-zinc-900/50 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white hidden peer-checked:block" />
+                    </div>
+                  </label>
                 </td>
                 <td className="px-6 py-4 w-full max-w-[300px]">
                   <div className="flex items-center gap-3">
@@ -124,18 +137,18 @@ export function FileTable({
                   {/* Custom Native Dropdown Menu */}
                   {activeDropdown === file.id && (
                     <div 
-                      className="absolute right-6 top-10 z-50 w-48 rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col p-1"
+                      className={`absolute right-6 z-50 w-48 rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col p-1 ${isNearBottom ? "bottom-10" : "top-10"}`}
                       onMouseDown={(e) => e.stopPropagation()} // Prevent closing before action executes
                     >
                       <button 
                         onMouseDown={(e) => { e.stopPropagation(); setViewDetailsDoc(file); setActiveDropdown(null); }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
                         <Eye className="w-4 h-4" /> View Details
                       </button>
                       <button 
-                        onMouseDown={(e) => { e.stopPropagation(); setActiveDropdown(null); }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left"
+                        onMouseDown={(e) => { e.stopPropagation(); handleReindex(file.id); setActiveDropdown(null); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
                         <RefreshCw className="w-4 h-4" /> Force Re-index
                       </button>
@@ -146,7 +159,7 @@ export function FileTable({
                           handleDelete(file.id); 
                           setActiveDropdown(null); 
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
                         <Trash2 className="w-4 h-4" /> Delete Vector
                       </button>

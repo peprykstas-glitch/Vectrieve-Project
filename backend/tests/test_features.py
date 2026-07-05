@@ -19,16 +19,22 @@ def mock_llm_service():
     with patch("api.endpoints.chat.llm_service") as mock:
         mock.generate_response = AsyncMock(return_value=("Mocked AI Response", "mock-model"))
         mock.generate_title = AsyncMock(return_value="Mocked Chat Title")
+        mock.generate_suggestions = AsyncMock(return_value=["Suggestion 1", "Suggestion 2", "Suggestion 3"])
         yield mock
 
 @pytest_asyncio.fixture(autouse=True)
 def mock_vector_service():
-    """Mocks the Vector service to avoid calling Qdrant during tests."""
-    with patch("api.endpoints.chat.vector_service") as mock:
-        mock.search = AsyncMock(return_value=[
-            {"filename": "test.txt", "text": "Mocked context from document", "score": 0.9}
-        ])
-        yield mock
+    """
+    Mock VectorService by patching get_vector_service() to return a MagicMock.
+    This avoids touching the _LazyVectorProxy which triggers real Qdrant initialization.
+    """
+    mock_vs = MagicMock()
+    mock_vs.search = AsyncMock(return_value=[
+        {"filename": "test.txt", "text": "Mocked context from document", "score": 0.9}
+    ])
+    with patch("services.vector_service.get_vector_service", return_value=mock_vs), \
+         patch("api.endpoints.chat.vector_service", mock_vs):
+        yield mock_vs
 
 # --- FEATURE 1: AUTHENTICATION ---
 
@@ -96,11 +102,13 @@ async def test_get_sessions_list(client: AsyncClient, test_session):
         "mode": "local"
     })
     
-    response = await client.get("/sessions/")
+    response = await client.get("/sessions")
     assert response.status_code == 200
     sessions = response.json()
     assert len(sessions) >= 1
-    assert "preview" in sessions[0]
+    # Sessions have 'id', 'title', 'created_at' fields
+    assert "id" in sessions[0]
+    assert "title" in sessions[0]
 
 async def test_delete_session(client: AsyncClient, test_session):
     res = await client.post("/chat/query", json={
@@ -110,7 +118,8 @@ async def test_delete_session(client: AsyncClient, test_session):
     session_id = res.json()["session_id"]
     
     delete_res = await client.delete(f"/sessions/{session_id}")
-    assert delete_res.status_code == 200
+    # 204 No Content on successful delete
+    assert delete_res.status_code == 204
     
     # Verify deletion
     result = await test_session.execute(select(ChatSession).where(ChatSession.id == session_id))
@@ -119,21 +128,31 @@ async def test_delete_session(client: AsyncClient, test_session):
 # --- FEATURE 3: ANALYTICS ---
 
 async def test_analytics_stats(client: AsyncClient, test_session):
-    # Seed some data to get non-zero stats
-    await client.post("/chat/query", json={"messages": [{"role": "user", "content": "Stats test"}]})
-    
-    doc = Document(filename="test_stats.pdf", status="COMPLETED", user_id=1)
+    # Seed a chat message so total_queries > 0
+    chat_resp = await client.post("/chat/query", json={
+        "messages": [{"role": "user", "content": "Stats test"}],
+        "thinking_mode": "mentor",
+        "mode": "local",
+    })
+    assert chat_resp.status_code == 200, chat_resp.text
+
+    # Seed a completed document directly in the test session
+    doc = Document(filename="test_stats.pdf", status="COMPLETED", user_id=1, file_size=1024, chunk_count=5)
     test_session.add(doc)
     await test_session.commit()
-    
+
     response = await client.get("/analytics/stats")
     assert response.status_code == 200
     data = response.json()
     
     assert "kpi" in data
     assert "chart_data" in data
+    # Both values come from data seeded in this test function above
     assert data["kpi"]["total_queries"] >= 1
     assert data["kpi"]["indexed_documents"] >= 1
+    # Structural checks
+    assert isinstance(data["kpi"]["total_users"], int)
+    assert isinstance(data["chart_data"], list)
 
 # --- FEATURE 4: EXPORT ---
 

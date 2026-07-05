@@ -2,14 +2,18 @@
 
 import React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { 
   BrainCircuit, 
   MessageSquare, 
   Database, 
   BarChart3, 
   Settings, 
-  LogOut 
+  LogOut,
+  PanelLeft,
+  Trash2,
+  Check,
+  X
 } from "lucide-react"
 import {
   Sidebar,
@@ -21,7 +25,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar
 } from "@/components/ui/sidebar"
+import { apiClient } from "@/lib/api/client"
+
 const navItems = [
   { title: "RAG Workspace", url: "/", icon: MessageSquare },
   { title: "Knowledge Base", url: "/files", icon: Database },
@@ -31,22 +38,56 @@ const navItems = [
 
 function ChatHistoryList() {
   const [sessions, setSessions] = React.useState<{id: string, title: string}[]>([])
+  const [deletingId, setDeletingId] = React.useState<string | null>(null)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  React.useEffect(() => {
-    async function fetchSessions() {
-      try {
-        const res = await fetch('/api/proxy/sessions')
-        if (res.ok) {
-          const data = await res.json()
-          setSessions(data)
-        }
-      } catch (e) {
-        console.error(e)
+  const fetchSessions = React.useCallback(async () => {
+    try {
+      const data = await apiClient<{id: string, title: string}[]>('/sessions')
+      setSessions(data)
+    } catch (e: any) {
+      console.error(e)
+      if (e.status === 401) {
+        window.location.href = '/login'
       }
     }
-    fetchSessions()
   }, [])
+
+  // Refresh when pathname or session param changes (new chat created)
+  React.useEffect(() => {
+    fetchSessions()
+  }, [pathname, searchParams, fetchSessions])
+
+  const currentSessionId = searchParams.get('session')
+
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDeletingId(id)
+  }
+
+  const handleConfirmDelete = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await apiClient(`/sessions/${id}`, { method: 'DELETE' })
+      if (id === currentSessionId && pathname === '/') {
+        window.location.href = '/'
+      } else {
+        setDeletingId(null)
+        fetchSessions()
+      }
+    } catch (err) {
+      console.error("Failed to delete session", err)
+    }
+  }
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDeletingId(null)
+  }
 
   if (sessions.length === 0) {
     return (
@@ -60,14 +101,41 @@ function ChatHistoryList() {
     <>
       {sessions.map(s => {
         const url = `/?session=${s.id}`
-        const isActive = pathname === '/' && typeof window !== 'undefined' && window.location.search.includes(s.id)
+        const isActive = pathname === '/' && s.id === currentSessionId
+
+        if (deletingId === s.id) {
+          return (
+            <SidebarMenuItem key={s.id} className="group/session-item relative">
+              <div className="flex items-center justify-between w-full px-3 py-2 text-xs text-red-400 bg-red-950/20 border border-red-900/30 rounded-md">
+                <span className="font-semibold truncate">Delete Chat?</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={(e) => handleConfirmDelete(s.id, e)}
+                    className="p-1 hover:bg-red-500/20 text-red-400 rounded transition-colors cursor-pointer border-0 bg-transparent"
+                    title="Yes, delete"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={handleCancelDelete}
+                    className="p-1 hover:bg-zinc-850 text-zinc-400 rounded transition-colors cursor-pointer border-0 bg-transparent"
+                    title="Cancel"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </SidebarMenuItem>
+          )
+        }
+
         return (
-          <SidebarMenuItem key={s.id}>
+          <SidebarMenuItem key={s.id} className="group/session-item relative">
             <SidebarMenuButton 
               asChild 
               isActive={isActive}
               tooltip={s.title}
-              className={`transition-all duration-200 rounded-md ${
+              className={`transition-all duration-200 rounded-md pr-8 ${
                 isActive 
                  ? "bg-zinc-800/80 text-white shadow-sm" 
                   : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
@@ -80,6 +148,13 @@ function ChatHistoryList() {
                 </span>
               </Link>
             </SidebarMenuButton>
+            <button
+              onClick={(e) => handleDeleteClick(s.id, e)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all duration-200 opacity-0 group-hover/session-item:opacity-100 focus:opacity-100 group-data-[collapsible=icon]:hidden cursor-pointer border-0 bg-transparent"
+              title="Delete chat"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </SidebarMenuItem>
         )
       })}
@@ -92,15 +167,18 @@ function UserCard() {
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
 
   React.useEffect(() => {
-    fetch('/api/proxy/auth/me')
-      .then(r => r.ok ? r.json() : null)
+    apiClient<{ email: string }>('/auth/me')
       .then(data => { if (data?.email) setEmail(data.email) })
-      .catch(() => {})
+      .catch((e: any) => {
+        if (e.status === 401) {
+          window.location.href = '/login'
+        }
+      })
   }, [])
 
   const handleSignOut = async () => {
     setIsLoggingOut(true)
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await apiClient('/auth/logout', { method: 'POST' })
     window.location.href = '/login'
   }
 
@@ -133,18 +211,29 @@ function UserCard() {
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { toggleSidebar } = useSidebar()
+  const [hovered, setHovered] = React.useState(false)
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-zinc-800 bg-zinc-950 z-40">
-      <SidebarHeader className="h-16 flex justify-center p-2">
-        <div className="flex items-center w-full gap-3 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-indigo-300/30">
-            <BrainCircuit className="h-4 w-4 text-white drop-shadow-md" />
+    <Sidebar collapsible="icon" className="border-r border-white/5 bg-zinc-950 z-40">
+      <SidebarHeader className="h-16 flex justify-center p-2 border-b border-white/5">
+        <button 
+          onClick={toggleSidebar}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          className="flex items-center w-full gap-3 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
+        >
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-indigo-300/30 transition-all duration-200 hover:scale-105 active:scale-95">
+            {hovered ? (
+              <PanelLeft className="h-4 w-4 text-white drop-shadow-md animate-in fade-in duration-200" />
+            ) : (
+              <BrainCircuit className="h-4 w-4 text-white drop-shadow-md animate-in fade-in duration-200" />
+            )}
           </div>
           <span className="truncate text-[15px] font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-400 group-data-[collapsible=icon]:hidden transition-opacity duration-200">
             Vectrieve Core
           </span>
-        </div>
+        </button>
       </SidebarHeader>
 
       <SidebarContent className="p-2 pt-4">
@@ -188,6 +277,18 @@ export function AppSidebar() {
             Recent Chats
           </SidebarGroupLabel>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="New Chat"
+                className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200 mb-1"
+              >
+                <Link href="/">
+                  <MessageSquare strokeWidth={1.5} className="shrink-0" />
+                  <span className="font-medium group-data-[collapsible=icon]:hidden">+ New Chat</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <ChatHistoryList />
           </SidebarMenu>
         </SidebarGroup>

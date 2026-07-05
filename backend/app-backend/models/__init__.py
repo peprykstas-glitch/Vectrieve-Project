@@ -1,3 +1,4 @@
 from .user import User
-from .document import Document
+from .document import Document, DocumentChunk
 from .sql_models import ChatSession, ChatHistory
+from .password_reset import PasswordResetToken

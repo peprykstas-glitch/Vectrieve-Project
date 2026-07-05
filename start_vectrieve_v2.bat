@@ -1,18 +1,22 @@
 @echo off
-title CoreMind Launcher
+title Vectrieve Launcher
 color 0A
 cls
 
 echo ========================================================
-echo   C O R E M I N D   S Y S T E M   v2.0
+echo   V E C T R I E V E   S Y S T E M   v2.0
 echo ========================================================
 echo.
 echo  [1] Starting Qdrant (Docker)...
 start "QDRANT" /min cmd /k "cd /d "%~dp0" && docker-compose up"
 
 echo.
+echo  Waiting 6 seconds for database and search services to start...
+timeout /t 6 >nul
+
+echo.
 echo  [2] Starting BACKEND (Python API)...
-start "BACKEND - PYTHON" cmd /k "cd /d "%~dp0backend\app-backend" && ..\venv\Scripts\activate && python main.py"
+start "BACKEND - PYTHON" cmd /k "cd /d "%~dp0backend\app-backend" && chcp 65001 && set PYTHONIOENCODING=utf-8 && ..\venv\Scripts\activate && python main.py"
 
 echo.
 echo  [3] Starting FRONTEND (Next.js UI)...
@@ -29,7 +33,7 @@ timeout /t 8 >nul
 start http://localhost:3000
 
 echo.
-echo   Press any key to KILL ALL PROCESSES and close CoreMind.
+echo   Press any key to KILL ALL PROCESSES and close Vectrieve.
 pause >nul
 
 :: --- KILL SWITCH ---

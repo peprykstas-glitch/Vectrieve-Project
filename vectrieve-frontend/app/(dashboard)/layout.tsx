@@ -5,8 +5,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { GlobalSettingsProvider, useGlobalSettings } from "@/components/global-settings"
 import { 
   SidebarProvider, 
-  SidebarInset, 
-  SidebarTrigger 
+  SidebarInset,
+  SidebarTrigger
 } from "@/components/ui/sidebar"
 import { 
   Select, 
@@ -27,18 +27,17 @@ function DashboardHeader() {
   }, [])
   
   return (
-    <header className="flex shrink-0 items-center justify-between pr-4 lg:pr-8 pl-3 py-3 border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl z-30 transition-all duration-300">
-      <div className="flex items-center gap-4">
-        {/* The trigger seamlessly toggles the sidebar without z-index clipping */}
-        <SidebarTrigger className="text-zinc-400 hover:text-zinc-100 transition-colors" />
+    <header className="flex shrink-0 items-center justify-between px-6 py-3.5 border-b border-white/5 bg-zinc-900/10 backdrop-blur-xl z-30 transition-all duration-300">
+      <div className="flex items-center gap-4 md:hidden">
+        <SidebarTrigger className="text-zinc-400 hover:text-white cursor-pointer" />
       </div>
 
       {/* Relocated Global Controls: Cloud/Local and Mentor/Auditor */}
-      <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar min-h-[32px]">
+      <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
         {mounted && (
           <>
             <Select value={computeMode} onValueChange={setComputeMode}>
-              <SelectTrigger aria-label="Select Environment" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/50 border-white/10 text-xs focus:ring-1 focus:ring-zinc-700 rounded-full shrink-0">
+              <SelectTrigger aria-label="Select Environment" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200">
                 <SelectValue placeholder="Environment" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-white/10 rounded-xl shadow-2xl">
@@ -56,7 +55,7 @@ function DashboardHeader() {
             </Select>
 
             <Select value={aiPersona} onValueChange={setAiPersona}>
-              <SelectTrigger aria-label="Select Persona" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/50 border-white/10 text-xs focus:ring-1 focus:ring-zinc-700 rounded-full shrink-0">
+              <SelectTrigger aria-label="Select Persona" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200">
                 <SelectValue placeholder="Persona" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-white/10 rounded-xl shadow-2xl">

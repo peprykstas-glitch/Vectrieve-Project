@@ -1,5 +1,6 @@
 import React, { useRef, useState, KeyboardEvent } from "react";
 import { Paperclip, ArrowUp, FileText, X } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ChatInputProps {
   isLoading: boolean;
@@ -59,10 +60,10 @@ export function ChatInput({ isLoading, onSubmit }: ChatInputProps) {
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 px-1 mb-2">
             {files.map((file, idx) => (
-              <div key={idx} className="flex items-center gap-2 bg-zinc-800/80 border border-white/10 rounded-lg py-1.5 pl-2.5 pr-1.5 text-xs text-zinc-300 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 shadow-lg">
+              <div key={idx} className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-xl py-1.5 pl-3 pr-2 text-xs text-zinc-300 shadow-xl">
                 <FileText className="w-3.5 h-3.5 text-indigo-400" />
                 <span className="truncate max-w-[150px] font-medium">{file.name}</span>
-                <button onClick={() => removeFile(idx)} className="p-0.5 hover:bg-zinc-700 rounded-md text-zinc-400 hover:text-white transition-colors">
+                <button onClick={() => removeFile(idx)} className="p-1 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-white transition-colors border-0 bg-transparent cursor-pointer">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -70,18 +71,20 @@ export function ChatInput({ isLoading, onSubmit }: ChatInputProps) {
           </div>
         )}
 
-        {/* Glassmorphism Input Container */}
-        <div className="relative flex items-end w-full bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl transition-all focus-within:ring-1 focus-within:ring-indigo-500/50 focus-within:border-indigo-500/30 focus-within:bg-zinc-900/80 p-2">
+        {/* Premium Breathing Focus Container */}
+        <div className="relative flex items-end w-full bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/30 focus-within:bg-zinc-900/70 p-2">
           {/* Attachment Button */}
           <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 text-zinc-400 hover:text-zinc-100 transition-colors rounded-full hover:bg-zinc-800/50 flex-shrink-0"
+            className="p-3 text-zinc-400 hover:text-zinc-200 transition-colors rounded-xl hover:bg-zinc-800/30 flex-shrink-0 border-0 bg-transparent cursor-pointer"
             aria-label="Attach file"
             disabled={isLoading}
           >
-            <Paperclip size={20} />
-          </button>
+            <Paperclip size={18} />
+          </motion.button>
 
           {/* Auto-resizing Textarea */}
           <textarea
@@ -94,22 +97,24 @@ export function ChatInput({ isLoading, onSubmit }: ChatInputProps) {
             rows={1}
           />
 
-          {/* Submission Button */}
-          <button
+          {/* Spring-powered Submission Button */}
+          <motion.button
+            whileHover={(!inputValue.trim() && files.length === 0) || isLoading ? {} : { scale: 1.05 }}
+            whileTap={(!inputValue.trim() && files.length === 0) || isLoading ? {} : { scale: 0.95 }}
             onClick={submit}
             disabled={(!inputValue.trim() && files.length === 0) || isLoading}
-            className={`p-3 rounded-full flex-shrink-0 transition-all duration-300 ${
+            className={`p-3 rounded-2xl flex-shrink-0 transition-all duration-300 border-0 cursor-pointer ${
               (inputValue.trim() || files.length > 0) && !isLoading
-               ? "bg-indigo-500 text-white shadow-lg hover:bg-indigo-400 hover:scale-105"
-                : "bg-zinc-800/50 text-zinc-500 cursor-not-allowed"
+               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500"
+                : "bg-zinc-800/30 text-zinc-600 cursor-not-allowed"
             }`}
             aria-label="Send query"
           >
-            <ArrowUp size={20} className={isLoading ? "animate-bounce" : ""} />
-          </button>
+            <ArrowUp size={18} className={isLoading ? "animate-pulse" : ""} />
+          </motion.button>
         </div>
         
-        <div className="text-center mt-3 text-[10px] text-zinc-500 tracking-wide">
+        <div className="text-center mt-3 text-[10px] text-zinc-600 tracking-wide">
           Vectrieve Core may produce inaccurate intelligence. Verify critical assertions.
         </div>
       </div>

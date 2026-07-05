@@ -2,10 +2,10 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 import { loginSchema, type LoginFormValues } from '@/lib/schemas/auth';
 import { apiClient } from '@/lib/api/client';
@@ -24,8 +24,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [globalError, setGlobalError] = React.useState<string | null>(null);
+
+  const justRegistered = searchParams.get('registered') === 'true';
+  const sessionExpired = searchParams.get('session_expired') === 'true';
 
   // Initialize React Hook Form with Zod schema validation
   const form = useForm<LoginFormValues>({
@@ -61,9 +65,10 @@ export function LoginForm() {
           const field = err.loc[err.loc.length - 1] as keyof LoginFormValues;
           form.setError(field, { type: 'server', message: err.msg });
         });
+      } else if (error.status === 404) {
+        form.setError('email', { type: 'server', message: error.message || 'This email address is not registered.' });
       } else if (error.status === 401) {
-        // Display a generic warning for invalid credentials to prevent email enumeration attacks
-        setGlobalError('Authentication failed. Invalid corporate email or master password.');
+        form.setError('password', { type: 'server', message: error.message || 'Incorrect password. Please try again.' });
       } else {
         setGlobalError(error.message || 'A critical systemic error occurred. Please contact IT support.');
       }
@@ -86,6 +91,17 @@ export function LoginForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               {/* Conditional rendering of global, non-field-specific errors */}
+              {justRegistered && (
+                <div className="p-3 text-sm text-emerald-400 bg-emerald-950/30 border border-emerald-900/50 rounded-lg flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Workspace provisioned successfully. Sign in to continue.
+                </div>
+              )}
+              {sessionExpired && !globalError && (
+                <div className="p-3 text-sm text-amber-400 bg-amber-950/30 border border-amber-900/50 rounded-lg">
+                  Your session has expired. Please sign in again.
+                </div>
+              )}
               {globalError && (
                 <div className="p-3 text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg">
                   {globalError}

@@ -1,0 +1,4 @@
+=== Secret Document ===
+The security code for the Vectrieve Core server room is 'Room-99-Alpha'.
+This code is confidential and should not be shared outside of security audits.
+The main backup server is located on the second floor.
