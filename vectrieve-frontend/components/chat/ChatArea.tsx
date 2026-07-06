@@ -59,26 +59,11 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
 
 export function ChatArea({ initialSessionId }: ChatAreaProps) {
   const { computeMode, aiPersona } = useGlobalSettings();
-  const { messages, isLoading, submitQuery } = useChat(computeMode, aiPersona, initialSessionId);
+  const { messages, isLoading, submitQuery, sessionId } = useChat(computeMode, aiPersona, initialSessionId);
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
-  const [latestDoc, setLatestDoc] = React.useState<{ id: number; filename: string } | null>(null);
   const [showAudioBrief, setShowAudioBrief] = React.useState(false);
-
-  useEffect(() => {
-    apiClient<any[]>('/upload')
-      .then((data) => {
-        if (data && data.length > 0) {
-          const completed = data.filter((f: any) => f.status === 'COMPLETED');
-          if (completed.length > 0) {
-            completed.sort((a, b) => new Date(b.upload_timestamp).getTime() - new Date(a.upload_timestamp).getTime());
-            setLatestDoc({ id: completed[0].id, filename: completed[0].filename });
-          }
-        }
-      })
-      .catch(e => console.error("Error loading files for audio brief:", e));
-  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -270,7 +255,7 @@ export function ChatArea({ initialSessionId }: ChatAreaProps) {
         </div>
         
         <div className="flex items-center gap-2">
-          {latestDoc && (
+          {sessionId && messages.length > 1 && (
             <button 
               onClick={() => setShowAudioBrief(true)}
               className="px-3 py-1.5 text-[10px] font-semibold bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 hover:text-white hover:bg-emerald-600 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(16,185,129,0.05)]"
@@ -408,12 +393,12 @@ export function ChatArea({ initialSessionId }: ChatAreaProps) {
       )}
 
       {/* Audio Briefing Floating Overlay Modal */}
-      {showAudioBrief && latestDoc && (
+      {showAudioBrief && sessionId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-800 shadow-2xl relative bg-zinc-900">
             <AudioBrief 
-              documentId={latestDoc.id} 
-              filename={latestDoc.filename} 
+              sessionId={sessionId}
+              filename="Active Chat Session" 
               onClose={() => setShowAudioBrief(false)} 
             />
           </div>

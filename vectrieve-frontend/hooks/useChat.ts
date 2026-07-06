@@ -258,5 +258,6 @@ export function useChat(
     messages,
     isLoading,
     submitQuery,
+    sessionId,
   };
 }

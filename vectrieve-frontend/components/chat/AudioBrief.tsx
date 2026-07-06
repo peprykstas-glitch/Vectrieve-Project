@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  Volume2, 
-  VolumeX, 
-  Radio, 
-  Sparkles, 
-  Loader2, 
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+  Radio,
+  Sparkles,
+  Loader2,
   X,
   MessageSquare
 } from "lucide-react";
@@ -32,24 +31,53 @@ interface PodcastData {
   transcript: PodcastTurn[];
 }
 
+const BAR_COUNT = 24;
+const FADE_SECONDS = 0.18; // crossfade length between dialogue turns
+const CLICK_DEBOUNCE_MS = 350; // ignore rapid repeat clicks on transcript rows
+
 export default function AudioBrief({ documentId, sessionId, filename, onClose }: AudioBriefProps) {
   const [loading, setLoading] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
+  const [progressPercent, setProgressPercent] = useState(0);
   const [podcast, setPodcast] = useState<PodcastData | null>(null);
   const [lang, setLang] = useState<"uk" | "en">("uk");
-  
+
   // Player states
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTurnIdx, setCurrentTurnIdx] = useState<number>(-1);
   const [speechRate, setSpeechRate] = useState<number>(1.0);
   const [isMuted, setIsMuted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
-  // Audio Refs
+
+  // Progress of the currently speaking turn (0-1), drives the inline progress underline
+  const [activeProgress, setActiveProgress] = useState(0);
+  // Real frequency-derived bar heights (0-1) for the visualizer, replaces random jitter
+  const [barLevels, setBarLevels] = useState<number[]>(() => Array(BAR_COUNT).fill(0.08));
+
+  // Audio element refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextAudioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const turnRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Web Audio graph refs (created lazily on first playback)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const currentGainRef = useRef<GainNode | null>(null);
+  const fadingOutRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+
+  // Refs that mirror state to avoid stale reads inside long-lived callbacks
+  const isMutedRef = useRef(isMuted);
+  const lastClickAtRef = useRef(0);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = isMuted ? 0 : 1;
+    }
+  }, [isMuted]);
 
   // Cache key helper
   const getCacheKey = () => {
@@ -58,38 +86,29 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
     return `vectrieve_podcast_brief_latest_${lang}`;
   };
 
+  const resetPlaybackVisuals = () => {
+    setActiveProgress(0);
+    setBarLevels(Array(BAR_COUNT).fill(0.08));
+    fadingOutRef.current = false;
+    if (currentGainRef.current) {
+      try {
+        currentGainRef.current.disconnect();
+      } catch {
+        // already disconnected, ignore
+      }
+      currentGainRef.current = null;
+    }
+  };
+
   // Synchronize loading from local storage on component mount or config/lang change
   useEffect(() => {
     const cacheKey = getCacheKey();
     const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (parsed.transcript && parsed.transcript.length > 0) {
-          setPodcast(parsed);
-          setCurrentTurnIdx(-1);
-          setIsPlaying(false);
-          // Stop any current playbacks
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-          }
-          if (nextAudioRef.current) {
-            nextAudioRef.current.pause();
-            nextAudioRef.current = null;
-          }
-          return;
-        }
-      } catch (e) {
-        console.error("Failed to parse cached podcast briefing", e);
-      }
-    }
-    
-    // If not cached, reset podcast to allow fresh generation
-    setPodcast(null);
-    setCurrentTurnIdx(-1);
+
     setIsPlaying(false);
-    
+    setCurrentTurnIdx(-1);
+    resetPlaybackVisuals();
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -98,9 +117,24 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       nextAudioRef.current.pause();
       nextAudioRef.current = null;
     }
+
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.transcript && parsed.transcript.length > 0) {
+          setPodcast(parsed);
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to parse cached podcast briefing", e);
+      }
+    }
+
+    // If not cached (or cache was corrupt), reset podcast to allow fresh generation
+    setPodcast(null);
   }, [documentId, sessionId, lang]);
 
-  // Clean up audios when component unmounts
+  // Clean up audio + Web Audio graph when component unmounts
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -110,6 +144,12 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       if (nextAudioRef.current) {
         nextAudioRef.current.pause();
         nextAudioRef.current = null;
+      }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => { });
       }
     };
   }, []);
@@ -133,33 +173,132 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
     }
   }, [currentTurnIdx, isPlaying]);
 
+  // Keyboard shortcuts: space = play/pause, arrows = skip turn
+  useEffect(() => {
+    if (!podcast) return;
+
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        handlePlayPause();
+      } else if (e.code === "ArrowRight" && currentTurnIdx < podcast.transcript.length - 1) {
+        e.preventDefault();
+        setCurrentTurnIdx(currentTurnIdx + 1);
+        setIsPlaying(true);
+      } else if (e.code === "ArrowLeft" && currentTurnIdx > 0) {
+        e.preventDefault();
+        setCurrentTurnIdx(currentTurnIdx - 1);
+        setIsPlaying(true);
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [podcast, isPlaying, currentTurnIdx]);
+
+  // Real audio-reactive visualizer loop (reads the shared analyser node each frame)
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
+    }
+
+    let active = true;
+    const tick = () => {
+      if (!active) return;
+      const analyser = analyserRef.current;
+      if (analyser) {
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        setBarLevels(
+          Array.from({ length: BAR_COUNT }, (_, i) => Math.max(0.06, (data[i] ?? 0) / 255))
+        );
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      active = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [isPlaying]);
+
+  const ensureAudioContext = (): AudioContext => {
+    if (!audioCtxRef.current) {
+      const AudioCtxClass: typeof AudioContext =
+        window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioCtxClass();
+
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.7;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = isMutedRef.current ? 0 : 1;
+
+      masterGain.connect(analyser);
+      analyser.connect(ctx.destination);
+
+      audioCtxRef.current = ctx;
+      analyserRef.current = analyser;
+      masterGainRef.current = masterGain;
+    }
+
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume().catch(() => { });
+    }
+
+    return audioCtxRef.current;
+  };
+
+  // Wires a fresh <audio> element into the shared Web Audio graph via its own gain node,
+  // so each dialogue turn can be faded in/out independently for a smooth crossfade.
+  const attachGraph = (audio: HTMLAudioElement): GainNode => {
+    const ctx = ensureAudioContext();
+    const source = ctx.createMediaElementSource(audio);
+    const trackGain = ctx.createGain();
+    trackGain.gain.value = 0; // start silent, fade in once playback begins
+    source.connect(trackGain);
+    trackGain.connect(masterGainRef.current!);
+    return trackGain;
+  };
+
   const generatePodcast = async () => {
     setLoading(true);
     setErrorMsg(null);
-    setProgressMsg("Scanning conversation context..." if sessionId else "Scanning vector segments...");
-    
-    const steps = sessionId 
+    setProgressPercent(0);
+
+    const steps = sessionId
       ? [
-          "Parsing chat messages...",
-          "Synthesizing dialogue briefing...",
-          "Julia is reviewing questions...",
-          "Max is analyzing AI answers...",
-          "Finalizing chat briefing..."
-        ]
+        "Parsing chat messages...",
+        "Synthesizing dialogue briefing...",
+        "Julia is reviewing questions...",
+        "Max is analyzing AI answers...",
+        "Finalizing chat briefing..."
+      ]
       : [
-          "Extracting key themes...",
-          "Drafting host scripts...",
-          "Julia is structuring details...",
-          "Max is adding commentary...",
-          "Finalizing audio brief..."
-        ];
-    
+        "Extracting key themes...",
+        "Drafting host scripts...",
+        "Julia is structuring details...",
+        "Max is adding commentary...",
+        "Finalizing audio brief..."
+      ];
+
+    setProgressMsg(steps[0]);
+
     let stepIdx = 0;
     const interval = setInterval(() => {
-      if (stepIdx < steps.length) {
-        setProgressMsg(steps[stepIdx]);
-        stepIdx++;
-      }
+      stepIdx = Math.min(stepIdx + 1, steps.length - 1);
+      setProgressMsg(steps[stepIdx]);
+      setProgressPercent(Math.round(((stepIdx + 1) / steps.length) * 100));
     }, 1500);
 
     try {
@@ -177,25 +316,34 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
         },
         body: JSON.stringify(payload)
       });
-      
+
       clearInterval(interval);
-      
+
       if (!res.ok) {
         throw new Error(sessionId ? "Failed to summarize chat session." : "Failed to synthesize document overview.");
       }
-      
+
       const data = await res.json();
       if (!data.transcript || data.transcript.length === 0) {
         throw new Error("Empty script returned.");
       }
-      
+
+      setProgressPercent(100);
       setPodcast(data);
-      localStorage.setItem(getCacheKey(), JSON.stringify(data));
+
+      try {
+        localStorage.setItem(getCacheKey(), JSON.stringify(data));
+      } catch (storageErr) {
+        // Private browsing / quota exceeded — non-fatal, briefing still works this session
+        console.warn("Unable to cache podcast briefing:", storageErr);
+      }
+
       setCurrentTurnIdx(0);
       setIsPlaying(true);
     } catch (err: any) {
       clearInterval(interval);
       console.error(err);
+      setProgressPercent(0);
       setErrorMsg(err.message || "An unexpected error occurred during generation.");
     } finally {
       setLoading(false);
@@ -210,11 +358,23 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       audioRef.current.pause();
       audioRef.current.onended = null;
       audioRef.current.onerror = null;
+      audioRef.current.ontimeupdate = null;
     }
+    if (currentGainRef.current) {
+      try {
+        currentGainRef.current.disconnect();
+      } catch {
+        // ignore
+      }
+      currentGainRef.current = null;
+    }
+
+    setActiveProgress(0);
+    fadingOutRef.current = false;
 
     const turn = podcast.transcript[index];
     const audioUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(turn.text)}&host=${encodeURIComponent(turn.host)}&language=${encodeURIComponent(lang)}`;
-    
+
     let audio: HTMLAudioElement;
 
     // Use preloaded audio if available
@@ -227,48 +387,82 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
 
     audioRef.current = audio;
     audio.playbackRate = speechRate;
-    audio.muted = isMuted;
 
-    audio.onended = () => {
+    const advance = () => {
       if (index + 1 < podcast.transcript.length) {
         setCurrentTurnIdx(index + 1);
       } else {
         setIsPlaying(false);
         setCurrentTurnIdx(-1);
+        setActiveProgress(0);
       }
+    };
+
+    // Try to route through the Web Audio graph for the visualizer + crossfade.
+    // If Web Audio is unavailable for any reason, fall back to plain playback.
+    let trackGain: GainNode | null = null;
+    try {
+      trackGain = attachGraph(audio);
+      currentGainRef.current = trackGain;
+    } catch (graphErr) {
+      console.warn("Web Audio graph unavailable, falling back to native playback:", graphErr);
+      audio.muted = isMuted;
+    }
+
+    audio.ontimeupdate = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setActiveProgress(audio.currentTime / audio.duration);
+
+        if (trackGain && audioCtxRef.current) {
+          const remaining = audio.duration - audio.currentTime;
+          if (remaining <= FADE_SECONDS && !fadingOutRef.current) {
+            fadingOutRef.current = true;
+            const ctx = audioCtxRef.current;
+            const now = ctx.currentTime;
+            trackGain.gain.cancelScheduledValues(now);
+            trackGain.gain.setValueAtTime(trackGain.gain.value, now);
+            trackGain.gain.linearRampToValueAtTime(0, now + Math.max(remaining, 0.01));
+          }
+        }
+      }
+    };
+
+    audio.onended = () => {
+      advance();
     };
 
     audio.onerror = (e) => {
       console.error("Audio playback error:", e);
-      setTimeout(() => {
-        if (index + 1 < podcast.transcript.length) {
-          setCurrentTurnIdx(index + 1);
-        } else {
-          setIsPlaying(false);
-          setCurrentTurnIdx(-1);
-        }
-      }, 1000);
+      setTimeout(advance, 1000);
     };
 
-    audio.play().catch(err => {
-      console.error("Audio play failed:", err);
-      setTimeout(() => {
-        if (index + 1 < podcast.transcript.length) {
-          setCurrentTurnIdx(index + 1);
-        } else {
-          setIsPlaying(false);
-          setCurrentTurnIdx(-1);
+    audio
+      .play()
+      .then(() => {
+        if (trackGain && audioCtxRef.current) {
+          const ctx = audioCtxRef.current;
+          const now = ctx.currentTime;
+          trackGain.gain.cancelScheduledValues(now);
+          trackGain.gain.setValueAtTime(0, now);
+          trackGain.gain.linearRampToValueAtTime(1, now + FADE_SECONDS);
         }
-      }, 2000);
-    });
+      })
+      .catch(err => {
+        console.error("Audio play failed:", err);
+        setTimeout(advance, 2000);
+      });
 
-    // Preload next turn in background
+    // Preload next turn in background (skip if it's already preloaded)
     if (index + 1 < podcast.transcript.length) {
       const nextTurn = podcast.transcript[index + 1];
       const nextUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(nextTurn.text)}&host=${encodeURIComponent(nextTurn.host)}&language=${encodeURIComponent(lang)}`;
-      const nextAudio = new Audio(nextUrl);
-      nextAudio.load();
-      nextAudioRef.current = nextAudio;
+
+      if (!nextAudioRef.current || !nextAudioRef.current.src.endsWith(nextUrl)) {
+        const preload = new Audio(nextUrl);
+        preload.preload = "auto";
+        preload.load();
+        nextAudioRef.current = preload;
+      }
     }
   };
 
@@ -305,6 +499,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       nextAudioRef.current.pause();
       nextAudioRef.current = null;
     }
+    resetPlaybackVisuals();
     setIsPlaying(false);
     setCurrentTurnIdx(0);
   };
@@ -322,6 +517,20 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
     if (audioRef.current) {
       audioRef.current.muted = nextMuted;
     }
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = nextMuted ? 0 : 1;
+    }
+  };
+
+  // Debounced so a burst of clicks on the transcript doesn't spin up several
+  // overlapping Audio() instances before the previous one has a chance to pause.
+  const handleTurnClick = (idx: number) => {
+    const now = Date.now();
+    if (now - lastClickAtRef.current < CLICK_DEBOUNCE_MS) return;
+    lastClickAtRef.current = now;
+
+    setCurrentTurnIdx(idx);
+    if (!isPlaying) setIsPlaying(true);
   };
 
   return (
@@ -334,7 +543,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-5">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-            <Radio className="w-4 h-4 animate-pulse" />
+            <Radio className="w-4 h-4 animate-pulse motion-reduce:animate-none" />
           </div>
           <div>
             <h4 className="text-sm font-semibold text-white tracking-tight flex items-center gap-1.5">
@@ -344,14 +553,14 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
               </span>
             </h4>
             <p className="text-[10px] text-zinc-500 truncate max-w-[280px] sm:max-w-md">
-              {sessionId 
+              {sessionId
                 ? "Podcast-style summary of active chat conversation"
                 : `Podcast-style executive dialogue of: ${filename}`}
             </p>
           </div>
         </div>
         {onClose && (
-          <button 
+          <button
             onClick={onClose}
             className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent"
           >
@@ -363,13 +572,13 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       {!podcast && !loading && (
         <div className="text-center py-10 flex flex-col items-center justify-center border border-dashed border-zinc-800 rounded-xl bg-zinc-950/20">
           <div className="p-4 rounded-full bg-zinc-800/40 mb-4 text-indigo-400">
-            <Sparkles className="w-8 h-8 animate-pulse" />
+            <Sparkles className="w-8 h-8 animate-pulse motion-reduce:animate-none" />
           </div>
           <h5 className="text-sm font-medium text-zinc-200 mb-1">
             {sessionId ? "Generate Chat Briefing" : "Generate Podcast Overview"}
           </h5>
           <p className="text-[11px] text-zinc-500 max-w-sm mx-auto mb-6 px-4">
-            {sessionId 
+            {sessionId
               ? "Transform this chat conversation into a briefing between Max and Julia. They will summarize your questions and debate responses live."
               : "Transform this document into a conversation between hosts Max and Julia. They will debate key ideas and summarize obligations live."}
           </p>
@@ -379,21 +588,19 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
             <div className="flex bg-zinc-950 p-0.5 rounded-xl border border-white/5">
               <button
                 onClick={() => setLang("uk")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  lang === "uk" 
-                    ? "bg-zinc-850 text-white shadow-sm border border-white/5" 
-                    : "text-zinc-500 hover:text-zinc-300"
-                }`}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${lang === "uk"
+                  ? "bg-zinc-850 text-white shadow-sm border border-white/5"
+                  : "text-zinc-500 hover:text-zinc-300"
+                  }`}
               >
                 🇺🇦 Українська
               </button>
               <button
                 onClick={() => setLang("en")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  lang === "en" 
-                    ? "bg-zinc-850 text-white shadow-sm border border-white/5" 
-                    : "text-zinc-500 hover:text-zinc-300"
-                }`}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${lang === "en"
+                  ? "bg-zinc-850 text-white shadow-sm border border-white/5"
+                  : "text-zinc-500 hover:text-zinc-300"
+                  }`}
               >
                 🇺🇸 English
               </button>
@@ -411,12 +618,33 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       )}
 
       {loading && (
-        <div className="text-center py-12 flex flex-col items-center justify-center border border-dashed border-zinc-800 rounded-xl bg-zinc-950/20">
-          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-          <h5 className="text-sm font-semibold text-zinc-200 animate-pulse">{progressMsg}</h5>
-          <p className="text-[10px] text-zinc-500 mt-1 max-w-[280px]">
-            Please wait. Processing transcript context and drafting dialogue turns...
-          </p>
+        <div className="space-y-4">
+          <div className="text-center py-8 flex flex-col items-center justify-center border border-dashed border-zinc-800 rounded-xl bg-zinc-950/20 px-5">
+            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin motion-reduce:animate-none mb-4" />
+            <h5 className="text-sm font-semibold text-zinc-200">{progressMsg}</h5>
+            <p className="text-[10px] text-zinc-500 mt-1 mb-4 max-w-[280px]">
+              Processing transcript context and drafting dialogue turns...
+            </p>
+
+            <div className="w-full max-w-xs h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <p className="text-[9px] text-zinc-600 mt-1 w-full max-w-xs text-right">{progressPercent}%</p>
+          </div>
+
+          {/* Skeleton preview of the dialogue rows about to arrive */}
+          <div className="space-y-2.5 px-1">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`h-11 rounded-xl bg-zinc-900/50 border border-white/5 animate-pulse motion-reduce:animate-none ${i % 2 === 0 ? "mr-10" : "ml-10"}`}
+                style={{ animationDelay: `${i * 120}ms` }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -425,7 +653,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
           <span className="font-bold text-red-500">Error:</span>
           <div>
             <p>{errorMsg}</p>
-            <button 
+            <button
               onClick={generatePodcast}
               className="mt-2 text-indigo-400 underline font-semibold cursor-pointer border-0 bg-transparent hover:text-indigo-300"
             >
@@ -441,7 +669,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-zinc-950 p-4 border border-white/5 rounded-xl">
             {/* Cassette Graphic */}
             <div className="flex justify-center select-none">
-              <svg 
+              <svg
                 className="w-full max-w-[200px] h-[120px] rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl relative"
                 viewBox="0 0 160 100"
               >
@@ -454,29 +682,29 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                   {lang === "uk" ? "🇺🇦 УКР.ОГЛЯД" : "🇺🇸 ENG.BRIEF"}
                 </text>
                 <rect x="35" y="60" width="90" height="25" rx="3" fill="#101010" />
-                
+
                 <circle cx="55" cy="72" r="10" fill="#27272a" stroke="#4b5563" strokeWidth="1" />
-                <circle 
-                  cx="55" 
-                  cy="72" 
-                  r="6" 
-                  fill="#18181b" 
-                  stroke="#6366f1" 
-                  strokeWidth="1.5" 
-                  strokeDasharray="4,2" 
-                  className={isPlaying ? "origin-[55px_72px] animate-[spin_6s_linear_infinite]" : ""}
+                <circle
+                  cx="55"
+                  cy="72"
+                  r="6"
+                  fill="#18181b"
+                  stroke="#6366f1"
+                  strokeWidth="1.5"
+                  strokeDasharray="4,2"
+                  className={isPlaying ? "origin-[55px_72px] animate-[spin_6s_linear_infinite] motion-reduce:animate-none" : ""}
                 />
-                
+
                 <circle cx="105" cy="72" r="10" fill="#27272a" stroke="#4b5563" strokeWidth="1" />
-                <circle 
-                  cx="105" 
-                  cy="72" 
-                  r="6" 
-                  fill="#18181b" 
-                  stroke="#6366f1" 
-                  strokeWidth="1.5" 
-                  strokeDasharray="4,2" 
-                  className={isPlaying ? "origin-[105px_72px] animate-[spin_6s_linear_infinite]" : ""}
+                <circle
+                  cx="105"
+                  cy="72"
+                  r="6"
+                  fill="#18181b"
+                  stroke="#6366f1"
+                  strokeWidth="1.5"
+                  strokeDasharray="4,2"
+                  className={isPlaying ? "origin-[105px_72px] animate-[spin_6s_linear_infinite] motion-reduce:animate-none" : ""}
                 />
 
                 <path d="M 60 85 L 100 85 L 94 95 L 66 95 Z" fill="#27272a" />
@@ -488,9 +716,9 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
               <div>
                 <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Now playing</span>
                 <h5 className="text-xs font-semibold text-zinc-200 truncate mt-0.5">{podcast.title}</h5>
-                
+
                 <div className="text-[10px] mt-1.5 text-zinc-400 flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? "bg-emerald-500 animate-ping" : "bg-zinc-600"}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? "bg-emerald-500 animate-ping motion-reduce:animate-none" : "bg-zinc-600"}`} />
                   {isPlaying ? (
                     currentTurnIdx >= 0 ? (
                       <span>
@@ -505,24 +733,18 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                 </div>
               </div>
 
-              {/* Bounce Soundbars Visualizer */}
+              {/* Audio-reactive visualizer, driven by the live analyser node */}
               <div className="h-6 flex items-end gap-0.5 px-2 bg-zinc-900 border border-white/5 rounded-lg overflow-hidden py-1">
-                {Array.from({ length: 24 }).map((_, idx) => {
-                  const delay = (idx % 5) * 0.15;
-                  return (
-                    <div 
-                      key={idx}
-                      className={`w-1 bg-gradient-to-t from-indigo-500 to-emerald-400 rounded-t-sm transition-all duration-300 visualizer-bar ${
-                        isPlaying ? "visualizer-bar-active" : ""
-                      }`}
-                      style={{
-                        height: isPlaying ? "100%" : "20%",
-                        transform: isPlaying ? `scaleY(${0.1 + Math.random() * 0.9})` : "scaleY(1)",
-                        "--bar-delay": `${delay}s`
-                      } as React.CSSProperties}
-                    />
-                  );
-                })}
+                {barLevels.map((level, idx) => (
+                  <div
+                    key={idx}
+                    className="w-1 bg-gradient-to-t from-indigo-500 to-emerald-400 rounded-t-sm transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    style={{
+                      height: "100%",
+                      transform: `scaleY(${isPlaying ? Math.max(0.08, level) : 0.2})`,
+                    }}
+                  />
+                ))}
               </div>
 
               {/* Player Core Bar */}
@@ -530,11 +752,10 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePlayPause}
-                    className={`h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
-                      isPlaying 
-                        ? "bg-zinc-800 border border-zinc-700 text-white" 
-                        : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-900/30"
-                    }`}
+                    className={`h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer ${isPlaying
+                      ? "bg-zinc-800 border border-zinc-700 text-white"
+                      : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-900/30"
+                      }`}
                   >
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
                   </button>
@@ -560,17 +781,20 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                     <button
                       key={rate}
                       onClick={() => handleSpeedChange(rate)}
-                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded transition-all cursor-pointer ${
-                        speechRate === rate 
-                          ? "bg-zinc-800 text-indigo-400 border border-white/5 shadow-inner" 
-                          : "text-zinc-500 hover:text-zinc-300"
-                      }`}
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded transition-all cursor-pointer ${speechRate === rate
+                        ? "bg-zinc-800 text-indigo-400 border border-white/5 shadow-inner"
+                        : "text-zinc-500 hover:text-zinc-300"
+                        }`}
                     >
                       {rate}x
                     </button>
                   ))}
                 </div>
               </div>
+
+              <p className="text-[9px] text-zinc-600 text-center">
+                Space to play/pause · ← → to skip a turn
+              </p>
             </div>
           </div>
 
@@ -580,55 +804,57 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
               <span>Interactive Podcast Script</span>
               <span>Scrolls automatically</span>
             </div>
-            
-            <div 
+
+            <div
               ref={scrollContainerRef}
               className="max-h-56 overflow-y-auto custom-scrollbar border border-white/5 bg-zinc-950/60 rounded-xl p-3.5 space-y-3"
             >
               {podcast.transcript.map((turn, idx) => {
                 const isActive = idx === currentTurnIdx;
                 const isMax = turn.host.toLowerCase() === "max";
-                
+
                 return (
                   <div
                     key={idx}
                     ref={(el) => { turnRefs.current[idx] = el; }}
-                    onClick={() => {
-                      setCurrentTurnIdx(idx);
-                      if (!isPlaying) setIsPlaying(true);
-                    }}
-                    className={`p-3 rounded-xl transition-all duration-300 cursor-pointer border ${
-                      isActive 
-                        ? isMax
-                          ? "bg-indigo-950/40 border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.15)] scale-[1.01]"
-                          : "bg-purple-950/40 border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.15)] scale-[1.01]"
-                        : "bg-zinc-900/30 border-transparent hover:border-zinc-800/80"
-                    }`}
+                    onClick={() => handleTurnClick(idx)}
+                    className={`p-3 rounded-xl transition-all duration-300 cursor-pointer border ${isActive
+                      ? isMax
+                        ? "bg-indigo-950/40 border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.15)] scale-[1.01]"
+                        : "bg-purple-950/40 border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.15)] scale-[1.01]"
+                      : "bg-zinc-900/30 border-transparent hover:border-zinc-800/80"
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${
-                          isMax ? "bg-indigo-400" : "bg-purple-400"
-                        }`} />
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                          isMax ? "text-indigo-400" : "text-purple-400"
-                        }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${isMax ? "bg-indigo-400" : "bg-purple-400"
+                          }`} />
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isMax ? "text-indigo-400" : "text-purple-400"
+                          }`}>
                           {turn.host}
                         </span>
                       </div>
-                      
+
                       {isActive && (
                         <div className="flex items-center gap-1 text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
-                          <MessageSquare className="w-2.5 h-2.5 animate-bounce" />
+                          <MessageSquare className="w-2.5 h-2.5 animate-bounce motion-reduce:animate-none" />
                           <span>Active Turn</span>
                         </div>
                       )}
                     </div>
-                    <p className={`text-xs font-sans leading-relaxed transition-colors ${
-                      isActive ? "text-zinc-100" : "text-zinc-400"
-                    }`}>
+                    <p className={`text-xs font-sans leading-relaxed transition-colors ${isActive ? "text-zinc-100" : "text-zinc-400"
+                      }`}>
                       {turn.text}
                     </p>
+
+                    {isActive && (
+                      <div className="mt-2 h-[3px] w-full bg-zinc-800/70 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-indigo-400 to-purple-400 transition-[width] duration-150 ease-linear"
+                          style={{ width: `${Math.min(100, Math.round(activeProgress * 100))}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -636,21 +862,6 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
           </div>
         </div>
       )}
-
-      {/* Styled animation keyframes */}
-      <style jsx global>{`
-        @keyframes bounce {
-          0% { transform: scaleY(0.2); }
-          100% { transform: scaleY(1.0); }
-        }
-        .visualizer-bar {
-          transform-origin: bottom;
-        }
-        .visualizer-bar-active {
-          animation: bounce 1s ease-in-out infinite alternate;
-          animation-delay: var(--bar-delay);
-        }
-      `}</style>
     </div>
   );
 }
