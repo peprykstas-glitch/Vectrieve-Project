@@ -28,13 +28,20 @@ def mock_vector_service():
     Mock VectorService by patching get_vector_service() to return a MagicMock.
     This avoids touching the _LazyVectorProxy which triggers real Qdrant initialization.
     """
+    from main import app
+    from services.vector_service import get_vector_service, SearchResult
     mock_vs = MagicMock()
     mock_vs.search = AsyncMock(return_value=[
-        {"filename": "test.txt", "text": "Mocked context from document", "score": 0.9}
+        SearchResult(filename="test.txt", text="Mocked context from document", score=0.9)
     ])
-    with patch("services.vector_service.get_vector_service", return_value=mock_vs), \
-         patch("api.endpoints.chat.vector_service", mock_vs):
+    
+    app.dependency_overrides[get_vector_service] = lambda: mock_vs
+    
+    with patch("services.vector_service.get_vector_service", return_value=mock_vs):
         yield mock_vs
+        
+    if get_vector_service in app.dependency_overrides:
+        del app.dependency_overrides[get_vector_service]
 
 # --- FEATURE 1: AUTHENTICATION ---
 
@@ -187,3 +194,76 @@ async def test_upload_document(client: AsyncClient):
         
         # Verify background task was called
         assert mock_bg.called
+
+
+async def test_chat_query_with_attached_filenames(client: AsyncClient, test_session, mock_vector_service):
+    query_payload = {
+        "messages": [{"role": "user", "content": "Explain this file!"}],
+        "thinking_mode": "mentor",
+        "mode": "local",
+        "attached_filenames": ["attached_doc.pdf"]
+    }
+    
+    response = await client.post("/chat/query", json=query_payload)
+    assert response.status_code == 200
+    
+    # Verify that the vector service search was called with filenames parameter
+    mock_vector_service.search.assert_called_once_with(
+        "Explain this file!",
+        user_id=1,
+        limit=8,
+        mode="local",
+        filenames=["attached_doc.pdf"]
+    )
+
+
+async def test_vector_service_search_reranks():
+    from services.vector_service import VectorService
+    from unittest.mock import MagicMock, patch, AsyncMock
+    
+    with patch.object(VectorService, "__init__", lambda self: None):
+        vs = VectorService()
+        vs.collection_name = "test_collection"
+        vs.vector_size = 128
+        vs.embed_model = "test"
+        vs.local_client = MagicMock()
+        vs.cloud_client = None
+        
+        vs._embed_text = MagicMock(return_value=[0.1] * 128)
+        
+        mock_hit1 = MagicMock()
+        mock_hit1.payload = {"text": "apple banana", "filename": "doc1.txt"}
+        mock_hit2 = MagicMock()
+        mock_hit2.payload = {"text": "cherry peach", "filename": "doc2.txt"}
+        
+        mock_query_result = MagicMock()
+        mock_query_result.points = [mock_hit1, mock_hit2]
+        vs.local_client.query_points = MagicMock(return_value=mock_query_result)
+        
+        mock_reranker = MagicMock()
+        mock_reranker.rerank = MagicMock(return_value=[1.0, 5.0])
+        vs._get_reranker = MagicMock(return_value=mock_reranker)
+        
+        with patch("core.database.get_session_factory") as mock_db_factory:
+            mock_session = MagicMock()
+            
+            class FakeResult:
+                def all(self):
+                    return []
+            mock_session.execute = AsyncMock(return_value=FakeResult())
+            
+            class FakeContext:
+                async def __aenter__(self):
+                    return mock_session
+                async def __aexit__(self, exc_type, exc_val, exc_tb):
+                    pass
+            mock_db_factory.return_value = FakeContext
+            
+            results = await vs.search(query="fruit", user_id=1, limit=5)
+            
+            assert len(results) == 2
+            assert results[0].filename == "doc2.txt"
+            assert results[0].text == "cherry peach"
+            assert results[1].filename == "doc1.txt"
+            assert results[1].text == "apple banana"
+

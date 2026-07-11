@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Bot, FileText, ChevronDown } from "lucide-react";
+import { User, Bot, FileText, ChevronDown, BrainCircuit } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Message, Source } from "@/hooks/useChat";
@@ -51,6 +51,23 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ msg }, ref) => {
     const isThinking = msg.isStreaming && !msg.content;
     const [showAllSources, setShowAllSources] = React.useState(false);
+
+    // DeepSeek reasoning block parser
+    const rawContent = msg.content || "";
+    let reasoning = "";
+    let markdownContent = rawContent;
+
+    const thinkStart = rawContent.indexOf("<think>");
+    if (thinkStart !== -1) {
+      const thinkEnd = rawContent.indexOf("</think>");
+      if (thinkEnd !== -1) {
+        reasoning = rawContent.substring(thinkStart + 7, thinkEnd).trim();
+        markdownContent = rawContent.substring(0, thinkStart) + rawContent.substring(thinkEnd + 8);
+      } else {
+        reasoning = rawContent.substring(thinkStart + 7).trim();
+        markdownContent = rawContent.substring(0, thinkStart);
+      }
+    }
 
     return (
       <motion.div
@@ -117,8 +134,19 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                 </div>
               ) : (
                 <>
+                  {reasoning && (
+                    <details className="mb-4 bg-zinc-950/40 border border-zinc-800/40 rounded-xl overflow-hidden group/think" open={msg.isStreaming}>
+                      <summary className="px-4 py-2 text-[11px] font-bold text-zinc-500 hover:text-zinc-300 cursor-pointer select-none flex items-center gap-2 outline-none border-b border-transparent group-open/think:border-zinc-900/60 bg-zinc-950/20">
+                        <BrainCircuit className="w-3.5 h-3.5 text-indigo-400 group-open/think:text-indigo-400 animate-pulse" />
+                        <span>{msg.isStreaming && !rawContent.includes("</think>") ? "Thinking Process..." : "Thought Process"}</span>
+                      </summary>
+                      <div className="px-4 pb-3 pt-2.5 text-[13px] leading-relaxed text-zinc-400 font-mono italic whitespace-pre-wrap border-t border-zinc-900/30">
+                        {reasoning}
+                      </div>
+                    </details>
+                  )}
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {msg.content}
+                    {markdownContent}
                   </ReactMarkdown>
                   {/* Glowing, fading cursor while typing */}
                   {msg.isStreaming && (

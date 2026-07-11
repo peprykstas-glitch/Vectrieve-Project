@@ -17,6 +17,7 @@ class ChatHistory(SQLModel, table=True):
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     sources: Optional[str] = Field(default=None)
+    attached_filenames: Optional[str] = Field(default=None)
 
 class FeedbackLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

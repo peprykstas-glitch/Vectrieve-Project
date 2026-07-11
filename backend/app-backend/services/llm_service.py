@@ -10,6 +10,47 @@ if hasattr(sys.stdout, "reconfigure"):
 from core.config import settings
 from models.schemas import QueryRequest
 
+# ---------------------------------------------------------------------------
+# Token budget guard — sliding window history trimmer
+# ---------------------------------------------------------------------------
+# Rough heuristic: 1 token ≈ 4 characters (works for English and Ukrainian).
+# We do NOT add tiktoken as a dependency to keep the footprint minimal.
+_CHARS_PER_TOKEN = 4
+_MAX_CONTEXT_TOKENS = 6000  # safe for all common local models (4K–8K window)
+
+
+def _trim_history(history_messages: list, system_prompt: str, max_tokens: int = _MAX_CONTEXT_TOKENS) -> list:
+    """
+    Trim chat history so the total prompt (system + history) stays within
+    the token budget. Always preserves the system message and the last user
+    message. Removes oldest messages first (sliding window).
+    """
+    if not history_messages:
+        return []
+
+    budget_chars = max_tokens * _CHARS_PER_TOKEN
+    # Account for system prompt overhead
+    used_chars = len(system_prompt)
+    # Always keep the last user message
+    last_msg = history_messages[-1]
+    used_chars += len(last_msg.get("content", ""))
+
+    kept = [last_msg]
+    # Walk backwards through history (excluding last), adding messages while budget allows
+    for msg in reversed(history_messages[:-1]):
+        msg_chars = len(msg.get("content", ""))
+        if used_chars + msg_chars > budget_chars:
+            break  # budget exhausted — drop this and all older messages
+        used_chars += msg_chars
+        kept.append(msg)
+
+    # Restore chronological order
+    kept.reverse()
+    trimmed_count = len(history_messages) - len(kept)
+    if trimmed_count > 0:
+        print(f"📏 Token guard: trimmed {trimmed_count} old messages to stay within {max_tokens}-token budget.")
+    return kept
+
 
 class LLMService:
     def __init__(self):
@@ -60,9 +101,12 @@ class LLMService:
             system_prompt = f"{base_prompt} No specific context provided."
 
         messages = [{"role": "system", "content": system_prompt}]
-        
-        if history_messages:
-            for msg in history_messages:
+
+        # Issue B fix: trim history to stay within token budget before sending to LLM
+        safe_history = _trim_history(history_messages or [], system_prompt) if history_messages else None
+
+        if safe_history:
+            for msg in safe_history:
                 messages.append(msg)
         else:
             # Fallback if no history passed (e.g. tests)
@@ -199,8 +243,10 @@ Examples:
             system_prompt = f"{base_prompt} No specific context provided."
 
         messages = [{"role": "system", "content": system_prompt}]
-        if history_messages:
-            for msg in history_messages:
+        # Issue B fix: trim history to stay within token budget
+        safe_history = _trim_history(history_messages or [], system_prompt) if history_messages else None
+        if safe_history:
+            for msg in safe_history:
                 messages.append(msg)
         else:
             for m in request.messages:

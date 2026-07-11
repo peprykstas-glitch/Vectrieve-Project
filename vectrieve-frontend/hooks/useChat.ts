@@ -34,6 +34,7 @@ export function useChat(
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(
     initialSessionId || undefined
   );
@@ -105,17 +106,104 @@ export function useChat(
     ]);
 
     try {
-      // Upload any attached files first (in parallel)
+      // Upload any attached files first (in parallel) and wait for them to fully index
       if (attachedFiles.length > 0) {
-        await Promise.all(
-          attachedFiles.map(async (file) => {
-            const fileData = new FormData();
-            fileData.append("file", file);
-            return apiClient("/upload", {
-              method: "POST",
-              body: fileData,
-            });
-          })
+        // Show processing indicator in the assistant placeholder
+        setIsProcessingFiles(true);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? { ...m, content: "⏳ Uploading and indexing files, please wait..." }
+              : m
+          )
+        );
+
+        let uploadedDocs: any[];
+        try {
+          uploadedDocs = await Promise.all(
+            attachedFiles.map(async (file) => {
+              const fileData = new FormData();
+              fileData.append("file", file);
+              return apiClient<any>("/upload", {
+                method: "POST",
+                body: fileData,
+              });
+            })
+          );
+        } catch (uploadErr) {
+          console.error("File upload failed:", uploadErr);
+          setIsProcessingFiles(false);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? {
+                    ...m,
+                    content: `❌ File upload failed. Please try again or upload via the Knowledge Base tab.`,
+                    isStreaming: false,
+                  }
+                : m
+            )
+          );
+          return;
+        }
+
+        // Poll until COMPLETED — waits through PENDING, PROCESSING, and EMBEDDING
+        // Bug fix: previously only COMPLETED/FAILED were handled, so EMBEDDING caused a timeout
+        // and the query was fired anyway without the file being indexed in Qdrant.
+        const docIds = uploadedDocs.map((doc) => doc.id);
+        const POLL_INTERVAL_MS = 1500;
+        const MAX_POLL_TIME_MS = 120_000; // 120s — accounts for large files embedding via local Ollama
+
+        const pollFileStatus = async (id: number): Promise<{ ok: boolean; error?: string }> => {
+          const deadline = Date.now() + MAX_POLL_TIME_MS;
+          while (Date.now() < deadline) {
+            try {
+              const doc = await apiClient<any>(`/upload/${id}`);
+              const status = (doc.status ?? "").toUpperCase();
+
+              if (status === "COMPLETED") {
+                return { ok: true };
+              }
+              if (status === "FAILED") {
+                return { ok: false, error: doc.error_log || "File parsing failed." };
+              }
+              // PENDING / PROCESSING / EMBEDDING — still working, keep waiting
+            } catch (err) {
+              console.error(`Error polling file status for id=${id}:`, err);
+            }
+            await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+          }
+          // Timed out
+          return { ok: false, error: `File processing timed out after ${MAX_POLL_TIME_MS / 1000}s.` };
+        };
+
+        const pollResults = await Promise.all(docIds.map((id) => pollFileStatus(id)));
+        const failedResult = pollResults.find((r) => !r.ok);
+
+        setIsProcessingFiles(false);
+
+        if (failedResult) {
+          // Bug fix: previously the query was sent even on failure/timeout.
+          // Now we stop and show a clear error message.
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? {
+                    ...m,
+                    content: `❌ Could not index file: ${failedResult.error}\n\nPlease try uploading via the **Knowledge Base** tab where you can monitor the status, then ask your question again.`,
+                    isStreaming: false,
+                  }
+                : m
+            )
+          );
+          return;
+        }
+
+        // Clear the processing placeholder so streaming tokens start fresh
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId ? { ...m, content: "" } : m
+          )
         );
       }
 
@@ -124,6 +212,10 @@ export function useChat(
         thinking_mode: aiPersona,
         mode: computeMode,
       };
+
+      if (fileNames.length > 0) {
+        queryPayload.attached_filenames = fileNames;
+      }
 
       if (computeMode === 'local') {
         const storedModel = localStorage.getItem('selected_local_model');
@@ -250,6 +342,7 @@ export function useChat(
       );
     } finally {
       setIsLoading(false);
+      setIsProcessingFiles(false);
       isQueryingRef.current = false;
     }
   };
@@ -257,6 +350,7 @@ export function useChat(
   return {
     messages,
     isLoading,
+    isProcessingFiles,
     submitQuery,
     sessionId,
   };

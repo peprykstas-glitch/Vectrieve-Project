@@ -178,7 +178,11 @@ function UserCard() {
 
   const handleSignOut = async () => {
     setIsLoggingOut(true)
-    await apiClient('/auth/logout', { method: 'POST' })
+    try {
+      await apiClient('/api/auth/logout', { method: 'POST' })
+    } catch (e) {
+      console.error("Failed to sign out on backend, proceeding with local logout", e)
+    }
     window.location.href = '/login'
   }
 

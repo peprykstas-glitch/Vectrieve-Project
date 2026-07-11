@@ -1,5 +1,8 @@
 import time
-from fastapi import APIRouter, UploadFile, BackgroundTasks, Depends, status
+import tempfile
+from typing import Optional
+from pathlib import Path
+from fastapi import APIRouter, UploadFile, BackgroundTasks, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.document import Document, DocumentRead
@@ -7,6 +10,10 @@ from models.user import User
 from core.database import get_session
 from services.pdf_parser import process_pdf_background
 from api.deps import get_current_user
+from core.rate_limiter import limiter
+
+# Chunk size for streaming file writes (256 KB)
+_CHUNK_SIZE = 256 * 1024
 
 router = APIRouter()
 
@@ -15,29 +22,44 @@ router = APIRouter()
     response_model=DocumentRead,
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("10/minute")
 async def upload_file(
+    request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> Document:
     """
-    Asynchronously receive a file, create a database record, and
-    dispatch PDF processing to a background task.
+    Stream the uploaded file to a temp file on disk, create a DB record,
+    and dispatch background processing. The file is NEVER fully loaded into
+    RAM — prevents OOM when multiple users upload large files concurrently.
     """
-    file_bytes: bytes = await file.read()
-    file_size = len(file_bytes)
+    # Bug 4 fix: stream to disk chunk-by-chunk instead of file.read() into RAM
+    suffix = Path(file.filename or "upload").suffix or ".bin"
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp_path = Path(tmp_file.name)
+    file_size = 0
+    try:
+        while True:
+            chunk = await file.read(_CHUNK_SIZE)
+            if not chunk:
+                break
+            tmp_file.write(chunk)
+            file_size += len(chunk)
+    finally:
+        tmp_file.close()
 
     doc = Document(filename=file.filename, user_id=current_user.id, file_size=file_size)
     session.add(doc)
     await session.commit()
     await session.refresh(doc)
 
-    # Run file processing in the background
+    # process_pdf_background now receives a Path, not raw bytes
     background_tasks.add_task(
         process_pdf_background,
         doc.id,
-        file_bytes,
+        tmp_path,
         file.filename,
         current_user.id,
     )
@@ -46,7 +68,7 @@ async def upload_file(
 
 from sqlmodel import select
 from fastapi import HTTPException
-from services.vector_service import get_vector_service
+from services.vector_service import get_vector_service, VectorService
 
 @router.get("", response_model=list[DocumentRead])
 async def list_files(
@@ -58,11 +80,26 @@ async def list_files(
     result = await session.execute(stmt)
     return result.scalars().all()
 
+@router.get("/{file_id}", response_model=DocumentRead)
+async def get_file(
+    file_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Get status of a specific document."""
+    stmt = select(Document).where(Document.id == file_id, Document.user_id == current_user.id)
+    result = await session.execute(stmt)
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return doc
+
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(
     file_id: int,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    vs: Optional[VectorService] = Depends(get_vector_service),
 ):
     """Delete a document and its associated vector data."""
     stmt = select(Document).where(Document.id == file_id, Document.user_id == current_user.id)
@@ -72,8 +109,7 @@ async def delete_file(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
         
-    # Delete vectors from Qdrant using the lazy singleton (avoids expensive re-initialization)
-    vs = get_vector_service()
+    # Delete vectors from Qdrant using the injected dependency
     if vs:
         vs.delete_file(doc.filename, current_user.id)
     else:
@@ -94,6 +130,7 @@ async def reindex_file(
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    vs: Optional[VectorService] = Depends(get_vector_service),
 ):
     """
     Force re-indexing of a document from its existing SQL chunks.
@@ -113,8 +150,7 @@ async def reindex_file(
     if not chunks:
         raise HTTPException(status_code=400, detail="Cannot re-index a document that has no extracted chunks. Please re-upload.")
 
-    # Delete existing vectors from Qdrant
-    vs = get_vector_service()
+    # Delete existing vectors from Qdrant using the injected dependency
     if vs:
         vs.delete_file(doc.filename, current_user.id)
 

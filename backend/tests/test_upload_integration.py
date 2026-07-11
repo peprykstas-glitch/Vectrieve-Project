@@ -50,4 +50,19 @@ async def test_upload_and_list_files(client: AsyncClient):
     list_resp = await client.get("/upload")
     assert list_resp.status_code == 200
     filenames = [d["filename"] for d in list_resp.json()]
-    assert "hello.py" in filenames
+    assert "hello.py" in filenames
+
+
+async def test_get_file_status(client: AsyncClient):
+    """GET /upload/{file_id} returns document status details."""
+    file_content = b"# status check"
+    files = {"file": ("status.py", file_content, "text/plain")}
+
+    with patch("api.endpoints.upload.process_pdf_background", new_callable=AsyncMock):
+        upload_resp = await client.post("/upload", files=files)
+        assert upload_resp.status_code == 202
+        doc_id = upload_resp.json()["id"]
+
+    status_resp = await client.get(f"/upload/{doc_id}")
+    assert status_resp.status_code == 200
+    assert status_resp.json()["filename"] == "status.py"

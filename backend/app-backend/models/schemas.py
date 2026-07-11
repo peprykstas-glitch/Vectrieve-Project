@@ -19,7 +19,10 @@ class QueryRequest(BaseModel):
     mode: str = "cloud"
     
     # 👇 НОВЕ ПОЛЕ: Дозволяє фронтенду вказати ID чату
-    session_id: Optional[str] = None 
+    session_id: Optional[str] = None
+
+    # 👇 НОВЕ ПОЛЕ: Обмежує RAG пошук тільки прикріпленими файлами
+    attached_filenames: Optional[List[str]] = None 
 
 class QueryResponse(BaseModel):
     response_text: str

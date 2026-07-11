@@ -59,7 +59,7 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
 
 export function ChatArea({ initialSessionId }: ChatAreaProps) {
   const { computeMode, aiPersona } = useGlobalSettings();
-  const { messages, isLoading, submitQuery, sessionId } = useChat(computeMode, aiPersona, initialSessionId);
+  const { messages, isLoading, isProcessingFiles, submitQuery, sessionId } = useChat(computeMode, aiPersona, initialSessionId);
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
@@ -379,7 +379,7 @@ export function ChatArea({ initialSessionId }: ChatAreaProps) {
       </div>
 
       {/* ADAPTIVE INPUT MECHANISM */}
-      <ChatInput isLoading={isLoading} onSubmit={submitQuery} />
+      <ChatInput isLoading={isLoading} isProcessingFiles={isProcessingFiles} onSubmit={submitQuery} />
 
       {/* Mobile Floating New Chat FAB — visible only on small screens when inside a session */}
       {!showWelcomeHero && (

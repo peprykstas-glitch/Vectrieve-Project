@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 async function handleProxy(request: Request, pathArray: string[]) {
   const path = pathArray.join('/');
   const url = new URL(request.url);
   const backendUrl = `${BACKEND_URL}/${path}${url.search}`;
+
+  console.log(`[BFF Proxy] Requesting: ${request.method} ${backendUrl}`);
 
   const cookieStore = await cookies();
   const token = cookieStore.get('vectrieve_session')?.value;

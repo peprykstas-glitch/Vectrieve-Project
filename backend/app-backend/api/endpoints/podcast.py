@@ -11,6 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import edge_tts
+import httpx
+from core.config import settings
 from sqlmodel import select
 from pydantic import BaseModel
 
@@ -395,10 +397,19 @@ async def get_podcast_audio(
     on-disk cache so replaying the same turn doesn't re-hit the TTS engine.
     """
     is_max = host.strip().lower() == "max"
-    voice = VOICE_MAP[(language, is_max)]
+    use_eleven = bool(settings.ELEVENLABS_API_KEY.strip())
+
+    if use_eleven:
+        voice = settings.ELEVENLABS_VOICE_MAX if is_max else settings.ELEVENLABS_VOICE_JULIA
+    else:
+        voice = VOICE_MAP[(language, is_max)]
 
     cache_path = _tts_cache_path(voice, text)
-    headers = {"Cache-Control": f"private, max-age={TTS_CACHE_MAX_AGE_SECONDS}"}
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
 
     if cache_path.exists():
         async def cached_generator():
@@ -412,24 +423,85 @@ async def get_podcast_audio(
 
     async def audio_generator():
         wrote_any = False
-        try:
-            communicate = edge_tts.Communicate(text, voice)
-            with open(tmp_path, "wb") as f:
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        data = chunk["data"]
-                        f.write(data)
-                        wrote_any = True
-                        yield data
-            if wrote_any:
-                tmp_path.replace(cache_path)  # atomic rename, avoids serving partial files
-            else:
+        fallback_needed = False
+
+        if use_eleven:
+            try:
+                url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/stream"
+                headers = {
+                    "xi-api-key": settings.ELEVENLABS_API_KEY,
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "text": text,
+                    "model_id": "eleven_multilingual_v2",
+                    "voice_settings": {
+                        "stability": 0.35,
+                        "similarity_boost": 0.85
+                    }
+                }
+                params = {
+                    "output_format": "mp3_44100_128"
+                }
+
+                async with httpx.AsyncClient() as client:
+                    async with client.stream(
+                        "POST",
+                        url,
+                        headers=headers,
+                        json=payload,
+                        params=params,
+                        timeout=30.0
+                    ) as response:
+                        if response.status_code != 200:
+                            error_body = await response.aread()
+                            logger.warning(
+                                "ElevenLabs API failed with status %d: %s. Falling back to edge-tts.",
+                                response.status_code,
+                                error_body.decode("utf-8", errors="ignore")
+                            )
+                            raise RuntimeError(f"ElevenLabs HTTP {response.status_code}")
+
+                        with open(tmp_path, "wb") as f:
+                            async for chunk in response.aiter_bytes():
+                                f.write(chunk)
+                                wrote_any = True
+                                yield chunk
+            except Exception as e:
+                logger.warning("ElevenLabs streaming failed: %s. Checking if fallback is possible.", str(e))
+                if wrote_any:
+                    # We've already sent some bytes to the client, cannot fallback mid-stream.
+                    tmp_path.unlink(missing_ok=True)
+                    raise
+                else:
+                    fallback_needed = True
+                    tmp_path.unlink(missing_ok=True)
+        else:
+            fallback_needed = True
+
+        if fallback_needed:
+            fallback_voice = VOICE_MAP[(language, is_max)]
+            try:
+                communicate = edge_tts.Communicate(text, fallback_voice)
+                with open(tmp_path, "wb") as f:
+                    async for chunk in communicate.stream():
+                        if chunk["type"] == "audio":
+                            data = chunk["data"]
+                            f.write(data)
+                            wrote_any = True
+                            yield data
+            except Exception:
                 tmp_path.unlink(missing_ok=True)
-        except Exception:
+                logger.exception("TTS fallback generation error for voice=%s", fallback_voice)
+                raise
+
+        if wrote_any:
+            try:
+                tmp_path.replace(cache_path)  # atomic rename, avoids serving partial files
+            except Exception as cache_err:
+                logger.warning("Failed to save cached audio file: %s", str(cache_err))
+                tmp_path.unlink(missing_ok=True)
+        else:
             tmp_path.unlink(missing_ok=True)
-            logger.exception("TTS generation error for voice=%s", voice)
-            # Streaming has likely already started, so we can't cleanly raise an
-            # HTTPException here — the client's audio.onerror handler takes over.
-            raise
 
     return StreamingResponse(audio_generator(), media_type="audio/mpeg", headers=headers)

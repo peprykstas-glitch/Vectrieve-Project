@@ -1,7 +1,8 @@
 import uuid
 import json
 import time
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from typing import Optional, List
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.responses import StreamingResponse
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +14,8 @@ from models.user import User
 from core.database import get_session, engine
 from api.deps import get_current_user
 from services.llm_service import llm_service
-from services.vector_service import vector_service
+from services.vector_service import get_vector_service, VectorService, SearchResult
+from core.rate_limiter import limiter
 
 router = APIRouter()
 
@@ -39,10 +41,10 @@ async def generate_chat_title_background(session_id: str, user_query: str, ai_re
 async def _prepare_rag_context(
     request: QueryRequest,
     current_user: User,
-    session: AsyncSession
+    session: AsyncSession,
+    vector_service: Optional[VectorService],
 ):
     """Shared logic: resolves/creates session, saves user message, runs RAG search, fetches history."""
-    # 1. Resolve or create chat session
     is_new_session = False
     if request.session_id:
         session_id = request.session_id
@@ -74,17 +76,71 @@ async def _prepare_rag_context(
     session.add(user_msg_db)
     await session.commit()
 
-    # 3. RAG vector search
-    try:
-        search_results = await vector_service.search(
-            user_query, user_id=current_user.id, limit=8, mode=request.mode
-        )
-    except Exception as e:
-        print(f"⚠️ Vector search failed (RAG skipped): {e}")
-        search_results = []
+    # 3. Pre-flight check: verify attached files are fully indexed before RAG search
+    # Wrapped in try/except — any failure here should degrade gracefully, NOT cause a 500.
+    if request.attached_filenames:
+        print(f"🔗 Attached filenames for RAG filter: {request.attached_filenames}")
+        try:
+            from models.document import Document as DocModel, DocumentStatus as DocStatus
+            from core.database import get_session_factory
+            not_ready = []
+            session_factory = get_session_factory()
+            async with session_factory() as check_session:
+                for fname in request.attached_filenames:
+                    stmt_doc = (
+                        select(DocModel)
+                        .where(DocModel.user_id == current_user.id)
+                        .where(DocModel.filename == fname)
+                    )
+                    res_doc = await check_session.execute(stmt_doc)
+                    doc_rows = res_doc.scalars().all()
+                    # Pick the most recently uploaded one
+                    if not doc_rows:
+                        not_ready.append(f"'{fname}' (not found in database)")
+                    else:
+                        # Find the latest by upload_timestamp
+                        latest = max(doc_rows, key=lambda d: d.upload_timestamp)
+                        if latest.status != DocStatus.COMPLETED.value:
+                            not_ready.append(f"'{fname}' (status: {latest.status})")
+            
+            if not_ready:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        f"The following attached files are not yet fully indexed and cannot be queried: "
+                        f"{', '.join(not_ready)}. "
+                        f"Please wait for indexing to complete or upload via the Knowledge Base tab."
+                    )
+                )
+        except HTTPException:
+            raise  # Re-raise 422 so the client gets the proper error
+        except Exception as preflight_err:
+            # Any other error (SQL, import, etc.) — log and continue rather than 500
+            print(f"⚠️ Pre-flight file status check failed (skipping): {preflight_err}")
+
+
+    # 4. RAG vector search
+    search_results = []
+    if vector_service:
+        try:
+            search_results = await vector_service.search(
+                user_query,
+                user_id=current_user.id,
+                limit=8,
+                mode=request.mode,
+                filenames=request.attached_filenames
+            )
+        except Exception as e:
+            print(f"⚠️ Vector search failed (RAG skipped): {e}")
+            search_results = []
+    else:
+        print("⚠️ VectorService unavailable — skipping vector search")
 
     rag_context = ""
     sources_data = []
+    if not search_results and request.attached_filenames:
+        print(f"⚠️ RAG search returned 0 results for attached files: {request.attached_filenames}. "
+              f"Check that vectors were upserted to Qdrant successfully.")
     if search_results:
         # Group sources by filename for clarity
         file_groups: dict[str, list[str]] = {}
@@ -122,7 +178,7 @@ async def _prepare_rag_context(
 
     full_context = f"--- DOCUMENT CONTEXT ---\n{rag_context}{multi_source_instruction}"
 
-    # 4. Fetch recent conversation history (last 10 turns)
+    # 5. Fetch recent conversation history (last 10 turns)
     stmt = (
         select(ChatHistory)
         .where(ChatHistory.session_id == session_id)
@@ -142,23 +198,26 @@ async def _prepare_rag_context(
 # POST /chat/query  (non-streaming, returns full JSON response)
 # ---------------------------------------------------------------------------
 @router.post("/query", response_model=QueryResponse)
+@limiter.limit("30/minute")
 async def handle_query(
-    request: QueryRequest,
+    request: Request,
+    body: QueryRequest,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    vector_service: Optional[VectorService] = Depends(get_vector_service),
 ):
     start_time = time.time()
     query_id = str(int(time.time() * 1000))
 
     session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
-        await _prepare_rag_context(request, current_user, session)
+        await _prepare_rag_context(body, current_user, session, vector_service)
     )
 
     # Generate full response
     try:
         response_text, used_model = await llm_service.generate_response(
-            request, full_context, history_messages
+            body, full_context, history_messages
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
@@ -168,7 +227,7 @@ async def handle_query(
     # Generate dynamic follow-up suggestions
     try:
         suggested_prompts = await llm_service.generate_suggestions(
-            user_query, response_text, request.mode, request.model
+            user_query, response_text, body.mode, body.model
         )
     except Exception:
         suggested_prompts = []
@@ -194,7 +253,7 @@ async def handle_query(
         sources=sources_data,
         latency=latency,
         query_id=query_id,
-        mode_used=request.thinking_mode,
+        mode_used=body.thinking_mode,
         session_id=session_id,
         suggested_prompts=suggested_prompts,
     )
@@ -208,14 +267,17 @@ async def handle_query(
 #   3. data: {"type":"done"}
 # ---------------------------------------------------------------------------
 @router.post("/stream")
+@limiter.limit("30/minute")
 async def handle_query_stream(
-    request: QueryRequest,
+    request: Request,
+    body: QueryRequest,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    vector_service: Optional[VectorService] = Depends(get_vector_service),
 ):
     session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
-        await _prepare_rag_context(request, current_user, session)
+        await _prepare_rag_context(body, current_user, session, vector_service)
     )
 
     async def event_generator():
@@ -231,7 +293,7 @@ async def handle_query_stream(
 
             # --- Events 2+: Stream tokens ---
             async for token in llm_service.generate_response_stream(
-                request, full_context, history_messages
+                body, full_context, history_messages
             ):
                 full_response.append(token)
                 token_event = json.dumps({"type": "token", "text": token})
@@ -241,7 +303,7 @@ async def handle_query_stream(
             response_text = "".join(full_response)
             try:
                 suggested_prompts = await llm_service.generate_suggestions(
-                    user_query, response_text, request.mode, request.model
+                    user_query, response_text, body.mode, body.model
                 )
             except Exception:
                 suggested_prompts = []

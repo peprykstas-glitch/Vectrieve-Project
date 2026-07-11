@@ -11,7 +11,9 @@ import {
   Sparkles,
   Loader2,
   X,
-  MessageSquare
+  MessageSquare,
+  Mic,
+  SlidersHorizontal
 } from "lucide-react";
 
 interface AudioBriefProps {
@@ -47,6 +49,8 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
   const [currentTurnIdx, setCurrentTurnIdx] = useState<number>(-1);
   const [speechRate, setSpeechRate] = useState<number>(1.0);
   const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState<number>(0.85);
+  const [viewMode, setViewMode] = useState<"modern" | "retro">("modern");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Progress of the currently speaking turn (0-1), drives the inline progress underline
@@ -75,9 +79,9 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
   useEffect(() => {
     isMutedRef.current = isMuted;
     if (masterGainRef.current) {
-      masterGainRef.current.gain.value = isMuted ? 0 : 1;
+      masterGainRef.current.gain.value = isMuted ? 0 : volume;
     }
-  }, [isMuted]);
+  }, [isMuted, volume]);
 
   // Cache key helper
   const getCacheKey = () => {
@@ -242,7 +246,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       analyser.smoothingTimeConstant = 0.7;
 
       const masterGain = ctx.createGain();
-      masterGain.gain.value = isMutedRef.current ? 0 : 1;
+      masterGain.gain.value = isMutedRef.current ? 0 : volume;
 
       masterGain.connect(analyser);
       analyser.connect(ctx.destination);
@@ -407,6 +411,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
     } catch (graphErr) {
       console.warn("Web Audio graph unavailable, falling back to native playback:", graphErr);
       audio.muted = isMuted;
+      audio.volume = isMuted ? 0 : volume;
     }
 
     audio.ontimeupdate = () => {
@@ -518,7 +523,20 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       audioRef.current.muted = nextMuted;
     }
     if (masterGainRef.current) {
-      masterGainRef.current.gain.value = nextMuted ? 0 : 1;
+      masterGainRef.current.gain.value = nextMuted ? 0 : volume;
+    }
+  };
+
+  const handleVolumeChange = (v: number) => {
+    setVolume(v);
+    const nextMuted = v === 0;
+    setIsMuted(nextMuted);
+    if (audioRef.current) {
+      audioRef.current.volume = v;
+      audioRef.current.muted = nextMuted;
+    }
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = nextMuted ? 0 : v;
     }
   };
 
@@ -533,11 +551,30 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
     if (!isPlaying) setIsPlaying(true);
   };
 
+  const currentTurn = podcast && currentTurnIdx >= 0 && currentTurnIdx < podcast.transcript.length
+    ? podcast.transcript[currentTurnIdx]
+    : null;
+  const activeHost = currentTurn ? currentTurn.host.toLowerCase() : "";
+  const isMaxSpeaking = isPlaying && activeHost === "max";
+  const isJuliaSpeaking = isPlaying && activeHost === "julia";
+
   return (
-    <div className="bg-zinc-900/60 border border-white/5 rounded-2xl p-5 relative overflow-hidden shadow-2xl backdrop-blur-xl">
+    <div className="bg-zinc-900/60 border border-white/5 rounded-2xl p-5 relative overflow-hidden shadow-2xl backdrop-blur-xl transition-all duration-1000">
       {/* Background glows */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+      <div className={`absolute top-0 right-0 w-44 h-44 rounded-full blur-3xl pointer-events-none transition-all duration-1000 ${
+        isMaxSpeaking
+          ? "bg-indigo-500/20"
+          : isJuliaSpeaking
+            ? "bg-purple-500/20"
+            : "bg-indigo-500/10"
+      }`} />
+      <div className={`absolute bottom-0 left-0 w-32 h-32 rounded-full blur-3xl pointer-events-none transition-all duration-1000 ${
+        isMaxSpeaking
+          ? "bg-blue-500/15"
+          : isJuliaSpeaking
+            ? "bg-pink-500/15"
+            : "bg-emerald-500/5"
+      }`} />
 
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-5">
@@ -666,82 +703,195 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
       {podcast && !loading && (
         <div className="space-y-5">
           {/* Cassette and Visualizer Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-zinc-950 p-4 border border-white/5 rounded-xl">
-            {/* Cassette Graphic */}
-            <div className="flex justify-center select-none">
-              <svg
-                className="w-full max-w-[200px] h-[120px] rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl relative"
-                viewBox="0 0 160 100"
-              >
-                <rect x="5" y="5" width="150" height="90" rx="6" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
-                <rect x="15" y="15" width="130" height="40" rx="3" fill="#2d1b4e" stroke="#6366f1" strokeWidth="1" />
-                <text x="80" y="27" textAnchor="middle" fill="#818cf8" fontSize="6" fontWeight="bold" fontFamily="monospace">
-                  VECTRIEVE OVERVIEW
-                </text>
-                <text x="80" y="38" textAnchor="middle" fill="#c084fc" fontSize="5" fontWeight="bold" fontFamily="monospace" opacity="0.8">
-                  {lang === "uk" ? "🇺🇦 УКР.ОГЛЯД" : "🇺🇸 ENG.BRIEF"}
-                </text>
-                <rect x="35" y="60" width="90" height="25" rx="3" fill="#101010" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-zinc-950 p-4 border border-white/5 rounded-xl transition-all duration-300">
+            {/* Visualizer view based on viewMode */}
+            {viewMode === "modern" ? (
+              <div className="flex items-center justify-around w-full max-w-[280px] h-[120px] mx-auto bg-zinc-900/30 border border-white/5 rounded-xl p-3 relative select-none shadow-inner">
+                {/* Host 1: Max */}
+                <div className="flex flex-col items-center gap-1.5 transition-all duration-300">
+                  <div className={`relative p-1 rounded-full transition-all duration-500 ${
+                    isMaxSpeaking
+                      ? "bg-gradient-to-tr from-indigo-500 to-indigo-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] scale-105"
+                      : isJuliaSpeaking
+                        ? "opacity-40 scale-95"
+                        : "bg-zinc-800"
+                  }`}>
+                    {/* Max avatar */}
+                    <svg className="w-12 h-12 rounded-full" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <radialGradient id="max-avatar-bg" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#1e1b4b" />
+                          <stop offset="100%" stopColor="#312e81" />
+                        </radialGradient>
+                        <linearGradient id="max-avatar-glow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#818cf8" />
+                          <stop offset="100%" stopColor="#4f46e5" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="32" cy="32" r="32" fill="url(#max-avatar-bg)" />
+                      {/* Headphone silhouette */}
+                      <path d="M18 34 C18 22 46 22 46 34" stroke="url(#max-avatar-glow)" strokeWidth="3" strokeLinecap="round" fill="none" />
+                      <rect x="15" y="32" width="6" height="10" rx="3" fill="url(#max-avatar-glow)" />
+                      <rect x="43" y="32" width="6" height="10" rx="3" fill="url(#max-avatar-glow)" />
+                      {/* Cool sunglasses (Max) */}
+                      <rect x="22" y="27" width="9" height="6" rx="2" fill="#1e1b4b" stroke="url(#max-avatar-glow)" strokeWidth="2" />
+                      <rect x="33" y="27" width="9" height="6" rx="2" fill="#1e1b4b" stroke="url(#max-avatar-glow)" strokeWidth="2" />
+                      <line x1="31" y1="30" x2="33" y2="30" stroke="url(#max-avatar-glow)" strokeWidth="2" />
+                      {/* Microphone */}
+                      <circle cx="32" cy="46" r="3" fill="url(#max-avatar-glow)" />
+                      <rect x="30" y="49" width="4" height="10" fill="url(#max-avatar-glow)" />
+                    </svg>
+                    
+                    {isMaxSpeaking && (
+                      <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border border-zinc-900 text-[6px] font-bold text-white items-center justify-center">ON</span>
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${isMaxSpeaking ? "text-indigo-400" : "text-zinc-500"}`}>Max</span>
+                </div>
 
-                <circle cx="55" cy="72" r="10" fill="#27272a" stroke="#4b5563" strokeWidth="1" />
-                <circle
-                  cx="55"
-                  cy="72"
-                  r="6"
-                  fill="#18181b"
-                  stroke="#6366f1"
-                  strokeWidth="1.5"
-                  strokeDasharray="4,2"
-                  className={isPlaying ? "origin-[55px_72px] animate-[spin_6s_linear_infinite] motion-reduce:animate-none" : ""}
-                />
+                {/* Central Mic & Audio indicator icon */}
+                <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-zinc-950/40 border border-white/5">
+                  <Mic className={`w-5 h-5 transition-all duration-300 ${isPlaying ? "text-indigo-400 animate-pulse" : "text-zinc-650"}`} />
+                  <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-widest mt-1">ON AIR</span>
+                </div>
 
-                <circle cx="105" cy="72" r="10" fill="#27272a" stroke="#4b5563" strokeWidth="1" />
-                <circle
-                  cx="105"
-                  cy="72"
-                  r="6"
-                  fill="#18181b"
-                  stroke="#6366f1"
-                  strokeWidth="1.5"
-                  strokeDasharray="4,2"
-                  className={isPlaying ? "origin-[105px_72px] animate-[spin_6s_linear_infinite] motion-reduce:animate-none" : ""}
-                />
+                {/* Host 2: Julia */}
+                <div className="flex flex-col items-center gap-1.5 transition-all duration-300">
+                  <div className={`relative p-1 rounded-full transition-all duration-500 ${
+                    isJuliaSpeaking
+                      ? "bg-gradient-to-tr from-purple-500 to-purple-600 shadow-[0_0_15px_rgba(168,85,247,0.5)] scale-105"
+                      : isMaxSpeaking
+                        ? "opacity-40 scale-95"
+                        : "bg-zinc-800"
+                  }`}>
+                    {/* Julia avatar */}
+                    <svg className="w-12 h-12 rounded-full" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <radialGradient id="julia-avatar-bg" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#3b0764" />
+                          <stop offset="100%" stopColor="#581c87" />
+                        </radialGradient>
+                        <linearGradient id="julia-avatar-glow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#c084fc" />
+                          <stop offset="100%" stopColor="#9333ea" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="32" cy="32" r="32" fill="url(#julia-avatar-bg)" />
+                      {/* Headphone silhouette */}
+                      <path d="M18 34 C18 22 46 22 46 34" stroke="url(#julia-avatar-glow)" strokeWidth="3" strokeLinecap="round" fill="none" />
+                      <rect x="15" y="32" width="6" height="10" rx="3" fill="url(#julia-avatar-glow)" />
+                      <rect x="43" y="32" width="6" height="10" rx="3" fill="url(#julia-avatar-glow)" />
+                      {/* Elegant hair/face shape (Julia) */}
+                      <path d="M24 28 C24 20 40 20 40 28 C40 33 37 36 32 38 C27 36 24 33 24 28 Z" fill="none" stroke="url(#julia-avatar-glow)" strokeWidth="1.5" />
+                      {/* Microphone */}
+                      <circle cx="32" cy="46" r="3" fill="url(#julia-avatar-glow)" />
+                      <rect x="30" y="49" width="4" height="10" fill="url(#julia-avatar-glow)" />
+                    </svg>
 
-                <path d="M 60 85 L 100 85 L 94 95 L 66 95 Z" fill="#27272a" />
-              </svg>
-            </div>
+                    {isJuliaSpeaking && (
+                      <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border border-zinc-900 text-[6px] font-bold text-white items-center justify-center">ON</span>
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${isJuliaSpeaking ? "text-purple-400" : "text-zinc-500"}`}>Julia</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center select-none">
+                <svg
+                  className="w-full max-w-[200px] h-[120px] rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl relative"
+                  viewBox="0 0 160 100"
+                >
+                  <rect x="5" y="5" width="150" height="90" rx="6" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
+                  <rect x="15" y="15" width="130" height="40" rx="3" fill="#2d1b4e" stroke="#6366f1" strokeWidth="1" />
+                  <text x="80" y="27" textAnchor="middle" fill="#818cf8" fontSize="6" fontWeight="bold" fontFamily="monospace">
+                    VECTRIEVE OVERVIEW
+                  </text>
+                  <text x="80" y="38" textAnchor="middle" fill="#c084fc" fontSize="5" fontWeight="bold" fontFamily="monospace" opacity="0.8">
+                    {lang === "uk" ? "🇺🇦 УКР.ОГЛЯД" : "🇺🇸 ENG.BRIEF"}
+                  </text>
+                  <rect x="35" y="60" width="90" height="25" rx="3" fill="#101010" />
+
+                  <circle cx="55" cy="72" r="10" fill="#27272a" stroke="#4b5563" strokeWidth="1" />
+                  <circle
+                    cx="55"
+                    cy="72"
+                    r="6"
+                    fill="#18181b"
+                    stroke="#6366f1"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,2"
+                    className={isPlaying ? "origin-[55px_72px] animate-[spin_6s_linear_infinite] motion-reduce:animate-none" : ""}
+                  />
+
+                  <circle cx="105" cy="72" r="10" fill="#27272a" stroke="#4b5563" strokeWidth="1" />
+                  <circle
+                    cx="105"
+                    cy="72"
+                    r="6"
+                    fill="#18181b"
+                    stroke="#6366f1"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,2"
+                    className={isPlaying ? "origin-[105px_72px] animate-[spin_6s_linear_infinite] motion-reduce:animate-none" : ""}
+                  />
+
+                  <path d="M 60 85 L 100 85 L 94 95 L 66 95 Z" fill="#27272a" />
+                </svg>
+              </div>
+            )}
 
             {/* Audio Controls and Spectrum */}
             <div className="flex flex-col justify-between h-full space-y-4">
-              <div>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Now playing</span>
-                <h5 className="text-xs font-semibold text-zinc-200 truncate mt-0.5">{podcast.title}</h5>
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Now playing</span>
+                  <h5 className="text-xs font-semibold text-zinc-200 truncate mt-0.5 max-w-[140px] sm:max-w-[200px]" title={podcast.title}>
+                    {podcast.title}
+                  </h5>
 
-                <div className="text-[10px] mt-1.5 text-zinc-400 flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? "bg-emerald-500 animate-ping motion-reduce:animate-none" : "bg-zinc-600"}`} />
-                  {isPlaying ? (
-                    currentTurnIdx >= 0 ? (
-                      <span>
-                        Speaking: <strong className="text-indigo-400">{podcast.transcript[currentTurnIdx].host}</strong> ({currentTurnIdx + 1}/{podcast.transcript.length})
-                      </span>
+                  <div className="text-[10px] mt-1.5 text-zinc-400 flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? "bg-emerald-500 animate-ping motion-reduce:animate-none" : "bg-zinc-600"}`} />
+                    {isPlaying ? (
+                      currentTurnIdx >= 0 ? (
+                        <span>
+                          Speaking: <strong className={isMaxSpeaking ? "text-indigo-400" : "text-purple-400"}>{podcast.transcript[currentTurnIdx].host}</strong> ({currentTurnIdx + 1}/{podcast.transcript.length})
+                        </span>
+                      ) : (
+                        "Initializing speech..."
+                      )
                     ) : (
-                      "Initializing speech..."
-                    )
-                  ) : (
-                    "Paused"
-                  )}
+                      "Paused"
+                    )}
+                  </div>
                 </div>
+
+                {/* View Mode Toggle */}
+                <button
+                  onClick={() => setViewMode(viewMode === "modern" ? "retro" : "modern")}
+                  className="px-2 py-1 text-[9px] font-bold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-white/5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Toggle player style"
+                >
+                  <SlidersHorizontal className="w-3 h-3 text-indigo-400" />
+                  <span>{viewMode === "modern" ? "Classic Tape" : "Studio View"}</span>
+                </button>
               </div>
 
               {/* Audio-reactive visualizer, driven by the live analyser node */}
-              <div className="h-6 flex items-end gap-0.5 px-2 bg-zinc-900 border border-white/5 rounded-lg overflow-hidden py-1">
+              <div className="h-8 flex items-end gap-1 px-3 bg-zinc-950 border border-white/5 rounded-xl overflow-hidden py-1.5 shadow-inner">
                 {barLevels.map((level, idx) => (
                   <div
                     key={idx}
-                    className="w-1 bg-gradient-to-t from-indigo-500 to-emerald-400 rounded-t-sm transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    className="w-1 bg-gradient-to-t from-indigo-500 via-purple-500 to-emerald-450 rounded-full transition-transform duration-75 ease-out motion-reduce:transition-none"
                     style={{
                       height: "100%",
-                      transform: `scaleY(${isPlaying ? Math.max(0.08, level) : 0.2})`,
+                      transform: `scaleY(${isPlaying ? Math.max(0.1, level) : 0.2})`,
+                      transformOrigin: "bottom",
                     }}
                   />
                 ))}
@@ -766,13 +916,28 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={toggleMute}
-                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent"
-                    title={isMuted ? "Unmute" : "Mute"}
-                  >
-                    {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
-                  </button>
+                  
+                  {/* volume controls with hover slide-out slider */}
+                  <div className="flex items-center gap-1 group relative">
+                    <button
+                      onClick={toggleMute}
+                      className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent"
+                      title={isMuted ? "Unmute" : "Mute"}
+                    >
+                      {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+                    <div className="w-0 overflow-hidden group-hover:w-16 transition-all duration-300 flex items-center">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={isMuted ? 0 : volume}
+                        onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                        className="w-16 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Speed Multiplier select */}

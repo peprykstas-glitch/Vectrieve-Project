@@ -1,0 +1,16 @@
+venv
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.pytest_cache
+Dockerfile
+logs
+data
+books_to_test
+*.csv
+*.db
+backups
