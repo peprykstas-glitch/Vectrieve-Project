@@ -13,6 +13,7 @@ import AudioBrief from "./AudioBrief";
 
 interface ChatAreaProps {
   initialSessionId?: string | null;
+  initialSpaceId?: string | null;
 }
 
 function getFollowUpPrompts(lastMessageText: string, persona: string): string[] {
@@ -57,9 +58,9 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
   ];
 }
 
-export function ChatArea({ initialSessionId }: ChatAreaProps) {
+export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
   const { computeMode, aiPersona } = useGlobalSettings();
-  const { messages, isLoading, isProcessingFiles, submitQuery, sessionId } = useChat(computeMode, aiPersona, initialSessionId);
+  const { messages, isLoading, isProcessingFiles, submitQuery, sessionId } = useChat(computeMode, aiPersona, initialSessionId, initialSpaceId);
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);

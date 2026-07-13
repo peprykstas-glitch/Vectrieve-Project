@@ -15,6 +15,7 @@ class DocumentStatus(str, Enum):
 class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
+    space_id: Optional[str] = Field(default=None, foreign_key="space.id", index=True)
     filename: str
     file_size: Optional[int] = Field(default=None)
     chunk_count: Optional[int] = Field(default=None)
@@ -27,6 +28,7 @@ class Document(SQLModel, table=True):
 class DocumentRead(SQLModel):
     id: Optional[int] = None
     user_id: int
+    space_id: Optional[str] = None
     filename: str
     file_size: Optional[int] = None
     chunk_count: Optional[int] = None

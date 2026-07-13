@@ -99,7 +99,7 @@ class VectorService:
                 ),
             )
 
-    async def upsert_batch(self, texts: List[str], filename: str, user_id: int):
+    async def upsert_batch(self, texts: List[str], filename: str, user_id: int, space_id: Optional[str] = None):
         """
         Batch upsert with parallel embedding generation.
 
@@ -143,6 +143,8 @@ class VectorService:
 
             doc_id = str(uuid.uuid4())
             payload = {"text": text, "filename": filename, "user_id": user_id}
+            if space_id:
+                payload["space_id"] = space_id
             points.append(
                 models.PointStruct(id=doc_id, vector=vector, payload=payload)
             )
@@ -164,22 +166,29 @@ class VectorService:
             )
         logger.info(f"✅ Upserted {len(points)} vectors to Qdrant (local and cloud).")
 
-    def delete_file(self, filename: str, user_id: int):
+    def delete_file(self, filename: str, user_id: int, space_id: Optional[str] = None):
         from qdrant_client.http import models
 
-        selector = models.FilterSelector(
-            filter=models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="filename",
-                        match=models.MatchValue(value=filename),
-                    ),
-                    models.FieldCondition(
-                        key="user_id",
-                        match=models.MatchValue(value=user_id),
-                    )
-                ]
+        must_conditions = [
+            models.FieldCondition(
+                key="filename",
+                match=models.MatchValue(value=filename),
+            ),
+            models.FieldCondition(
+                key="user_id",
+                match=models.MatchValue(value=user_id),
             )
+        ]
+        if space_id:
+            must_conditions.append(
+                models.FieldCondition(
+                    key="space_id",
+                    match=models.MatchValue(value=space_id),
+                )
+            )
+
+        selector = models.FilterSelector(
+            filter=models.Filter(must=must_conditions)
         )
         
         self.local_client.delete(
@@ -193,9 +202,9 @@ class VectorService:
                 points_selector=selector,
                 wait=True,
             )
-        logger.info(f"🗑️ Deleted vectors for file: {filename} of user: {user_id}")
+        logger.info(f"🗑️ Deleted vectors for file: {filename} of user: {user_id}, space: {space_id}")
 
-    async def search(self, query: str, user_id: int, limit: int = 5, mode: str = "local", filenames: Optional[List[str]] = None) -> List[SearchResult]:
+    async def search(self, query: str, user_id: int, limit: int = 5, mode: str = "local", filenames: Optional[List[str]] = None, space_id: Optional[str] = None) -> List[SearchResult]:
         try:
             # Handle empty query strings safely
             if not query or not query.strip():
@@ -212,6 +221,17 @@ class VectorService:
                     match=models.MatchValue(value=user_id),
                 )
             ]
+            if space_id:
+                must_conditions.append(
+                    models.FieldCondition(
+                        key="space_id",
+                        match=models.MatchValue(value=space_id),
+                    )
+                )
+            else:
+                must_conditions.append(
+                    models.IsEmptyCondition(is_empty=models.PayloadField(key="space_id"))
+                )
             if filenames:
                 must_conditions.append(
                     models.FieldCondition(
@@ -256,6 +276,7 @@ class VectorService:
                             .where(DocumentChunk.user_id == user_id)
                             .where(DocumentChunk.chunk_index >= 0)  # Exclude AI summary chunk
                         )
+                        stmt = stmt.where(Document.space_id == space_id)
                         if filenames:
                             stmt = stmt.where(Document.filename.in_(filenames))
                         stmt = (
@@ -276,6 +297,7 @@ class VectorService:
                             .where(DocumentChunk.chunk_index >= 0)  # Exclude AI summary chunk
                             .where(or_(*conditions))
                         )
+                        stmt = stmt.where(Document.space_id == space_id)
                         if filenames:
                             stmt = stmt.where(Document.filename.in_(filenames))
                         stmt = stmt.limit(dense_limit)

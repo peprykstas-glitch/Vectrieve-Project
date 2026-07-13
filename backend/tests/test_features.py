@@ -213,7 +213,8 @@ async def test_chat_query_with_attached_filenames(client: AsyncClient, test_sess
         user_id=1,
         limit=8,
         mode="local",
-        filenames=["attached_doc.pdf"]
+        filenames=["attached_doc.pdf"],
+        space_id=None
     )
 
 
@@ -266,4 +267,112 @@ async def test_vector_service_search_reranks():
             assert results[0].text == "cherry peach"
             assert results[1].filename == "doc1.txt"
             assert results[1].text == "apple banana"
+
+
+async def test_space_isolation_end_to_end(client: AsyncClient, test_session):
+    from services.vector_service import VectorService
+    from models.sql_models import Space
+    from models.document import Document, DocumentChunk
+    from sqlalchemy.ext.asyncio import AsyncSession
+    
+    # 1. Populate the test database with Spaces
+    space_a = Space(id="space-a-uuid", name="Space A", user_id=1)
+    space_b = Space(id="space-b-uuid", name="Space B", user_id=1)
+    test_session.add(space_a)
+    test_session.add(space_b)
+    await test_session.commit()
+    
+    # 2. Populate Documents
+    doc_a = Document(filename="secret_a.txt", user_id=1, space_id="space-a-uuid", status="COMPLETED")
+    doc_b = Document(filename="secret_b.txt", user_id=1, space_id="space-b-uuid", status="COMPLETED")
+    test_session.add(doc_a)
+    test_session.add(doc_b)
+    await test_session.commit()
+    await test_session.refresh(doc_a)
+    await test_session.refresh(doc_b)
+    
+    # 3. Populate Document Chunks (including a Global Workspace document)
+    doc_global = Document(filename="legacy.txt", user_id=1, space_id=None, status="COMPLETED")
+    test_session.add(doc_global)
+    await test_session.commit()
+    await test_session.refresh(doc_global)
+    
+    chunk_a = DocumentChunk(document_id=doc_a.id, user_id=1, chunk_index=0, content="ALPHA_SECRET_TOKEN")
+    chunk_b = DocumentChunk(document_id=doc_b.id, user_id=1, chunk_index=0, content="BETA_SECRET_TOKEN")
+    chunk_global = DocumentChunk(document_id=doc_global.id, user_id=1, chunk_index=0, content="LEGACY_TOKEN")
+    
+    test_session.add(chunk_a)
+    test_session.add(chunk_b)
+    test_session.add(chunk_global)
+    await test_session.commit()
+    
+    # 4. Instantiate custom VectorService
+    with patch.object(VectorService, "__init__", lambda self: None):
+        vs = VectorService()
+        vs.collection_name = "test_collection"
+        vs.vector_size = 128
+        vs.embed_model = "test"
+        vs.local_client = MagicMock()
+        vs.cloud_client = None
+        
+        vs._embed_text = MagicMock(return_value=[0.1] * 128)
+        
+        # Mock Qdrant dense query to return empty to isolate sparse test path
+        mock_query_result = MagicMock()
+        mock_query_result.points = []
+        vs.local_client.query_points = MagicMock(return_value=mock_query_result)
+        
+        # Bypass reranking
+        vs._get_reranker = MagicMock(return_value=None)
+        
+        # Patch session factory to return the active test database session
+        class SharedSessionContext:
+            async def __aenter__(self):
+                return test_session
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+        
+        test_session_factory = lambda: SharedSessionContext()
+        
+        with patch("core.database.get_session_factory", return_value=test_session_factory):
+            # 5. Search in Space A
+            res_a = await vs.search(query="ALPHA", user_id=1, space_id="space-a-uuid")
+            assert len(res_a) == 1
+            assert res_a[0].filename == "secret_a.txt"
+            assert "ALPHA_SECRET_TOKEN" in res_a[0].text
+            
+            # 6. Search in Space B
+            res_b = await vs.search(query="BETA", user_id=1, space_id="space-b-uuid")
+            assert len(res_b) == 1
+            assert res_b[0].filename == "secret_b.txt"
+            assert "BETA_SECRET_TOKEN" in res_b[0].text
+            
+            # 7. Search for BETA in Space A (should be empty due to space isolation)
+            res_cross = await vs.search(query="BETA", user_id=1, space_id="space-a-uuid")
+            assert len(res_cross) == 0
+            
+            # 8. Search in Global Workspace (space_id=None)
+            res_global = await vs.search(query="LEGACY", user_id=1, space_id=None)
+            assert len(res_global) == 1
+            assert res_global[0].filename == "legacy.txt"
+            assert "LEGACY_TOKEN" in res_global[0].text
+            
+            # 9. Search for ALPHA in Global Workspace (should be empty - no leakage of space docs to global)
+            res_global_leak = await vs.search(query="ALPHA", user_id=1, space_id=None)
+            assert len(res_global_leak) == 0
+            
+            # 10. Assert Qdrant filter condition types were passed correctly
+            calls = vs.local_client.query_points.call_args_list
+            assert len(calls) == 5
+            
+            # Call 0 (Space A): FieldCondition checking space-a-uuid
+            filter_a = calls[0].kwargs["query_filter"]
+            space_cond_a = [c for c in filter_a.must if getattr(c, "key", None) == "space_id"][0]
+            assert space_cond_a.match.value == "space-a-uuid"
+            
+            # Call 3 (Global Search): IsEmptyCondition checking space_id is empty
+            filter_global = calls[3].kwargs["query_filter"]
+            empty_cond = [c for c in filter_global.must if not hasattr(c, "key")][0]
+            assert empty_cond.is_empty.key == "space_id"
+
 

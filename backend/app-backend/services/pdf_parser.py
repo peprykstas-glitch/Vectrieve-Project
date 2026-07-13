@@ -2,7 +2,7 @@ import asyncio
 import io
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from models.document import Document, DocumentStatus, DocumentChunk
 from core.database import get_session_factory
@@ -192,7 +192,7 @@ def _sample_chunks(chunks: List[str], n: int = 8) -> List[str]:
 # Background task — called from upload.py via BackgroundTasks
 # ---------------------------------------------------------------------------
 
-async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, user_id: int) -> None:
+async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, user_id: int, space_id: Optional[str] = None) -> None:
     """
     Processes an uploaded file that has already been streamed to disk at tmp_path.
 
@@ -301,7 +301,7 @@ Document Sample:
                 vs = get_vector_service()
                 if vs and chunks:
                     await send_ws("EMBEDDING")
-                    await vs.upsert_batch(chunks, filename, user_id)
+                    await vs.upsert_batch(chunks, filename, user_id, space_id=space_id)
             except Exception as e:
                 print(f"⚠️ Vector upsert failed: {e}")
                 raise RuntimeError(f"Vector upsert failed: {e}")

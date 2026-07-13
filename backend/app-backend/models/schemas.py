@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
+from datetime import datetime
 
 # --- 1. Chat Models (Чат) ---
 
@@ -23,6 +24,7 @@ class QueryRequest(BaseModel):
 
     # 👇 НОВЕ ПОЛЕ: Обмежує RAG пошук тільки прикріпленими файлами
     attached_filenames: Optional[List[str]] = None 
+    space_id: Optional[str] = None
 
 class QueryResponse(BaseModel):
     response_text: str
@@ -56,3 +58,19 @@ class FileUploadResponse(BaseModel):
 
 class DeleteFileRequest(BaseModel):
     filename: str
+
+# --- 4. Space Models (NEW) ---
+
+class SpaceCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    system_prompt: Optional[str] = None
+
+class SpaceUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    system_prompt: Optional[str] = None
+
+class SpaceRead(BaseModel):
+    id: str
+    name: str
+    system_prompt: Optional[str] = None
+    created_at: datetime

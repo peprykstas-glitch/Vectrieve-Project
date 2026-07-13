@@ -30,13 +30,17 @@ export interface Message {
 export function useChat(
   computeMode: string,
   aiPersona: string,
-  initialSessionId?: string | null
+  initialSessionId?: string | null,
+  initialSpaceId?: string | null
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(
     initialSessionId || undefined
+  );
+  const [activeSpaceId, setActiveSpaceId] = useState<string | null>(
+    initialSpaceId ?? null
   );
   const isQueryingRef = useRef(false);
 
@@ -45,7 +49,8 @@ export function useChat(
     if (initialSessionId) {
       setSessionId(initialSessionId);
       setIsLoading(true);
-      apiClient<any>(`/sessions/${initialSessionId}`)
+      const query = activeSpaceId ? `?space_id=${encodeURIComponent(activeSpaceId)}` : '';
+      apiClient<any>(`/sessions/${initialSessionId}${query}`)
         .then((data) => {
           if (data && data.messages) {
             setMessages(
@@ -71,7 +76,7 @@ export function useChat(
         },
       ]);
     }
-  }, [initialSessionId]);
+  }, [initialSessionId, activeSpaceId]);
 
   const submitQuery = async (queryText: string, attachedFiles: File[]) => {
     if ((!queryText.trim() && attachedFiles.length === 0) || isQueryingRef.current) return;
@@ -124,6 +129,9 @@ export function useChat(
             attachedFiles.map(async (file) => {
               const fileData = new FormData();
               fileData.append("file", file);
+              if (activeSpaceId) {
+                fileData.append("space_id", activeSpaceId);
+              }
               return apiClient<any>("/upload", {
                 method: "POST",
                 body: fileData,
@@ -215,6 +223,10 @@ export function useChat(
 
       if (fileNames.length > 0) {
         queryPayload.attached_filenames = fileNames;
+      }
+
+      if (activeSpaceId) {
+        queryPayload.space_id = activeSpaceId;
       }
 
       if (computeMode === 'local') {
@@ -353,5 +365,7 @@ export function useChat(
     isProcessingFiles,
     submitQuery,
     sessionId,
+    activeSpaceId,
+    setActiveSpaceId,
   };
 }

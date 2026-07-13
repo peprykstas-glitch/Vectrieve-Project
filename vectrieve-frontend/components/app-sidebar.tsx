@@ -13,7 +13,9 @@ import {
   PanelLeft,
   Trash2,
   Check,
-  X
+  X,
+  ChevronDown,
+  Plus
 } from "lucide-react"
 import {
   Sidebar,
@@ -41,10 +43,12 @@ function ChatHistoryList() {
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const spaceId = searchParams.get('space')
 
   const fetchSessions = React.useCallback(async () => {
     try {
-      const data = await apiClient<{id: string, title: string}[]>('/sessions')
+      const query = spaceId ? `?space_id=${encodeURIComponent(spaceId)}` : ''
+      const data = await apiClient<{id: string, title: string}[]>(`/sessions${query}`)
       setSessions(data)
     } catch (e: any) {
       console.error(e)
@@ -52,12 +56,12 @@ function ChatHistoryList() {
         window.location.href = '/login'
       }
     }
-  }, [])
+  }, [spaceId])
 
   // Refresh when pathname or session param changes (new chat created)
   React.useEffect(() => {
     fetchSessions()
-  }, [pathname, searchParams, fetchSessions])
+  }, [pathname, searchParams, spaceId, fetchSessions])
 
   const currentSessionId = searchParams.get('session')
 
@@ -100,7 +104,7 @@ function ChatHistoryList() {
   return (
     <>
       {sessions.map(s => {
-        const url = `/?session=${s.id}`
+        const url = spaceId ? `/?session=${s.id}&space=${spaceId}` : `/?session=${s.id}`
         const isActive = pathname === '/' && s.id === currentSessionId
 
         if (deletingId === s.id) {
@@ -213,8 +217,189 @@ function UserCard() {
   )
 }
 
+interface Space {
+  id: string
+  name: string
+  system_prompt?: string
+}
+
+function SpaceSwitcher() {
+  const [spaces, setSpaces] = React.useState<Space[]>([])
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [newSpaceName, setNewSpaceName] = React.useState("")
+  const [newSpacePrompt, setNewSpacePrompt] = React.useState("")
+  const [isCreating, setIsCreating] = React.useState(false)
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  
+  const currentSpaceId = searchParams.get('space')
+  
+  const fetchSpaces = React.useCallback(async () => {
+    try {
+      const data = await apiClient<Space[]>('/spaces')
+      setSpaces(data)
+    } catch (e) {
+      console.error("Failed to load spaces", e)
+    }
+  }, [])
+  
+  React.useEffect(() => {
+    fetchSpaces()
+  }, [fetchSpaces])
+  
+  const currentSpace = spaces.find(s => s.id === currentSpaceId)
+  
+  const handleSelectSpace = (id: string | null) => {
+    setIsOpen(false)
+    const params = new URLSearchParams(window.location.search)
+    if (id) {
+      params.set('space', id)
+    } else {
+      params.delete('space')
+    }
+    params.delete('session') // Always clear active chat session when switching space
+    window.location.href = `${pathname}?${params.toString()}`
+  }
+  
+  const handleCreateSpace = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newSpaceName.trim()) return
+    try {
+      const newSpace = await apiClient<Space>('/spaces', {
+        method: 'POST',
+        body: JSON.stringify({ name: newSpaceName.trim(), system_prompt: newSpacePrompt.trim() || undefined })
+      })
+      setNewSpaceName("")
+      setNewSpacePrompt("")
+      setIsCreating(false)
+      fetchSpaces()
+      handleSelectSpace(newSpace.id)
+    } catch (err) {
+      console.error("Failed to create space", err)
+    }
+  }
+  
+  return (
+    <div className="px-2 mb-4 group-data-[collapsible=icon]:hidden relative">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2 px-1">
+        Current Workspace
+      </div>
+      
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-zinc-200 border border-white/5 bg-zinc-900/60 hover:bg-zinc-900 rounded-lg shadow-sm transition-all duration-200 cursor-pointer select-none text-left"
+      >
+        <span className="truncate font-semibold text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-indigo-200">
+          {currentSpace ? currentSpace.name : "Global Workspace"}
+        </span>
+        <ChevronDown className="w-3.5 h-3.5 text-zinc-500 shrink-0 ml-1 transition-transform" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute left-2 right-2 mt-1 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-1 duration-100">
+          <div className="max-h-40 overflow-y-auto mb-1.5 scrollbar-thin">
+            <button
+              onClick={() => handleSelectSpace(null)}
+              className={`w-full text-left px-3 py-2 text-xs rounded-md transition-colors cursor-pointer border-0 bg-transparent ${
+                !currentSpaceId ? "bg-zinc-800 text-white font-bold" : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+              }`}
+            >
+              Global Workspace
+            </button>
+            {spaces.map(s => (
+              <div
+                key={s.id}
+                className={`group/space flex items-center justify-between rounded-md transition-colors ${
+                  s.id === currentSpaceId ? "bg-zinc-800" : "hover:bg-zinc-800/50"
+                }`}
+              >
+                <button
+                  onClick={() => handleSelectSpace(s.id)}
+                  className={`flex-1 text-left px-3 py-2 text-xs rounded-md transition-colors truncate cursor-pointer border-0 bg-transparent ${
+                    s.id === currentSpaceId ? "text-white font-bold" : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  {s.name}
+                </button>
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete "${s.name}"? This will delete all documents and chats in this space.`)) {
+                      try {
+                        await apiClient(`/spaces/${s.id}`, { method: 'DELETE' });
+                        if (s.id === currentSpaceId) {
+                          handleSelectSpace(null);
+                        }
+                        fetchSpaces();
+                      } catch (err) {
+                        console.error("Failed to delete space", err);
+                      }
+                    }
+                  }}
+                  className="p-1 text-zinc-500 hover:text-red-400 opacity-0 group-hover/space:opacity-100 transition-opacity mr-2 cursor-pointer bg-transparent border-0"
+                  title="Delete Space"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="border-t border-zinc-800/80 pt-1.5 mt-1.5 px-1.5">
+            {isCreating ? (
+              <form onSubmit={handleCreateSpace} className="flex flex-col gap-1.5 animate-in zoom-in-95 duration-150">
+                <input
+                  type="text"
+                  placeholder="Space name..."
+                  value={newSpaceName}
+                  onChange={e => setNewSpaceName(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  required
+                  autoFocus
+                />
+                <textarea
+                  placeholder="System instruction (optional)..."
+                  value={newSpacePrompt}
+                  onChange={e => setNewSpacePrompt(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none h-12"
+                />
+                <div className="flex gap-1 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreating(false)}
+                    className="px-2 py-1 text-[10px] text-zinc-400 hover:bg-zinc-800 rounded cursor-pointer border-0 bg-transparent"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-2 py-1 text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white rounded cursor-pointer border-0"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                onClick={() => setIsCreating(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded transition-all cursor-pointer border-0 bg-transparent"
+              >
+                <Plus className="w-3 h-3" />
+                Create New Space
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function AppSidebar() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const spaceId = searchParams.get('space')
   const { toggleSidebar } = useSidebar()
   const [hovered, setHovered] = React.useState(false)
 
@@ -241,6 +426,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="p-2 pt-4">
+        <SpaceSwitcher />
         <SidebarGroup>
           <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 group-data-[collapsible=icon]:hidden">
             Platform Operations
@@ -260,7 +446,7 @@ export function AppSidebar() {
                         : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
                     }`}
                   >
-                    <Link href={item.url}>
+                    <Link href={spaceId ? `${item.url}?space=${spaceId}` : item.url}>
                       <item.icon 
                         strokeWidth={isActive ? 2 : 1.5} 
                         className={`shrink-0 ${isActive ? "text-indigo-400" : ""}`} 
@@ -287,7 +473,7 @@ export function AppSidebar() {
                 tooltip="New Chat"
                 className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200 mb-1"
               >
-                <Link href="/">
+                <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
                   <MessageSquare strokeWidth={1.5} className="shrink-0" />
                   <span className="font-medium group-data-[collapsible=icon]:hidden">+ New Chat</span>
                 </Link>

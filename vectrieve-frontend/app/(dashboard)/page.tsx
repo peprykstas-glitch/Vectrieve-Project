@@ -8,10 +8,11 @@ export const metadata = {
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const params = await searchParams;
   const sessionId = typeof params.session === 'string' ? params.session : null;
+  const spaceId = typeof params.space === 'string' ? params.space : null;
   
   return (
     <div className="flex flex-1 flex-col overflow-hidden h-full">
-      <ChatArea initialSessionId={sessionId} />
+      <ChatArea initialSessionId={sessionId} initialSpaceId={spaceId} />
     </div>
   );
 }

@@ -2,10 +2,12 @@ import time
 import tempfile
 from typing import Optional
 from pathlib import Path
-from fastapi import APIRouter, UploadFile, BackgroundTasks, Depends, Request, status
+from fastapi import APIRouter, UploadFile, BackgroundTasks, Depends, Request, status, Form, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from models.document import Document, DocumentRead
+from models.sql_models import Space
 from models.user import User
 from core.database import get_session
 from services.pdf_parser import process_pdf_background
@@ -17,6 +19,19 @@ _CHUNK_SIZE = 256 * 1024
 
 router = APIRouter()
 
+async def _validate_space_ownership(
+    space_id: Optional[str], user_id: int, session: AsyncSession
+) -> Optional[str]:
+    """Ensures space_id (if passed) belongs to current user. Otherwise raise 404."""
+    if not space_id or space_id in ("null", "undefined"):
+        return None
+    res = await session.execute(
+        select(Space).where(Space.id == space_id).where(Space.user_id == user_id)
+    )
+    if not res.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Space not found or access denied.")
+    return space_id
+
 @router.post(
     "",
     response_model=DocumentRead,
@@ -27,6 +42,7 @@ async def upload_file(
     request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
+    space_id: Optional[str] = Form(None),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> Document:
@@ -35,6 +51,8 @@ async def upload_file(
     and dispatch background processing. The file is NEVER fully loaded into
     RAM — prevents OOM when multiple users upload large files concurrently.
     """
+    space_id = await _validate_space_ownership(space_id, current_user.id, session)
+
     # Bug 4 fix: stream to disk chunk-by-chunk instead of file.read() into RAM
     suffix = Path(file.filename or "upload").suffix or ".bin"
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
@@ -50,7 +68,7 @@ async def upload_file(
     finally:
         tmp_file.close()
 
-    doc = Document(filename=file.filename, user_id=current_user.id, file_size=file_size)
+    doc = Document(filename=file.filename, user_id=current_user.id, space_id=space_id, file_size=file_size)
     session.add(doc)
     await session.commit()
     await session.refresh(doc)
@@ -62,6 +80,7 @@ async def upload_file(
         tmp_path,
         file.filename,
         current_user.id,
+        space_id,
     )
 
     return doc
@@ -72,11 +91,17 @@ from services.vector_service import get_vector_service, VectorService
 
 @router.get("", response_model=list[DocumentRead])
 async def list_files(
+    space_id: Optional[str] = None,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """List all documents for the current user."""
-    stmt = select(Document).where(Document.user_id == current_user.id).order_by(Document.upload_timestamp.desc())
+    """List all documents for the current user, optionally filtered by space."""
+    stmt = (
+        select(Document)
+        .where(Document.user_id == current_user.id)
+        .where(Document.space_id == space_id)
+        .order_by(Document.upload_timestamp.desc())
+    )
     result = await session.execute(stmt)
     return result.scalars().all()
 
@@ -111,7 +136,7 @@ async def delete_file(
         
     # Delete vectors from Qdrant using the injected dependency
     if vs:
-        vs.delete_file(doc.filename, current_user.id)
+        vs.delete_file(doc.filename, current_user.id, space_id=doc.space_id)
     else:
         print(f"⚠️ VectorService unavailable — skipping vector deletion for '{doc.filename}'")
     
@@ -152,7 +177,7 @@ async def reindex_file(
 
     # Delete existing vectors from Qdrant using the injected dependency
     if vs:
-        vs.delete_file(doc.filename, current_user.id)
+        vs.delete_file(doc.filename, current_user.id, space_id=doc.space_id)
 
     async def reindex_background():
         from core.database import get_session_factory
@@ -180,7 +205,7 @@ async def reindex_file(
                     await send_ws("EMBEDDING")
                     bg_doc.status = "EMBEDDING"
                     await bg_session.commit()
-                    await vs.upsert_batch(chunk_texts, bg_doc.filename, current_user.id)
+                    await vs.upsert_batch(chunk_texts, bg_doc.filename, current_user.id, space_id=bg_doc.space_id)
                 
                 bg_doc.status = "COMPLETED"
                 await bg_session.commit()

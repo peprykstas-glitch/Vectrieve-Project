@@ -46,6 +46,20 @@ async def _prepare_rag_context(
 ):
     """Shared logic: resolves/creates session, saves user message, runs RAG search, fetches history."""
     is_new_session = False
+    space = None
+
+    # --- Resolve Space (if provided) and verify OWNERSHIP ---
+    if request.space_id:
+        from models.sql_models import Space
+        space_res = await session.execute(
+            select(Space)
+            .where(Space.id == request.space_id)
+            .where(Space.user_id == current_user.id)
+        )
+        space = space_res.scalar_one_or_none()
+        if not space:
+            raise HTTPException(status_code=404, detail="Space not found or access denied.")
+
     if request.session_id:
         session_id = request.session_id
         chk = await session.execute(
@@ -53,14 +67,25 @@ async def _prepare_rag_context(
             .where(ChatSession.id == session_id)
             .where(ChatSession.user_id == current_user.id)
         )
-        if not chk.scalar_one_or_none():
+        existing_session = chk.scalar_one_or_none()
+        if not existing_session:
             is_new_session = True
+        elif existing_session.space_id != request.space_id:
+            raise HTTPException(
+                status_code=400,
+                detail="This chat session belongs to a different space."
+            )
     else:
         session_id = str(uuid.uuid4())
         is_new_session = True
 
     if is_new_session:
-        new_sess = ChatSession(id=session_id, user_id=current_user.id, title="New Chat...")
+        new_sess = ChatSession(
+            id=session_id,
+            user_id=current_user.id,
+            space_id=request.space_id,
+            title="New Chat...",
+        )
         session.add(new_sess)
         await session.commit()
 
@@ -92,6 +117,8 @@ async def _prepare_rag_context(
                         .where(DocModel.user_id == current_user.id)
                         .where(DocModel.filename == fname)
                     )
+                    if request.space_id:
+                        stmt_doc = stmt_doc.where(DocModel.space_id == request.space_id)
                     res_doc = await check_session.execute(stmt_doc)
                     doc_rows = res_doc.scalars().all()
                     # Pick the most recently uploaded one
@@ -128,7 +155,8 @@ async def _prepare_rag_context(
                 user_id=current_user.id,
                 limit=8,
                 mode=request.mode,
-                filenames=request.attached_filenames
+                filenames=request.attached_filenames,
+                space_id=request.space_id
             )
         except Exception as e:
             print(f"⚠️ Vector search failed (RAG skipped): {e}")
@@ -190,6 +218,9 @@ async def _prepare_rag_context(
     history_messages = [
         {"role": m.role, "content": m.content} for m in reversed(history_records)
     ]
+
+    if space and space.system_prompt:
+        history_messages.insert(0, {"role": "system", "content": space.system_prompt})
 
     return session_id, is_new_session, user_query, full_context, sources_data, history_messages
 

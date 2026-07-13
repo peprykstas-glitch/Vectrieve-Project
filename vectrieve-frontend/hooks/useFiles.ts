@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { apiClient } from "@/lib/api/client";
+import { useSearchParams } from "next/navigation";
 
 export interface Document {
   id: number;
@@ -18,10 +19,13 @@ export function useFiles() {
   const [searchQuery, setSearchQuery] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+  const spaceId = searchParams.get('space');
 
   const fetchFiles = async () => {
     try {
-      const data = await apiClient<Document[]>('/upload');
+      const query = spaceId ? `?space_id=${encodeURIComponent(spaceId)}` : '';
+      const data = await apiClient<Document[]>(`/upload${query}`);
       setFiles(data);
     } catch (error) {
       console.error("Failed to fetch files", error);
@@ -81,7 +85,7 @@ export function useFiles() {
       clearTimeout(reconnectTimeout);
       if (ws) ws.close();
     };
-  }, []);
+  }, [spaceId]);
 
   // Intelligent polling fallback: if any file is processing (e.g. over ngrok where local WS might be unreachable)
   useEffect(() => {
@@ -103,6 +107,9 @@ export function useFiles() {
       for (const file of Array.from(e.target.files)) {
         const formData = new FormData();
         formData.append('file', file);
+        if (spaceId) {
+          formData.append('space_id', spaceId);
+        }
         
         await apiClient('/upload', {
           method: 'POST',

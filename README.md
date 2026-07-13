@@ -1,67 +1,97 @@
-# 🧠 Vectrieve AI (v2.0)
+# Vectrieve AI (v2.0)
 
-**Vectrieve** is a secure, local RAG (Retrieval-Augmented Generation) Knowledge Assistant designed for developers and product managers. It allows users to chat with their documents (PDF, TXT) and source code (Python, JS, TS) with high precision and zero data leakage.
+Vectrieve is a secure, local Retrieval-Augmented Generation (RAG) Knowledge Assistant designed for developers and product teams. It enables precise, isolated context retrieval from documents, source code, and custom workspaces with zero data leakage.
 
-![Vectrieve UI Screenshot](![alt text](image.png))
-*(Replace this link with your actual screenshot)*
+---
 
-## 🚀 Key Features
+## Key Capabilities
 
--   **🔍 Chat with Codebase:** Drag & drop project files (`.py`, `.js`, `.tsx`) to analyze logic, architecture, and endpoints instantly.
--   **📄 Document Intelligence:** Powered by **Qdrant** vector search to retrieve precise context from large PDFs.
--   **📊 Analytics Dashboard:** Real-time tracking of latency, model usage, and user feedback (👍/👎).
--   **⚡ High Performance:** Built on **FastAPI** (Backend) and **Next.js 14** (Frontend) with optimized memory management.
--   **🛡️ Secure & Local:** Documents are processed locally and stored in a Dockerized vector database.
+* **Multi-Tenant Workspace Isolation (Spaces):** Partition files, chat histories, and system prompts into separate workspaces. Data never bleeds between spaces in either vector (dense) or database (sparse) search steps.
+* **Codebase & Document Intelligence:** Index and analyze project files (`.py`, `.js`, `.tsx`, `.ts`) alongside large text files and PDFs using optimized Qdrant vector storage.
+* **Granular LLM Directives:** Set custom system prompts per workspace to align model behavior, formatting rules, and constraints for specific task domains.
+* **Performance Telemetry:** Real-time feedback, latency tracking, and model usage analytics.
 
-## 🛠️ Tech Stack
+---
 
--   **Core AI:** Groq (Llama-3-70b-versatile)
--   **Vector DB:** Qdrant (Docker)
--   **Backend:** Python, FastAPI, Pandas
--   **Frontend:** TypeScript, Next.js, Tailwind CSS, Recharts
--   **Orchestration:** Docker Compose
+## System Architecture
 
-## 📦 Installation Guide
+The application is structured into isolated backend and frontend services, coordinated via Docker Compose:
+
+```
+[ Frontend: Next.js 14 / TS ] ---> [ BFF Proxy / API Gateway ]
+                                              |
+                                              v
+                                   [ Backend: FastAPI ]
+                                     /             \
+                                    v               v
+                         [ Postgres DB ]     [ Qdrant Vector DB ]
+```
+
+---
+
+## Technical Stack
+
+* **Large Language Models:** Groq Cloud APIs (e.g., Llama-3-70b) and local Ollama integrations.
+* **Vector Engine:** Qdrant (deployed inside Docker).
+* **Database & Migration:** PostgreSQL, SQLite (testing), SQLAlchemy/SQLModel, and Alembic.
+* **Backend Framework:** Python 3.12, FastAPI, PyPDF2/PDFPlumber, Pydantic v2.
+* **Frontend Application:** TypeScript, Next.js 14, Tailwind CSS, Shadcn UI.
+
+---
+
+## Getting Started
 
 ### Prerequisites
--   Docker Desktop installed & running
--   Python 3.10+
--   Node.js 18+
+* Docker Desktop installed and running
+* Python 3.12+
+* Node.js 18+
 
-### 1. Clone & Setup Database
+### 1. Database Infrastructure
+Spin up Qdrant and PostgreSQL databases:
 ```bash
-git clone [https://github.com/your-username/vectrieve-ai.git](https://github.com/your-username/vectrieve-ai.git)
-cd vectrieve-ai
-docker-compose up -d  # Starts Qdrant Vector DB
-2. Backend Setup (Brain)
-Bash
+docker-compose up -d
+```
 
+### 2. Backend Services
+Navigate to the backend directory, initialize your virtual environment, and install dependencies:
+```bash
 cd backend
 python -m venv venv
-# Windows:
-.\venv\Scripts\activate
-# Linux/Mac:
+
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+
+# Linux / macOS:
 source venv/bin/activate
 
 pip install -r requirements.txt
+```
+
+Run database migrations to initialize tables and indices:
+```bash
+alembic upgrade head
+```
+
+Launch the FastAPI dev server:
+```bash
 python main.py
 # Server starts at http://localhost:8000
-3. Frontend Setup (UI)
-Bash
+```
 
-cd vectrieve-ui
+### 3. Frontend Application
+Navigate to the frontend directory, install dependencies, and start the development server:
+```bash
+cd vectrieve-frontend
 npm install
-npm run build
-npm start
-# UI opens at http://localhost:3000
-🧩 How It Works
-Ingestion: User uploads a file. The backend parses text/code, chunks it, creates embeddings, and stores them in Qdrant.
+npm run dev
+# Application starts at http://localhost:3000
+```
 
-Retrieval: When a user asks a question, the system searches for the most relevant chunks in the vector DB.
+---
 
-Generation: The retrieved context + user query are sent to the LLM (Groq) to generate a grounded response.
-
-🤝 Contribution
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Created by Stanislav Pepryk
+## Running Integration Tests
+Execute the pytest suite to verify database schemas, workspace isolation bounds, and API route security:
+```bash
+cd backend
+venv/Scripts/python -m pytest
+```

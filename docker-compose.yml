@@ -3,7 +3,7 @@ services:
     image: qdrant/qdrant:latest
     container_name: vectrieve-qdrant
     ports:
-      - "6333:6333"  # Відкриваємо порт назовні, щоб локальний Python його бачив
+      - "6333:6333"
     volumes:
       - ./qdrant_data:/qdrant/storage
     restart: always
