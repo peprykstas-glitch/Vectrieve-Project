@@ -1,20 +1,22 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from core.database import get_session
-from models.sql_models import ChatHistory, ChatSession
+from core.database import get_session, engine
+from models.sql_models import ChatHistory, ChatSession, FeedbackLog
 from models.document import Document
 from models.user import User
-from api.deps import get_current_user
+from models.telemetry_log import TelemetryLog
+from api.deps import require_admin
 from collections import defaultdict
 import calendar
+import datetime
 
 router = APIRouter()
 
 @router.get("/stats")
 async def get_analytics_stats(
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     # 1. Total queries
     statement = select(func.count(ChatHistory.id)).where(ChatHistory.role == "user")
@@ -67,7 +69,6 @@ async def get_analytics_stats(
             month_name = calendar.month_abbr[ts.month]
             grouped_data[month_name]["docs"] += 1
 
-    import datetime
     current_month_abbr = calendar.month_abbr[datetime.datetime.utcnow().month]
     if not grouped_data:
         grouped_data[current_month_abbr] = {"queries": 0, "docs": 0}
@@ -80,6 +81,47 @@ async def get_analytics_stats(
             "docs": counts["docs"]
         })
 
+    # --- ADVANCED DEVELOPER TELEMETRY (Phase 2) ---
+    
+    # 7. Latency and Token Throughput Averages
+    latency_stmt = select(
+        func.avg(TelemetryLog.dense_latency),
+        func.avg(TelemetryLog.sparse_latency),
+        func.avg(TelemetryLog.rerank_latency),
+        func.avg(TelemetryLog.llm_latency),
+        func.avg(TelemetryLog.total_latency),
+        func.avg(TelemetryLog.tokens_per_second),
+        func.sum(TelemetryLog.tokens_generated)
+    )
+    latency_result = await session.execute(latency_stmt)
+    row = latency_result.first()
+    
+    dense_avg = round(row[0] or 0.0, 3) if row else 0.0
+    sparse_avg = round(row[1] or 0.0, 3) if row else 0.0
+    rerank_avg = round(row[2] or 0.0, 3) if row else 0.0
+    llm_avg = round(row[3] or 0.0, 3) if row else 0.0
+    total_avg = round(row[4] or 0.0, 3) if row else 0.0
+    tps_avg = round(row[5] or 0.0, 1) if row else 0.0
+    tokens_total = row[6] or 0 if row else 0
+
+    # 8. Feedback logs thumbs counts
+    thumbs_up_stmt = select(func.count(FeedbackLog.id)).where(FeedbackLog.rating == 1)
+    thumbs_up_res = await session.execute(thumbs_up_stmt)
+    thumbs_up = thumbs_up_res.scalar() or 0
+
+    thumbs_down_stmt = select(func.count(FeedbackLog.id)).where(FeedbackLog.rating == -1)
+    thumbs_down_res = await session.execute(thumbs_down_stmt)
+    thumbs_down = thumbs_down_res.scalar() or 0
+
+    # 9. Database Connection Pool Health
+    pool = engine.pool
+    pool_stats = {
+        "size": pool.size(),
+        "checked_in": pool.checkedin(),
+        "checked_out": pool.checkedout(),
+        "overflow": pool.overflow()
+    }
+
     return {
         "kpi": {
             "total_queries": total_queries,
@@ -89,5 +131,17 @@ async def get_analytics_stats(
             "total_storage_mb": total_storage_mb,
             "total_vectors": total_vectors
         },
-        "chart_data": chart_data
+        "chart_data": chart_data,
+        "telemetry": {
+            "dense_avg_sec": dense_avg,
+            "sparse_avg_sec": sparse_avg,
+            "rerank_avg_sec": rerank_avg,
+            "llm_avg_sec": llm_avg,
+            "total_avg_sec": total_avg,
+            "tokens_per_second_avg": tps_avg,
+            "tokens_generated_total": tokens_total,
+            "thumbs_up": thumbs_up,
+            "thumbs_down": thumbs_down,
+            "pool": pool_stats
+        }
     }

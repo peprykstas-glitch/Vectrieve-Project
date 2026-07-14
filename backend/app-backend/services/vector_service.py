@@ -1,9 +1,11 @@
 import uuid
 import logging
+import time
 from typing import List, Optional
 import asyncio
 from pydantic import BaseModel
 from core.config import settings
+from core.telemetry import rag_telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -205,12 +207,16 @@ class VectorService:
         logger.info(f"🗑️ Deleted vectors for file: {filename} of user: {user_id}, space: {space_id}")
 
     async def search(self, query: str, user_id: int, limit: int = 5, mode: str = "local", filenames: Optional[List[str]] = None, space_id: Optional[str] = None) -> List[SearchResult]:
+        dense_latency = 0.0
+        sparse_latency = 0.0
+        rerank_latency = 0.0
         try:
             # Handle empty query strings safely
             if not query or not query.strip():
                 query = "document summary overview details content key points"
 
             # 1. Dense (Vector) Search — cast a wider net for diversity
+            dense_start = time.time()
             query_vector = await asyncio.to_thread(self._embed_text, query)
             client_to_use = self.cloud_client if (mode == "cloud" and self.cloud_client) else self.local_client
             
@@ -254,8 +260,10 @@ class VectorService:
                 ).points
             except Exception as ex:
                 logger.warning(f"⚠️ Qdrant dense search failed: {ex}")
+            dense_latency = time.time() - dense_start
 
             # 2. Sparse (Keyword) Search in PostgreSQL/SQLite (Full-Text Search)
+            sparse_start = time.time()
             sparse_results = []
             try:
                 from core.database import get_session_factory
@@ -310,6 +318,7 @@ class VectorService:
                         })
             except Exception as ex:
                 logger.warning(f"⚠️ SQL sparse full-text search failed: {ex}")
+            sparse_latency = time.time() - sparse_start
 
             # 3. Reciprocal Rank Fusion (RRF) Merging
             # RRF Score = sum( 1 / (60 + rank) )
@@ -338,6 +347,7 @@ class VectorService:
             sorted_texts = sorted(rrf_scores.keys(), key=lambda t: rrf_scores[t], reverse=True)
 
             # 3.5. Cross-Encoder Reranking
+            rerank_start = time.time()
             reranker = self._get_reranker()
             if reranker and sorted_texts:
                 try:
@@ -373,6 +383,7 @@ class VectorService:
                     sorted_texts = [item[0] for item in reranked_items] + sorted_texts[15:]
                 except Exception as rerank_err:
                     logger.warning(f"⚠️ Reranking failed (falling back to pure RRF): {rerank_err}")
+            rerank_latency = time.time() - rerank_start
 
             # 4. Source Diversity Reranking
             # Guarantee at least one chunk from each unique file before filling by score.
@@ -415,6 +426,13 @@ class VectorService:
 
             unique_files = len(set(r["filename"] for r in merged_results))
             logger.info(f"🔍 Hybrid Search merged {len(dense_results)} dense + {len(sparse_results)} sparse → {len(merged_results)} results from {unique_files} unique files.")
+            
+            # Save request-scoped telemetry timings
+            rag_telemetry.set({
+                "dense_latency": dense_latency,
+                "sparse_latency": sparse_latency,
+                "rerank_latency": rerank_latency
+            })
             return [SearchResult(text=r["text"], filename=r["filename"], score=r["score"]) for r in merged_results]
 
         except Exception as e:

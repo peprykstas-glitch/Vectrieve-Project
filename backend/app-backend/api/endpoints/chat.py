@@ -15,9 +15,12 @@ from core.database import get_session, engine
 from api.deps import get_current_user
 from services.llm_service import llm_service
 from services.vector_service import get_vector_service, VectorService, SearchResult
+from core.telemetry import rag_telemetry
 from core.rate_limiter import limiter
 
 router = APIRouter()
+
+
 
 
 # --- BACKGROUND TASK: Auto-generate session title after first message ---
@@ -269,12 +272,14 @@ async def handle_query(
     )
 
     # Generate full response
+    llm_start = time.time()
     try:
         response_text, used_model = await llm_service.generate_response(
             body, full_context, history_messages
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    llm_latency = time.time() - llm_start
 
     latency = time.time() - start_time
 
@@ -294,7 +299,27 @@ async def handle_query(
         content=response_text,
         sources=json.dumps(sources_data) if sources_data else None
     )
-    session.add(ai_msg_db)
+    # Retrieve telemetry metrics
+    metrics = rag_telemetry.get() or {"dense_latency": 0.0, "sparse_latency": 0.0, "rerank_latency": 0.0}
+    dense_latency = metrics.get("dense_latency", 0.0)
+    sparse_latency = metrics.get("sparse_latency", 0.0)
+    rerank_latency = metrics.get("rerank_latency", 0.0)
+    tokens_generated = len(response_text) // 4
+    tokens_per_second = tokens_generated / llm_latency if llm_latency > 0 else 0.0
+
+    from models.telemetry_log import TelemetryLog
+    telemetry_entry = TelemetryLog(
+        query_id=query_id,
+        user_id=current_user.id,
+        dense_latency=dense_latency,
+        sparse_latency=sparse_latency,
+        rerank_latency=rerank_latency,
+        llm_latency=llm_latency,
+        total_latency=latency,
+        tokens_generated=tokens_generated,
+        tokens_per_second=tokens_per_second
+    )
+    session.add(telemetry_entry)
     await session.commit()
 
     if is_new_session:
@@ -330,12 +355,15 @@ async def handle_query_stream(
     current_user: User = Depends(get_current_user),
     vector_service: Optional[VectorService] = Depends(get_vector_service),
 ):
+    start_time = time.time()
+    query_id = str(int(time.time() * 1000))
     session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
         await _prepare_rag_context(body, current_user, session, vector_service)
     )
 
     async def event_generator():
         full_response = []
+        llm_latency = 0.0
         try:
             # --- Event 1: Send session info + sources before first token ---
             meta_event = json.dumps({
@@ -346,12 +374,14 @@ async def handle_query_stream(
             yield f"data: {meta_event}\n\n"
 
             # --- Events 2+: Stream tokens ---
+            llm_start = time.time()
             async for token in llm_service.generate_response_stream(
                 body, full_context, history_messages
             ):
                 full_response.append(token)
                 token_event = json.dumps({"type": "token", "text": token})
                 yield f"data: {token_event}\n\n"
+            llm_latency = time.time() - llm_start
 
             # --- Event 3: Send dynamic follow-up suggestions ---
             response_text = "".join(full_response)
@@ -389,9 +419,33 @@ async def handle_query_stream(
                     sources=json.dumps(sources_data) if sources_data else None
                 )
                 db.add(ai_msg_db)
+
+                # Log Telemetry for streaming query inside same session
+                latency = time.time() - start_time
+                metrics = rag_telemetry.get() or {"dense_latency": 0.0, "sparse_latency": 0.0, "rerank_latency": 0.0}
+                dense_latency = metrics.get("dense_latency", 0.0)
+                sparse_latency = metrics.get("sparse_latency", 0.0)
+                rerank_latency = metrics.get("rerank_latency", 0.0)
+                tokens_generated = len(response_text) // 4
+                tokens_per_second = tokens_generated / llm_latency if llm_latency > 0 else 0.0
+
+                from models.telemetry_log import TelemetryLog
+                telemetry_entry = TelemetryLog(
+                    query_id=query_id,
+                    user_id=current_user.id,
+                    dense_latency=dense_latency,
+                    sparse_latency=sparse_latency,
+                    rerank_latency=rerank_latency,
+                    llm_latency=llm_latency,
+                    total_latency=latency,
+                    tokens_generated=tokens_generated,
+                    tokens_per_second=tokens_per_second
+                )
+                db.add(telemetry_entry)
+                
                 await db.commit()
         except Exception as e:
-            print(f"⚠️ Failed to persist streamed AI response: {e}")
+            print(f"⚠️ Failed to persist streamed AI response/telemetry: {e}")
 
         if is_new_session and response_text:
             background_tasks.add_task(

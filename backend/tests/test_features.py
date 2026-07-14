@@ -148,6 +148,19 @@ async def test_analytics_stats(client: AsyncClient, test_session):
     test_session.add(doc)
     await test_session.commit()
 
+    # 1. Non-admin request should return 403 Forbidden
+    response_denied = await client.get("/analytics/stats")
+    assert response_denied.status_code == 403
+
+    # 2. Override get_current_user dependency to return an admin user
+    from main import app
+    from api.deps import get_current_user
+    
+    async def override_get_current_user_admin():
+        return User(id=1, username="test@example.com", hashed_password="dummy", is_active=True, is_admin=True)
+
+    app.dependency_overrides[get_current_user] = override_get_current_user_admin
+
     response = await client.get("/analytics/stats")
     assert response.status_code == 200
     data = response.json()
@@ -157,6 +170,11 @@ async def test_analytics_stats(client: AsyncClient, test_session):
     # Both values come from data seeded in this test function above
     assert data["kpi"]["total_queries"] >= 1
     assert data["kpi"]["indexed_documents"] >= 1
+
+    # Cleanup overrides to restore regular user for subsequent tests
+    async def override_get_current_user_regular():
+        return User(id=1, username="test@example.com", hashed_password="dummy", is_active=True)
+    app.dependency_overrides[get_current_user] = override_get_current_user_regular
     # Structural checks
     assert isinstance(data["kpi"]["total_users"], int)
     assert isinstance(data["chart_data"], list)
@@ -450,5 +468,58 @@ async def test_resolve_llm_config():
     cfg = SpaceLLMConfig(llm_provider="local", llm_model="qwen2.5-coder:7b")
     assert cfg.llm_provider == "local"
     assert cfg.llm_model == "qwen2.5-coder:7b"
+
+
+@pytest.mark.asyncio
+async def test_require_admin_dependency():
+    from api.deps import require_admin
+    from models.user import User
+    from fastapi import HTTPException
+    
+    admin_user = User(username="admin@test.com", hashed_password="pwd", is_admin=True)
+    regular_user = User(username="user@test.com", hashed_password="pwd", is_admin=False)
+    
+    # Should pass
+    res = await require_admin(admin_user)
+    assert res == admin_user
+    
+    # Should raise 403
+    with pytest.raises(HTTPException) as exc_info:
+        await require_admin(regular_user)
+    assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_require_admin_endpoint_denied(client):
+    response = await client.get("/analytics/stats")
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_require_admin_endpoint_allowed(test_session):
+    from main import app
+    from api.deps import get_current_user
+    from core.database import get_session
+    from models.user import User
+    from httpx import AsyncClient, ASGITransport
+
+    async def override_get_session():
+        yield test_session
+
+    async def override_get_current_user():
+        return User(id=1, username="admin@example.com", hashed_password="dummy", is_active=True, is_admin=True)
+
+    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/analytics/stats")
+        assert response.status_code == 200
+        data = response.json()
+        assert "telemetry" in data
+        assert "pool" in data["telemetry"]
+
+    app.dependency_overrides.clear()
+
 
 

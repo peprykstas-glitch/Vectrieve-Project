@@ -12,6 +12,7 @@ from models.user import User
 from models.password_reset import PasswordResetToken
 from core.security import verify_password, create_access_token, get_password_hash
 from services.email_service import send_password_reset_email
+from core.config import settings
 
 router = APIRouter()
 
@@ -60,9 +61,14 @@ async def register_user(
 
     # 2. Створення об'єкта користувача (хешуємо безпечний пароль)
     hashed = await get_password_hash(safe_password)
+    
+    admin_list = [u.strip().lower() for u in settings.ADMIN_USERNAMES.split(",") if u.strip()]
+    is_admin = user_in.email.lower() in admin_list
+
     new_user = User(
         username=user_in.email,
         hashed_password=hashed,
+        is_admin=is_admin,
     )
     
     # 3. Запис у БД (Асинхронно)
@@ -107,7 +113,7 @@ from api.deps import get_current_user
 
 @router.get("/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    return {"email": current_user.username, "id": current_user.id}
+    return {"email": current_user.username, "id": current_user.id, "is_admin": current_user.is_admin}
 
 
 # --- ЕНДПОІНТ ЗАБУВ ПАРОЛЬ ---

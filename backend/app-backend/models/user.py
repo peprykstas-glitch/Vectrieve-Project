@@ -6,6 +6,7 @@ class User(SQLModel, table=True):
     username: str = Field(unique=True, index=True)
     hashed_password: str
     is_active: bool = Field(default=True)
+    is_admin: bool = Field(default=False)
 
 class UserCreate(SQLModel):
     username: str
@@ -15,6 +16,7 @@ class UserRead(SQLModel):
     id: int
     username: str
     is_active: bool
+    is_admin: bool
 
 class Token(BaseModel):
     access_token: str
