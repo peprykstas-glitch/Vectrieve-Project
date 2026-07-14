@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api/client";
 
 export interface Space {
@@ -21,7 +22,6 @@ type SettingsContextType = {
   spaces: Space[];
   setSpaces: (spaces: Space[]) => void;
   fetchSpaces: () => Promise<void>;
-  activeSpace: Space | null;
 };
 
 const SettingsContext = createContext<SettingsContextType>({
@@ -32,28 +32,17 @@ const SettingsContext = createContext<SettingsContextType>({
   spaces: [],
   setSpaces: () => {},
   fetchSpaces: async () => {},
-  activeSpace: null,
 });
 
 export function GlobalSettingsProvider({ children }: { children: React.ReactNode }) {
   const [computeMode, setComputeMode] = useState("cloud");
   const [aiPersona, setAiPersona] = useState("mentor");
   const [spaces, setSpaces] = useState<Space[]>([]);
-  const [activeSpace, setActiveSpace] = useState<Space | null>(null);
 
   const fetchSpaces = useCallback(async () => {
     try {
       const data = await apiClient<Space[]>('/spaces');
       setSpaces(data);
-      
-      const params = new URLSearchParams(window.location.search);
-      const spaceId = params.get('space');
-      if (spaceId) {
-        const found = data.find(s => s.id === spaceId);
-        setActiveSpace(found || null);
-      } else {
-        setActiveSpace(null);
-      }
     } catch (e) {
       console.error("Failed to load spaces", e);
     }
@@ -62,12 +51,6 @@ export function GlobalSettingsProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     fetchSpaces();
   }, [fetchSpaces]);
-
-  useEffect(() => {
-    if (activeSpace?.llm_provider) {
-      setComputeMode(activeSpace.llm_provider);
-    }
-  }, [activeSpace]);
 
   return (
     <SettingsContext.Provider 
@@ -78,8 +61,7 @@ export function GlobalSettingsProvider({ children }: { children: React.ReactNode
         setAiPersona, 
         spaces, 
         setSpaces, 
-        fetchSpaces, 
-        activeSpace 
+        fetchSpaces,
       }}
     >
       {children}
@@ -88,5 +70,23 @@ export function GlobalSettingsProvider({ children }: { children: React.ReactNode
 }
 
 export function useGlobalSettings() {
-  return useContext(SettingsContext);
+  const context = useContext(SettingsContext);
+  const searchParams = useSearchParams();
+  
+  const spaceId = searchParams.get('space');
+  const activeSpace = spaceId 
+    ? context.spaces.find(s => s.id === spaceId) || null
+    : null;
+
+  // Reactively synchronize computeMode with activeSpace provider restriction
+  useEffect(() => {
+    if (activeSpace?.llm_provider) {
+      context.setComputeMode(activeSpace.llm_provider);
+    }
+  }, [activeSpace, context]);
+
+  return {
+    ...context,
+    activeSpace,
+  };
 }

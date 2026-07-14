@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { GlobalSettingsProvider, useGlobalSettings } from "@/components/global-settings"
 import { 
@@ -110,7 +110,9 @@ export default function DashboardLayout({
       */}
       <SidebarInset className="flex flex-col h-screen min-w-0 bg-zinc-950">
         
-        <DashboardHeader />
+        <Suspense fallback={<div className="h-[65px] shrink-0 border-b border-white/5 bg-zinc-900/10" />}>
+          <DashboardHeader />
+        </Suspense>
 
         {/* 
           MAIN CONTENT AREA

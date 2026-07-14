@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional, Any, Dict
 from datetime import datetime
 
@@ -61,12 +61,42 @@ class FileUploadResponse(BaseModel):
 class DeleteFileRequest(BaseModel):
     filename: str
 
+KNOWN_CLOUD_MODELS = {
+    "llama-3.3-70b-versatile",
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it",
+    "gemma-7b-it",
+}
+
+KNOWN_LOCAL_MODELS = {
+    "qwen2.5-coder:7b",
+    "qwen2.5-coder",
+    "llama3",
+    "mistral",
+    "gemma",
+    "phi3",
+}
+
 class SpaceLLMConfig(BaseModel):
     llm_provider: Optional[str] = Field(default=None, pattern="^(cloud|local)$")
     llm_model: Optional[str] = None
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, gt=0)
     top_p: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def validate_provider_model_compatibility(self) -> 'SpaceLLMConfig':
+        provider = self.llm_provider
+        model = self.llm_model
+        if provider and model:
+            # Check for obvious mismatches
+            if provider == "local" and model in KNOWN_CLOUD_MODELS:
+                raise ValueError(f"Model '{model}' is a cloud-only model, not compatible with local provider.")
+            if provider == "cloud" and model in KNOWN_LOCAL_MODELS:
+                raise ValueError(f"Model '{model}' is a local-only model, not compatible with cloud provider.")
+        return self
 
 class SpaceCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)

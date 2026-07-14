@@ -428,4 +428,27 @@ async def test_resolve_llm_config():
     assert req3.max_tokens == 150
     assert req3.top_p == 0.95
 
+    # Test 4: Validation compatibility check
+    from pydantic import ValidationError
+    from models.schemas import SpaceLLMConfig
+    
+    # Try invalid combination: cloud model with local provider
+    try:
+        SpaceLLMConfig(llm_provider="local", llm_model="llama-3.3-70b-versatile")
+        assert False, "Should fail compatibility validation"
+    except ValidationError:
+        pass
+        
+    # Try invalid combination: local model with cloud provider
+    try:
+        SpaceLLMConfig(llm_provider="cloud", llm_model="qwen2.5-coder:7b")
+        assert False, "Should fail compatibility validation"
+    except ValidationError:
+        pass
+
+    # Try valid combination
+    cfg = SpaceLLMConfig(llm_provider="local", llm_model="qwen2.5-coder:7b")
+    assert cfg.llm_provider == "local"
+    assert cfg.llm_model == "qwen2.5-coder:7b"
+
 
