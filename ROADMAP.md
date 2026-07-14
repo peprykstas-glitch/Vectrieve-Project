@@ -1,58 +1,60 @@
 # Vectrieve AI — Product Roadmap & Future Tasks
 
-This document tracks the long-term development roadmap and feature backlog for Vectrieve AI. It acts as the single source of truth for upcoming architectural, feature, and security enhancements.
-
----
-
 ## Roadmap Overview
 
-| Feature / Milestone | Complexity | Target Component | Status |
-| :--- | :--- | :--- | :--- |
-| **1. Individual LLM Configuration Per Space** | Medium | Backend API / UI | `[ ] Backlog` |
-| **2. Admin-Restricted Performance Analytics** | Medium | Auth / BFF Proxy / UI | `[ ] Backlog` |
-| **3. Multi-Format & Audio Document Ingestion** | High | Ingestion / Parser Service | `[ ] Backlog` |
-| **4. Workspace Sharing & Collaboration** | Very High | Database / RLS / Auth | `[ ] Backlog` |
-| **5. Multimodal Vision RAG & OCR Ingestion** | High | Embedding Pipeline / DB | `[ ] Backlog` |
+| Phase | Feature / Milestone | Complexity | Target Component | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | **Per-Space LLM Configuration** | Medium | Backend API / UI | `[ ] Backlog` |
+| 2 | **RBAC Foundation + Admin Analytics** | Medium | Auth / User model / UI | `[ ] Backlog` |
+| 3a | **Ingestion: Rich Text Formats** (docx/md/html) | Low | Parser Service | `[ ] Backlog` |
+| 3b | **Ingestion: Structured Data** (csv/xlsx/json) | Medium | Parser Service / Chunking | `[ ] Backlog` |
+| 3c | **Ingestion: Vision/OCR** (images, scanned PDFs, pptx) | Medium–High | Parser Service / Embedding | `[ ] Backlog` |
+| 3d | **Ingestion: Audio Transcription** (Whisper) | High | Parser Service / Infra | `[ ] Backlog` |
+| 4 | **Workspace Sharing — Static Membership** (Owner/Editor/Viewer, no live sync) | Very High | Database / Auth | `[ ] Backlog` |
+| 5 | **Live Collaborative Chat** (realtime sync) | Very High (later) | WebSocket / DB | `[ ] Icebox` |
 
 ---
 
 ## Detailed Specifications
 
-### 1. Individual LLM Configuration Per Space
-Currently, spaces support custom system instructions (`system_prompt`). The goal is to extend this to full LLM profiles per space.
-* **Requirements:**
-  * Allow users to select LLM providers (e.g., Groq vs. local Ollama) and specific models (e.g., Llama-3-70b vs. Mistral) per space.
-  * Allow configuring hyper-parameters (e.g., temperature, max tokens, top-p) per space.
-  * Store configurations in the `Space` table and load them dynamically during query generation.
+### 1. Per-Space LLM Configuration
+* Users select LLM provider (Groq/Ollama) and model per space.
+* Configure hyperparameters (temperature, max_tokens, top_p) per space.
+* **Core Rule Configuration:** Space-level settings act as **hard limits** for provider/model selection (preventing unauthorized cost surprises or security risks), and **soft defaults** for temperature/max_tokens (allowing override per-query via `QueryRequest` if needed).
+* Store settings in the `Space` table and load them dynamically during LLM RAG prompt generation (`_prepare_rag_context`).
 
-### 2. Admin-Restricted Performance Analytics
-The current analytics dashboard is visible to all authenticated users and lacks detailed developer-centric metrics.
-* **Requirements:**
-  * **RBAC Enforcement:** Restrict the `/analytics` dashboard to accounts verified as admins. Specifically, configure a bootstrap list of admin emails (e.g., `pepryk.stas@gmail.com`). Non-admin requests to analytics endpoints must return a `403 Forbidden` response.
-  * **Developer Metrics:** Stop collecting generic metrics and focus on performance telemetry:
-    * Vector search latency (dense vs. sparse steps).
-    * Rerank processing latency.
-    * Model token throughput (tokens per second).
-    * Storage and memory consumption of Qdrant and PostgreSQL.
-    * User feedback ratios matched to query templates.
+### 2. RBAC Foundation + Admin Analytics
+* Add `User.is_admin: bool` (or a minimal `Role` enum) seeded via environment variables, CLI tools, or migration scripts. **Specific personal emails must never be hardcoded in the codebase.**
+* Gate `/analytics` endpoints behind a new `is_admin` attribute check, returning `403 Forbidden` for non-admin users.
+* Implement this check as a reusable FastAPI dependency (e.g. `Depends(require_admin)`). This creates the foundational role check module to be reused in Phase 4 (Workspace Sharing).
+* Telemetry targets: dense/sparse search latency, cross-encoder rerank latency, token throughput per second, DB connection pool health, and thumbs-up/thumbs-down ratio stats matched to query templates.
 
-### 3. Multi-Format & Audio Document Ingestion
-Extend the ingestion engine to process documents beyond standard PDFs and basic TXT files.
-* **Requirements:**
-  * **Audio Ingestion:** Add Whisper (or similar local/cloud transcribe APIs) to process audio files (`.mp3`, `.wav`, `.m4a`) and automatically parse their text transcripts into Qdrant vector spaces.
-  * **Structured Data:** Add native parsers for `.csv`, `.xlsx`, and `.json` to ingest tabular data with row/column context retention.
-  * **Rich Text formats:** Support `.docx`, `.md`, and `.html` formatting rules.
+### 3a. Ingestion: Rich Text Formats
+* Support `.docx`, `.md`, and `.html` files.
+* Reuse the text extraction patterns (like `extract_text_from_docx`) in `pdf_parser.py`.
+* Highest-ratio value for lowest risk: scheduled as the first item of the ingestion overhaul.
 
-### 4. Workspace Sharing & Collaboration
-Elevate spaces from single-user environments to team-based workspaces.
-* **Requirements:**
-  * Add a `SpaceMember` join table linking users to spaces with distinct access roles (e.g., Owner, Editor, Viewer).
-  * Update database query filters from `user_id == current_user.id` to verify membership in the requested `space_id`.
-  * Support live collaborative RAG chats and shared knowledge base modifications.
+### 3b. Ingestion: Structured Data
+* Support `.csv`, `.xlsx`, and `.json` files.
+* Replace `RecursiveCharacterTextSplitter` with a **row-grouped parser** that chunks tables into logical rows while prefixing or injecting header/column metadata into every chunk to preserve table structure.
+* Scope MVP retrieval to standard row-group semantic matching (no natural language text-to-SQL execution in v1).
 
-### 5. Multimodal Vision RAG & OCR Ingestion
-Support documents with rich visual structures such as slide presentations, scanned documents, and embedded charts.
-* **Requirements:**
-  * Integrate an OCR parser (e.g., Tesseract or cloud Vision API) to extract text from image-only PDFs and standalone image uploads (`.png`, `.jpg`).
-  * Process presentation slides (`.pptx`) by treating each slide as a standalone visual/textual chunk.
-  * Store image summaries alongside dense vector embeddings to match user queries to graphical content.
+### 3c. Ingestion: Vision/OCR
+* Support images (`.png`, `.jpg`) and scanned image-only PDFs using OCR (e.g. Tesseract or cloud Vision APIs).
+* Support presentations (`.pptx`) by chunking slides individually.
+* **MVP Strategy:** Process images using a vision model (e.g. Llama-3-Vision) to generate a textual caption/summary, and insert the caption text into the existing dense vector collection using `nomic-embed-text`. CLIP-style multimodal vector spaces are deferred.
+
+### 3d. Ingestion: Audio Transcription
+* Support `.mp3`, `.wav`, and `.m4a` files using Whisper APIs or local Whisper models.
+* Add a `TRANSCRIBING` status to the backend file ingestion state machine.
+* Raise client-side polling timeouts in `useChat.ts` (`MAX_POLL_TIME_MS`) to account for longer audio transcribing times.
+
+### 4. Workspace Sharing — Static Membership
+* Introduce a `SpaceMember(space_id, user_id, role)` table mapping membership with roles (`Owner`, `Editor`, `Viewer`).
+* Refactor database query checks in `chat.py`, `upload.py`, `spaces.py`, `sessions.py`, and `vector_service.py` to check for active workspace membership instead of single ownership (`Space.user_id == current_user.id`).
+* **Data Migration:** Create a migration script that automatically populates the `SpaceMember` table by designating the current owner of every existing space as `Owner`.
+* Excludes simultaneous live typing collaboration in v1. Members share space chat history sequentially.
+
+### 5. Live Collaborative Chat (Icebox)
+* Support real-time chat sessions (concurrent streams, presence indicator, cursor tracking, and collaborative state synchronization via WebSockets).
+* Deferred to the Icebox; to be implemented only if Phase 4 telemetry reveals team demand for simultaneous RAG editing sessions.
