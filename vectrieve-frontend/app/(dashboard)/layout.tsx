@@ -19,7 +19,7 @@ import { Cpu, Cloud, GraduationCap, ShieldCheck, Lock } from "lucide-react"
 
 // Extracted header to use context
 function DashboardHeader() {
-  const { computeMode, setComputeMode, aiPersona, setAiPersona, activeSpace } = useGlobalSettings()
+  const { computeMode, setComputeMode, aiPersona, setAiPersona, isComputeModeLocked } = useGlobalSettings()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -36,16 +36,16 @@ function DashboardHeader() {
       <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
         {mounted && (
           <>
-            <Select value={computeMode} onValueChange={setComputeMode} disabled={!!activeSpace?.llm_provider}>
+            <Select value={computeMode} onValueChange={setComputeMode} disabled={isComputeModeLocked}>
               <SelectTrigger 
                 aria-label="Select Environment" 
                 className={`h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200 ${
-                  activeSpace?.llm_provider ? "opacity-80 cursor-not-allowed" : ""
+                  isComputeModeLocked ? "opacity-80 cursor-not-allowed" : ""
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <SelectValue placeholder="Environment" />
-                  {activeSpace?.llm_provider && (
+                  {isComputeModeLocked && (
                     <Lock className="w-2.5 h-2.5 text-zinc-500 shrink-0" />
                   )}
                 </div>
@@ -100,31 +100,31 @@ export default function DashboardLayout({
 }) {
   return (
     <GlobalSettingsProvider>
-      <SidebarProvider>
-      {/* The Sidebar component automatically handles its own width transitions */}
-      <AppSidebar />
-      
-      {/* 
-        SidebarInset acts as the flexible container that reacts to the Sidebar's state. 
-        It is structured as a strict column to manage vertical real estate perfectly.
-      */}
-      <SidebarInset className="flex flex-col h-screen min-w-0 bg-zinc-950">
-        
-        <Suspense fallback={<div className="h-[65px] shrink-0 border-b border-white/5 bg-zinc-900/10" />}>
-          <DashboardHeader />
-        </Suspense>
+      <Suspense fallback={<div className="h-screen w-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading Vectrieve...</div>}>
+        <SidebarProvider>
+          {/* The Sidebar component automatically handles its own width transitions */}
+          <AppSidebar />
+          
+          {/* 
+            SidebarInset acts as the flexible container that reacts to the Sidebar's state. 
+            It is structured as a strict column to manage vertical real estate perfectly.
+          */}
+          <SidebarInset className="flex flex-col h-screen min-w-0 bg-zinc-950">
+            
+            <DashboardHeader />
 
-        {/* 
-          MAIN CONTENT AREA
-          Takes up remaining height (flex-1). Overflows internally to prevent the global 
-          window from scrolling. This is the exact container where Analytics, Settings, 
-          and the ChatArea will render.
-        */}
-        <main className="flex-1 overflow-hidden relative">
-          {children}
-        </main>
-      </SidebarInset>
-      </SidebarProvider>
+            {/* 
+              MAIN CONTENT AREA
+              Takes up remaining height (flex-1). Overflows internally to prevent the global 
+              window from scrolling. This is the exact container where Analytics, Settings, 
+              and the ChatArea will render.
+            */}
+            <main className="flex-1 overflow-hidden relative">
+              {children}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </Suspense>
     </GlobalSettingsProvider>
   )
 }
