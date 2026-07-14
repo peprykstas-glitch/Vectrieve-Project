@@ -4,7 +4,7 @@
 
 | Phase | Feature / Milestone | Complexity | Target Component | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | **Per-Space LLM Configuration** | Medium | Backend API / UI | `[ ] Backlog` |
+| 1 | **Per-Space LLM Configuration** | Medium | Backend API / UI | `[x] Completed` |
 | 2 | **RBAC Foundation + Admin Analytics** | Medium | Auth / User model / UI | `[ ] Backlog` |
 | 3a | **Ingestion: Rich Text Formats** (docx/md/html) | Low | Parser Service | `[ ] Backlog` |
 | 3b | **Ingestion: Structured Data** (csv/xlsx/json) | Medium | Parser Service / Chunking | `[ ] Backlog` |
@@ -22,6 +22,7 @@
 * Configure hyperparameters (temperature, max_tokens, top_p) per space.
 * **Core Rule Configuration:** Space-level settings act as **hard limits** for provider/model selection (preventing unauthorized cost surprises or security risks), and **soft defaults** for temperature/max_tokens (allowing override per-query via `QueryRequest` if needed).
 * Store settings in the `Space` table and load them dynamically during LLM RAG prompt generation (`_prepare_rag_context`).
+* **Technical Debt / Future Improvement:** Currently, model-provider compatibility is validated using exact match lists and suffix/prefix heuristics to prevent blocking custom/new models (Option 1). Future iterations should implement dynamic validation (Option 2) by querying `ollama_client.list()` for local models and `groq_client.models.list()` for cloud models to verify existence in real-time.
 
 ### 2. RBAC Foundation + Admin Analytics
 * Add `User.is_admin: bool` (or a minimal `Role` enum) seeded via environment variables, CLI tools, or migration scripts. **Specific personal emails must never be hardcoded in the codebase.**
