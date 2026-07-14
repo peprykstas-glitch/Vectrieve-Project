@@ -299,33 +299,43 @@ async def handle_query(
         content=response_text,
         sources=json.dumps(sources_data) if sources_data else None
     )
-    # Retrieve telemetry metrics
-    metrics = rag_telemetry.get() or {"dense_latency": 0.0, "sparse_latency": 0.0, "rerank_latency": 0.0}
-    dense_latency = metrics.get("dense_latency", 0.0)
-    sparse_latency = metrics.get("sparse_latency", 0.0)
-    rerank_latency = metrics.get("rerank_latency", 0.0)
-    tokens_generated = len(response_text) // 4
-    tokens_per_second = tokens_generated / llm_latency if llm_latency > 0 else 0.0
-
-    from models.telemetry_log import TelemetryLog
-    telemetry_entry = TelemetryLog(
-        query_id=query_id,
-        user_id=current_user.id,
-        dense_latency=dense_latency,
-        sparse_latency=sparse_latency,
-        rerank_latency=rerank_latency,
-        llm_latency=llm_latency,
-        total_latency=latency,
-        tokens_generated=tokens_generated,
-        tokens_per_second=tokens_per_second
-    )
-    session.add(telemetry_entry)
+    session.add(ai_msg_db)
     await session.commit()
 
     if is_new_session:
         background_tasks.add_task(
             generate_chat_title_background, session_id, user_query, response_text
         )
+
+    # Log Telemetry in a best-effort, non-blocking way
+    try:
+        metrics = rag_telemetry.get() or {"dense_latency": 0.0, "sparse_latency": 0.0, "rerank_latency": 0.0}
+        dense_latency = metrics.get("dense_latency", 0.0)
+        sparse_latency = metrics.get("sparse_latency", 0.0)
+        rerank_latency = metrics.get("rerank_latency", 0.0)
+        tokens_generated = len(response_text) // 4
+        tokens_per_second = tokens_generated / llm_latency if llm_latency > 0 else 0.0
+
+        from models.telemetry_log import TelemetryLog
+        from core.database import get_session_factory
+        session_factory = get_session_factory()
+        async with session_factory() as db:
+            telemetry_entry = TelemetryLog(
+                query_id=query_id,
+                user_id=current_user.id,
+                dense_latency=dense_latency,
+                sparse_latency=sparse_latency,
+                rerank_latency=rerank_latency,
+                llm_latency=llm_latency,
+                total_latency=latency,
+                tokens_generated=tokens_generated,
+                tokens_per_second=tokens_per_second
+            )
+            db.add(telemetry_entry)
+            await db.commit()
+    except Exception as telemetry_err:
+        import logging
+        logging.getLogger(__name__).warning(f"⚠️ Telemetry logging failed (non-blocking): {telemetry_err}")
 
     return QueryResponse(
         response_text=response_text,
@@ -406,11 +416,12 @@ async def handle_query_stream(
             yield f"data: {error_event}\n\n"
             return
 
-        # --- Post-stream: Persist AI response & schedule title generation ---
+        # --- Post-stream: Persist AI response ---
         response_text = "".join(full_response)
         try:
-            async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-            async with async_session_factory() as db:
+            from core.database import get_session_factory
+            session_factory = get_session_factory()
+            async with session_factory() as db:
                 ai_msg_db = ChatHistory(
                     session_id=session_id,
                     user_id=current_user.id,
@@ -419,17 +430,24 @@ async def handle_query_stream(
                     sources=json.dumps(sources_data) if sources_data else None
                 )
                 db.add(ai_msg_db)
+                await db.commit()
+        except Exception as e:
+            print(f"⚠️ Failed to persist streamed AI response: {e}")
 
-                # Log Telemetry for streaming query inside same session
-                latency = time.time() - start_time
-                metrics = rag_telemetry.get() or {"dense_latency": 0.0, "sparse_latency": 0.0, "rerank_latency": 0.0}
-                dense_latency = metrics.get("dense_latency", 0.0)
-                sparse_latency = metrics.get("sparse_latency", 0.0)
-                rerank_latency = metrics.get("rerank_latency", 0.0)
-                tokens_generated = len(response_text) // 4
-                tokens_per_second = tokens_generated / llm_latency if llm_latency > 0 else 0.0
+        # Log Telemetry for streaming query inside separate session (best-effort)
+        try:
+            latency = time.time() - start_time
+            metrics = rag_telemetry.get() or {"dense_latency": 0.0, "sparse_latency": 0.0, "rerank_latency": 0.0}
+            dense_latency = metrics.get("dense_latency", 0.0)
+            sparse_latency = metrics.get("sparse_latency", 0.0)
+            rerank_latency = metrics.get("rerank_latency", 0.0)
+            tokens_generated = len(response_text) // 4
+            tokens_per_second = tokens_generated / llm_latency if llm_latency > 0 else 0.0
 
-                from models.telemetry_log import TelemetryLog
+            from models.telemetry_log import TelemetryLog
+            from core.database import get_session_factory
+            session_factory = get_session_factory()
+            async with session_factory() as db:
                 telemetry_entry = TelemetryLog(
                     query_id=query_id,
                     user_id=current_user.id,
@@ -442,10 +460,10 @@ async def handle_query_stream(
                     tokens_per_second=tokens_per_second
                 )
                 db.add(telemetry_entry)
-                
                 await db.commit()
-        except Exception as e:
-            print(f"⚠️ Failed to persist streamed AI response/telemetry: {e}")
+        except Exception as telemetry_err:
+            import logging
+            logging.getLogger(__name__).warning(f"⚠️ Stream telemetry logging failed (non-blocking): {telemetry_err}")
 
         if is_new_session and response_text:
             background_tasks.add_task(

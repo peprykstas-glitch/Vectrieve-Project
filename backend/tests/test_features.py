@@ -215,6 +215,11 @@ async def test_upload_document(client: AsyncClient):
 
 
 async def test_chat_query_with_attached_filenames(client: AsyncClient, test_session, mock_vector_service):
+    from models.document import Document
+    doc = Document(filename="attached_doc.pdf", status="COMPLETED", user_id=1, file_size=1024, chunk_count=5)
+    test_session.add(doc)
+    await test_session.commit()
+
     query_payload = {
         "messages": [{"role": "user", "content": "Explain this file!"}],
         "thinking_mode": "mentor",

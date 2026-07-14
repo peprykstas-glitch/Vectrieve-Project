@@ -15,6 +15,10 @@ from core.database import get_session
 # In-memory database for testing
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+
+import core.database
+core.database.engine = test_engine
+
 TestingSessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=test_engine, class_=AsyncSession, expire_on_commit=False
 )
