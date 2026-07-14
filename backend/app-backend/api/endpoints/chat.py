@@ -38,6 +38,27 @@ async def generate_chat_title_background(session_id: str, user_query: str, ai_re
         print(f"Error generating title: {e}")
 
 
+def _resolve_llm_config(request: QueryRequest, space) -> None:
+    # --- Hard limits: space provider/model constraints cannot be bypassed ---
+    if space and space.llm_provider:
+        request.mode = space.llm_provider
+    elif request.mode is None:
+        request.mode = "cloud"  # system default
+
+    if space and space.llm_model:
+        request.model = space.llm_model
+
+    # --- Soft defaults: client request values override space values ---
+    if request.temperature is None:
+        request.temperature = space.temperature if (space and space.temperature is not None) else None
+
+    if request.max_tokens is None:
+        request.max_tokens = space.max_tokens if (space and space.max_tokens is not None) else None
+
+    if request.top_p is None:
+        request.top_p = space.top_p if (space and space.top_p is not None) else None
+
+
 async def _prepare_rag_context(
     request: QueryRequest,
     current_user: User,
@@ -59,6 +80,8 @@ async def _prepare_rag_context(
         space = space_res.scalar_one_or_none()
         if not space:
             raise HTTPException(status_code=404, detail="Space not found or access denied.")
+
+    _resolve_llm_config(request, space)
 
     if request.session_id:
         session_id = request.session_id

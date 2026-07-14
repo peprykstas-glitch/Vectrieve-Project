@@ -376,3 +376,56 @@ async def test_space_isolation_end_to_end(client: AsyncClient, test_session):
             assert empty_cond.is_empty.key == "space_id"
 
 
+async def test_resolve_llm_config():
+    from models.schemas import QueryRequest, ChatMessage
+    from models.sql_models import Space
+    from api.endpoints.chat import _resolve_llm_config
+
+    # Test 1: Fallback to defaults when no space is selected and query request is empty
+    req1 = QueryRequest(
+        messages=[ChatMessage(role="user", content="hello")]
+    )
+    _resolve_llm_config(req1, space=None)
+    assert req1.mode == "cloud"
+    assert req1.model is None
+    assert req1.temperature is None
+    assert req1.max_tokens is None
+    assert req1.top_p is None
+
+    # Test 2: Space config hard limits override client request limits
+    space_w_limits = Space(
+        id="space-id",
+        name="Space with limits",
+        user_id=1,
+        llm_provider="local",
+        llm_model="llama-local-7b",
+        temperature=0.7,
+        max_tokens=500
+    )
+    
+    req2 = QueryRequest(
+        messages=[ChatMessage(role="user", content="hello")],
+        mode="cloud",
+        model="gpt-4"
+    )
+    _resolve_llm_config(req2, space=space_w_limits)
+    assert req2.mode == "local"
+    assert req2.model == "llama-local-7b"
+    assert req2.temperature == 0.7
+    assert req2.max_tokens == 500
+
+    # Test 3: Client overrides space soft defaults
+    req3 = QueryRequest(
+        messages=[ChatMessage(role="user", content="hello")],
+        temperature=0.9,
+        max_tokens=150,
+        top_p=0.95
+    )
+    _resolve_llm_config(req3, space=space_w_limits)
+    assert req3.mode == "local"
+    assert req3.model == "llama-local-7b"
+    assert req3.temperature == 0.9
+    assert req3.max_tokens == 150
+    assert req3.top_p == 0.95
+
+

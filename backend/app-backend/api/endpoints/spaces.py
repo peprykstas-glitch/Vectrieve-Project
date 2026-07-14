@@ -37,11 +37,16 @@ async def create_space(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new space."""
+    llm_config_data = {}
+    if body.llm_config:
+        llm_config_data = body.llm_config.model_dump(exclude_unset=True)
+
     space = Space(
         id=str(uuid.uuid4()),
         name=body.name,
         system_prompt=body.system_prompt,
         user_id=current_user.id,
+        **llm_config_data
     )
     session.add(space)
     await session.commit()
@@ -67,6 +72,10 @@ async def update_space(
         space.name = body.name
     if body.system_prompt is not None:
         space.system_prompt = body.system_prompt
+    if body.llm_config is not None:
+        config_dict = body.llm_config.model_dump(exclude_unset=True)
+        for k, v in config_dict.items():
+            setattr(space, k, v)
 
     session.add(space)
     await session.commit()

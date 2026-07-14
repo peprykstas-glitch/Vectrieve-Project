@@ -3,6 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
+import { useGlobalSettings, Space } from "@/components/global-settings"
 import { 
   BrainCircuit, 
   MessageSquare, 
@@ -217,14 +218,8 @@ function UserCard() {
   )
 }
 
-interface Space {
-  id: string
-  name: string
-  system_prompt?: string
-}
-
 function SpaceSwitcher() {
-  const [spaces, setSpaces] = React.useState<Space[]>([])
+  const { spaces, fetchSpaces, activeSpace: currentSpace } = useGlobalSettings()
   const [isOpen, setIsOpen] = React.useState(false)
   const [newSpaceName, setNewSpaceName] = React.useState("")
   const [newSpacePrompt, setNewSpacePrompt] = React.useState("")
@@ -233,21 +228,6 @@ function SpaceSwitcher() {
   const pathname = usePathname()
   
   const currentSpaceId = searchParams.get('space')
-  
-  const fetchSpaces = React.useCallback(async () => {
-    try {
-      const data = await apiClient<Space[]>('/spaces')
-      setSpaces(data)
-    } catch (e) {
-      console.error("Failed to load spaces", e)
-    }
-  }, [])
-  
-  React.useEffect(() => {
-    fetchSpaces()
-  }, [fetchSpaces])
-  
-  const currentSpace = spaces.find(s => s.id === currentSpaceId)
   
   const handleSelectSpace = (id: string | null) => {
     setIsOpen(false)

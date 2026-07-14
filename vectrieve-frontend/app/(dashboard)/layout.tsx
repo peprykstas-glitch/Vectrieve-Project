@@ -15,11 +15,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import { Cpu, Cloud, GraduationCap, ShieldCheck } from "lucide-react"
+import { Cpu, Cloud, GraduationCap, ShieldCheck, Lock } from "lucide-react"
 
 // Extracted header to use context
 function DashboardHeader() {
-  const { computeMode, setComputeMode, aiPersona, setAiPersona } = useGlobalSettings()
+  const { computeMode, setComputeMode, aiPersona, setAiPersona, activeSpace } = useGlobalSettings()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -36,9 +36,19 @@ function DashboardHeader() {
       <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
         {mounted && (
           <>
-            <Select value={computeMode} onValueChange={setComputeMode}>
-              <SelectTrigger aria-label="Select Environment" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200">
-                <SelectValue placeholder="Environment" />
+            <Select value={computeMode} onValueChange={setComputeMode} disabled={!!activeSpace?.llm_provider}>
+              <SelectTrigger 
+                aria-label="Select Environment" 
+                className={`h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200 ${
+                  activeSpace?.llm_provider ? "opacity-80 cursor-not-allowed" : ""
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <SelectValue placeholder="Environment" />
+                  {activeSpace?.llm_provider && (
+                    <Lock className="w-2.5 h-2.5 text-zinc-500 shrink-0" />
+                  )}
+                </div>
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-white/10 rounded-xl shadow-2xl">
                 <SelectItem value="cloud" className="text-xs text-zinc-300 focus:bg-zinc-800">

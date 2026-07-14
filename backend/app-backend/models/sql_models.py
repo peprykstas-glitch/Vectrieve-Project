@@ -11,6 +11,13 @@ class Space(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+    # --- Phase 1: Per-Space LLM Configuration ---
+    llm_provider: Optional[str] = Field(default=None)
+    llm_model: Optional[str] = Field(default=None)
+    temperature: Optional[float] = Field(default=None)
+    max_tokens: Optional[int] = Field(default=None)
+    top_p: Optional[float] = Field(default=None)
+
 
 class ChatSession(SQLModel, table=True):
     id: str = Field(primary_key=True)
