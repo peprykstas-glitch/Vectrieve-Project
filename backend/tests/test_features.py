@@ -554,6 +554,15 @@ async def test_pdf_summary_respects_space_hard_limit():
     assert fake_req.mode == "local"
 
 
+async def test_sample_chunks_respects_char_budget():
+    from services.pdf_parser import _sample_chunks
+    huge_chunks = ["A" * 1000] * 10  # 10 chunks of 1000 chars
+    result = _sample_chunks(huge_chunks, n=8, max_chars=3000)
+    assert sum(len(c) for c in result) <= 3000
+    assert len(result) >= 1  # backstop should not strip everything
+
+
+
 
 
 
