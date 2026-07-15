@@ -542,11 +542,18 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
                     )
 
             elif isinstance(text_or_chunks, ScannedPDFPayload):
-                # Scanned PDF: one chunk per page (capped at MAX_OCR_PAGES)
-                chunks = await process_scanned_pdf(
+                # Scanned PDF: one chunk per page (capped at MAX_OCR_PAGES).
+                # process_scanned_pdf returns (chunks, truncation_warning);
+                # if the file was truncated, we write the warning to doc.error_log
+                # so the user sees it in the UI — same visibility as FAILED messages.
+                chunks, _truncation_warning = await process_scanned_pdf(
                     text_or_chunks.file_bytes, filename,
                     _llm_svc, _vision_req.mode, _vision_req.model
                 )
+                if _truncation_warning:
+                    doc.error_log = _truncation_warning
+                    session.add(doc)
+                    await session.commit()
                 if not chunks:
                     raise ValueError(
                         f"Vision pipeline returned no content for scanned PDF '{filename}'. "

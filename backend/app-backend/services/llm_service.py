@@ -419,6 +419,14 @@ Examples:
     ) -> str:
         """
         Call a locally-running Ollama vision model (e.g. llava, llama3.2-vision).
+
+        IMPORTANT: Ollama vision API is structurally different from Groq/OpenAI:
+          - Groq expects:  messages[i].content = [{"type": "image_url", ...}, {"type": "text", ...}]
+          - Ollama expects: messages[i].images = [base64_str], messages[i].content = "text prompt"
+
+        We convert from the Groq-format messages built in describe_image() to
+        the Ollama-native format here — the two must never be mixed.
+
         Creates a fresh Client in a worker thread — same pattern as _run_local —
         to avoid httpx.Client event-loop conflicts in ollama v0.6+.
         """
@@ -430,10 +438,30 @@ Examples:
         # Common vision models: llava, llava:13b, llama3.2-vision, moondream
         model = model_name or "llava"
 
+        # Convert Groq-format content blocks → Ollama-native images + content text
+        ollama_messages = []
+        for msg in messages:
+            content_blocks = msg.get("content", [])
+            if isinstance(content_blocks, list):
+                text_parts = [b["text"] for b in content_blocks if b.get("type") == "text"]
+                image_parts = [
+                    b["image_url"]["url"].split(",", 1)[1]  # strip "data:image/jpeg;base64,"
+                    for b in content_blocks
+                    if b.get("type") == "image_url"
+                ]
+                ollama_messages.append({
+                    "role": msg["role"],
+                    "content": " ".join(text_parts),
+                    "images": image_parts,
+                })
+            else:
+                # Plain text message — pass through unchanged
+                ollama_messages.append(msg)
+
         def _sync_call():
             from ollama import Client
             client = Client(host=ollama_host)
-            return client.chat(model=model, messages=messages)
+            return client.chat(model=model, messages=ollama_messages)
 
         # 5-minute timeout — vision inference is significantly slower than text
         response = await asyncio.wait_for(

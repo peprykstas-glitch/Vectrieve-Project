@@ -11,6 +11,8 @@ Provides:
   - process_scanned_pdf — renders each page of a scanned PDF with pypdfium2
     (pure-Python, no Poppler required) and calls describe_image_bytes per page,
     capped at MAX_OCR_PAGES to prevent indefinite background-task hangs.
+    Returns (chunks, truncation_warning) — warning is non-None when the file
+    was truncated, so the caller can write it to doc.error_log / UI.
 """
 
 from __future__ import annotations
@@ -18,14 +20,15 @@ from __future__ import annotations
 import io
 import pypdfium2 as pdfium
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 if TYPE_CHECKING:
     from services.llm_service import LLMService
 
 # ---------------------------------------------------------------------------
 # Hard limit — prevents a 200-page scanned PDF from running the background
-# task for hours. Pages beyond this limit are silently dropped with a warning.
+# task for hours. Pages beyond this limit are dropped with an explicit warning
+# written to doc.error_log so the user knows the document was truncated.
 # ---------------------------------------------------------------------------
 MAX_OCR_PAGES = 30
 
@@ -88,7 +91,7 @@ async def process_scanned_pdf(
     llm_service: "LLMService",
     mode: str,
     model_name: Optional[str],
-) -> List[str]:
+) -> Tuple[List[str], Optional[str]]:
     """
     Render each page of a scanned PDF to JPEG with pypdfium2 and describe it
     via vision LLM.
@@ -96,19 +99,25 @@ async def process_scanned_pdf(
     pypdfium2 is a pure-Python binding to PDFium — no Poppler system package
     required, works on Windows/Linux/macOS without extra setup.
 
-    Pages beyond MAX_OCR_PAGES are truncated with a log warning.
+    Returns (chunks, truncation_warning):
+      - chunks: List of text chunks, one per successfully described page.
+      - truncation_warning: non-None string if the file exceeded MAX_OCR_PAGES;
+        the caller should write this to doc.error_log so the user is informed.
+
     Individual page failures are skipped (best-effort); the document still
     gets indexed with whatever pages succeeded.
     """
-
     doc = pdfium.PdfDocument(file_bytes)
     total_pages = len(doc)
+    truncation_warning: Optional[str] = None
 
     if total_pages > MAX_OCR_PAGES:
-        print(
-            f"⚠️ '{filename}': {total_pages} pages exceeds MAX_OCR_PAGES={MAX_OCR_PAGES}. "
-            f"Only the first {MAX_OCR_PAGES} pages will be processed."
+        truncation_warning = (
+            f"⚠️ Document truncated: processed {MAX_OCR_PAGES} of {total_pages} pages "
+            f"due to size limits (MAX_OCR_PAGES={MAX_OCR_PAGES}). "
+            f"The remaining {total_pages - MAX_OCR_PAGES} pages were not indexed."
         )
+        print(f"⚠️ '{filename}': {truncation_warning}")
         page_indices = range(MAX_OCR_PAGES)
     else:
         page_indices = range(total_pages)
@@ -122,9 +131,9 @@ async def process_scanned_pdf(
 
         buf = io.BytesIO()
         pil_image.save(buf, format="JPEG", quality=85)
-        image_bytes = buf.getvalue()
+        image_bytes_page = buf.getvalue()
 
-        description = await describe_image_bytes(image_bytes, llm_service, mode, model_name)
+        description = await describe_image_bytes(image_bytes_page, llm_service, mode, model_name)
         if description:
             chunks.append(
                 f"=== Source File: {filename} (Page {i + 1}) ===\n"
@@ -132,4 +141,4 @@ async def process_scanned_pdf(
             )
 
     doc.close()
-    return chunks
+    return chunks, truncation_warning

@@ -390,7 +390,7 @@ def test_process_scanned_pdf_page_limit(tmp_path):
 
     with patch("services.vision_pipeline.pdfium") as mock_pdfium:
         mock_pdfium.PdfDocument.return_value = mock_doc
-        chunks = asyncio.run(
+        chunks, truncation_warning = asyncio.run(
             process_scanned_pdf(b"fake_pdf", "scan.pdf", mock_llm, "cloud", None)
         )
 
@@ -399,3 +399,6 @@ def test_process_scanned_pdf_page_limit(tmp_path):
     )
     for chunk in chunks:
         assert "Source File: scan.pdf" in chunk
+    # Truncation warning must be non-None and mention page counts
+    assert truncation_warning is not None
+    assert "30 of 35" in truncation_warning
