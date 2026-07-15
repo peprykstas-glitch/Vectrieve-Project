@@ -158,10 +158,37 @@ def extract_text_from_html(file_bytes: bytes) -> str:
     return parser.get_text().strip()
 
 
+def _group_rows_with_char_budget(
+    rows: List[str], header_prefix: str, rows_per_group: int = 10, max_chars: int = 2500
+) -> List[str]:
+    """
+    Groups formatted row strings into chunks, respecting BOTH a row-count cap
+    and a hard character budget — a single verbose row (long text cell) must
+    not be allowed to blow the embedding model's context window.
+    """
+    groups: List[str] = []
+    current: List[str] = []
+    current_len = len(header_prefix)
+
+    for row in rows:
+        row_len = len(row) + 1  # count newline
+        would_exceed = current_len + row_len > max_chars
+        at_row_cap = len(current) >= rows_per_group
+        if current and (would_exceed or at_row_cap):
+            groups.append(header_prefix + "\n".join(current))
+            current = []
+            current_len = len(header_prefix)
+        current.append(row)
+        current_len += row_len
+
+    if current:
+        groups.append(header_prefix + "\n".join(current))
+    return groups
+
+
 def parse_csv_to_chunks(file_path: Path, filename: str) -> List[str]:
     import csv
     
-    chunks = []
     try:
         # Detect encoding safely
         file_bytes = file_path.read_bytes()
@@ -190,23 +217,15 @@ def parse_csv_to_chunks(file_path: Path, filename: str) -> List[str]:
     if not data_rows:
         return [f"Table: {filename}\nColumns: {' | '.join(headers)}\nNo data rows."]
 
-    group_size = 10
-    for i in range(0, len(data_rows), group_size):
-        group = data_rows[i:i+group_size]
-        chunk_lines = [
-            f"=== Source File: {filename} ===",
-            f"Format: Table Row Group (Rows {i+1} to {i+len(group)})",
-            f"Columns: {' | '.join(headers)}",
-            "---"
-        ]
-        for idx, row in enumerate(group):
-            row_num = i + 1 + idx
-            row_str = " | ".join(val.strip() for val in row)
-            chunk_lines.append(f"Row {row_num}: {row_str}")
-        
-        chunks.append("\n".join(chunk_lines))
-        
-    return chunks
+    header_prefix = f"=== Source File: {filename} ===\nFormat: Table Row Group\nColumns: {' | '.join(headers)}\n---\n"
+    
+    formatted_rows = []
+    for idx, row in enumerate(data_rows):
+        row_num = idx + 1
+        row_str = " | ".join(val.strip() for val in row)
+        formatted_rows.append(f"Row {row_num}: {row_str}")
+
+    return _group_rows_with_char_budget(formatted_rows, header_prefix, rows_per_group=10, max_chars=2500)
 
 
 def parse_excel_to_chunks(file_path: Path, filename: str) -> List[str]:
@@ -231,27 +250,22 @@ def parse_excel_to_chunks(file_path: Path, filename: str) -> List[str]:
             chunks.append(f"Table: {filename} (Sheet: {sheet_name})\nColumns: {' | '.join(headers)}\nNo data rows.")
             continue
             
-        group_size = 10
-        for i in range(0, len(data_rows), group_size):
-            group = data_rows[i:i+group_size]
-            chunk_lines = [
-                f"=== Source File: {filename} (Sheet: {sheet_name}) ===",
-                f"Format: Table Row Group (Rows {i+1} to {i+len(group)})",
-                f"Columns: {' | '.join(headers)}",
-                "---"
-            ]
-            for idx, row in enumerate(group):
-                row_num = i + 1 + idx
-                row_cells = []
-                for val in row:
-                    if pd.isna(val):
-                        row_cells.append("")
-                    else:
-                        row_cells.append(str(val).strip())
-                row_str = " | ".join(row_cells)
-                chunk_lines.append(f"Row {row_num}: {row_str}")
-            
-            chunks.append("\n".join(chunk_lines))
+        header_prefix = f"=== Source File: {filename} (Sheet: {sheet_name}) ===\nFormat: Table Row Group\nColumns: {' | '.join(headers)}\n---\n"
+        
+        formatted_rows = []
+        for idx, row in enumerate(data_rows):
+            row_num = idx + 1
+            row_cells = []
+            for val in row:
+                if pd.isna(val):
+                    row_cells.append("")
+                else:
+                    row_cells.append(str(val).strip())
+            row_str = " | ".join(row_cells)
+            formatted_rows.append(f"Row {row_num}: {row_str}")
+
+        sheet_chunks = _group_rows_with_char_budget(formatted_rows, header_prefix, rows_per_group=10, max_chars=2500)
+        chunks.extend(sheet_chunks)
             
     return chunks
 
@@ -276,22 +290,17 @@ def parse_json_to_chunks(file_path: Path, filename: str) -> List[str]:
                     keys_set.append(k)
         
         headers = keys_set
-        group_size = 10
-        for i in range(0, len(json_data), group_size):
-            group = json_data[i:i+group_size]
-            chunk_lines = [
-                f"=== Source File: {filename} ===",
-                f"Format: JSON Record Group (Records {i+1} to {i+len(group)})",
-                f"Columns: {' | '.join(headers)}",
-                "---"
-            ]
-            for idx, item in enumerate(group):
-                record_num = i + 1 + idx
-                row_cells = [str(item.get(k, "")).strip() for k in headers]
-                row_str = " | ".join(row_cells)
-                chunk_lines.append(f"Record {record_num}: {row_str}")
-                
-            chunks.append("\n".join(chunk_lines))
+        header_prefix = f"=== Source File: {filename} ===\nFormat: JSON Record Group\nColumns: {' | '.join(headers)}\n---\n"
+        
+        formatted_rows = []
+        for idx, item in enumerate(json_data):
+            record_num = idx + 1
+            row_cells = [str(item.get(k, "")).strip() for k in headers]
+            row_str = " | ".join(row_cells)
+            formatted_rows.append(f"Record {record_num}: {row_str}")
+            
+        list_chunks = _group_rows_with_char_budget(formatted_rows, header_prefix, rows_per_group=10, max_chars=2500)
+        chunks.extend(list_chunks)
             
     elif isinstance(json_data, dict):
         for key, val in json_data.items():
@@ -394,7 +403,7 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str]]:
     if filename.lower().endswith('.csv'):
         return parse_csv_to_chunks(file_path, filename)
 
-    if filename.lower().endswith(('.xlsx', '.xls')):
+    if filename.lower().endswith('.xlsx'):
         return parse_excel_to_chunks(file_path, filename)
 
     if filename.lower().endswith('.json'):
@@ -408,7 +417,7 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str]]:
             continue
 
     raise ValueError(
-        "Unsupported binary file format. Only PDF, PPTX, DOCX, EPUB, HTML, CSV, Excel, JSON, Markdown, and text files are supported."
+        "Unsupported binary file format. Only PDF, PPTX, DOCX, EPUB, HTML, CSV, XLSX, JSON, Markdown, and text files are supported."
     )
 
 

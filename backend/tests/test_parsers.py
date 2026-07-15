@@ -250,3 +250,16 @@ def test_parse_file_sync_json_nested(tmp_path):
     keys = [c for c in chunks if "Key: settings" in c or "Key: users" in c]
     assert len(keys) == 2
 
+
+def test_group_rows_with_char_budget():
+    """_group_rows_with_char_budget splits records dynamically using a character limit."""
+    from services.pdf_parser import _group_rows_with_char_budget
+    rows = ["Row 1: " + "A" * 1000, "Row 2: " + "B" * 1000, "Row 3: " + "C" * 1000]
+    header = "Header\n---\n"
+    
+    result = _group_rows_with_char_budget(rows, header, rows_per_group=10, max_chars=2100)
+    assert len(result) == 2
+    assert result[0] == "Header\n---\nRow 1: " + "A" * 1000 + "\nRow 2: " + "B" * 1000
+    assert result[1] == "Header\n---\nRow 3: " + "C" * 1000
+
+
