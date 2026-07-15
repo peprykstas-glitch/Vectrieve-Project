@@ -188,37 +188,39 @@ def _group_rows_with_char_budget(
 
 def parse_csv_to_chunks(file_path: Path, filename: str) -> List[str]:
     import csv
-    
-    try:
-        # Detect encoding safely
-        file_bytes = file_path.read_bytes()
-        html_str = None
-        for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
-            try:
-                html_str = file_bytes.decode(encoding)
-                break
-            except UnicodeDecodeError:
-                continue
-        if html_str is None:
-            html_str = file_bytes.decode('latin-1', errors='ignore')
-            
-        reader = csv.reader(html_str.splitlines())
-        rows = list(reader)
-    except Exception as e:
-        print(f"Error reading CSV: {e}")
-        return [f"Error reading CSV file '{filename}': {str(e)}"]
+
+    # Detect encoding safely (no try/except wrapper — errors propagate to
+    # process_pdf_background which converts them to status=FAILED + error_log).
+    file_bytes = file_path.read_bytes()
+    csv_str = None
+    for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
+        try:
+            csv_str = file_bytes.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    if csv_str is None:
+        csv_str = file_bytes.decode('latin-1', errors='ignore')
+
+    # Use io.StringIO so that csv.reader sees the full raw string and can
+    # correctly handle quoted fields that contain embedded newlines, e.g.:
+    #   "Great guest.\nLeft a 5-star review."
+    # splitlines() would have destroyed that structure before csv.reader
+    # had a chance to process the quotes.
+    reader = csv.reader(io.StringIO(csv_str))
+    rows = list(reader)
 
     if not rows:
         return []
 
     headers = [col.strip() for col in rows[0]]
     data_rows = rows[1:]
-    
+
     if not data_rows:
         return [f"Table: {filename}\nColumns: {' | '.join(headers)}\nNo data rows."]
 
     header_prefix = f"=== Source File: {filename} ===\nFormat: Table Row Group\nColumns: {' | '.join(headers)}\n---\n"
-    
+
     formatted_rows = []
     for idx, row in enumerate(data_rows):
         row_num = idx + 1
@@ -230,13 +232,11 @@ def parse_csv_to_chunks(file_path: Path, filename: str) -> List[str]:
 
 def parse_excel_to_chunks(file_path: Path, filename: str) -> List[str]:
     import pandas as pd
-    
+
+    # No try/except wrapper — openpyxl errors propagate to process_pdf_background
+    # which converts them to status=FAILED + error_log (avoids fake-success chunks).
     chunks = []
-    try:
-        dict_dfs = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
-    except Exception as e:
-        print(f"Error reading Excel: {e}")
-        return [f"Error reading Excel file '{filename}': {str(e)}"]
+    dict_dfs = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
 
     for sheet_name, df in dict_dfs.items():
         df = df.dropna(how='all')
@@ -272,13 +272,11 @@ def parse_excel_to_chunks(file_path: Path, filename: str) -> List[str]:
 
 def parse_json_to_chunks(file_path: Path, filename: str) -> List[str]:
     import json
-    
-    try:
-        file_bytes = file_path.read_bytes()
-        json_data = json.loads(file_bytes.decode('utf-8', errors='ignore'))
-    except Exception as e:
-        print(f"Error reading JSON: {e}")
-        return [f"Error reading JSON file '{filename}': {str(e)}"]
+
+    # No try/except wrapper — JSON decode errors propagate to process_pdf_background
+    # which converts them to status=FAILED + error_log (avoids fake-success chunks).
+    file_bytes = file_path.read_bytes()
+    json_data = json.loads(file_bytes.decode('utf-8', errors='ignore'))
 
     chunks = []
     
@@ -413,7 +411,7 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str]]:
     for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
         try:
             return file_bytes.decode(encoding)
-        except (UnicodeDecodeError, Exception):
+        except UnicodeDecodeError:
             continue
 
     raise ValueError(

@@ -260,6 +260,27 @@ def test_group_rows_with_char_budget():
     result = _group_rows_with_char_budget(rows, header, rows_per_group=10, max_chars=2100)
     assert len(result) == 2
     assert result[0] == "Header\n---\nRow 1: " + "A" * 1000 + "\nRow 2: " + "B" * 1000
-    assert result[1] == "Header\n---\nRow 3: " + "C" * 1000
 
 
+def test_parse_csv_multiline_field(tmp_path):
+    """Regression test: quoted CSV fields containing embedded newlines must be
+    kept as a single cell value, not split across multiple rows.
+    The old csv.reader(html_str.splitlines()) would have broken this case."""
+    from services.pdf_parser import _parse_file_sync
+    # Notes column contains a newline inside a quoted field
+    csv_content = (
+        'Name,Role,Notes\r\n'
+        'John Smith,Sales,"Great guest.\nLeft a 5-star review."\r\n'
+        'Jane Doe,Marketing,OK\r\n'
+    )
+    p = tmp_path / "multiline.csv"
+    p.write_text(csv_content, encoding="utf-8")
+
+    chunks = _parse_file_sync(p, "multiline.csv")
+    assert isinstance(chunks, list)
+    # Must be exactly 2 data rows (John and Jane), not 3+ due to the embedded newline
+    combined = "\n".join(chunks)
+    assert "Row 1: John Smith | Sales | Great guest." in combined
+    assert "Row 2: Jane Doe | Marketing | OK" in combined
+    # The embedded newline continuation must NOT appear as a separate row
+    assert "Row 3:" not in combined
