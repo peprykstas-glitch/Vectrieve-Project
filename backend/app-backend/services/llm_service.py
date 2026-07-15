@@ -364,6 +364,85 @@ Examples:
             return f"⚠️ Local AI error: {str(e)}", "error"
 
 
+    async def describe_image(
+        self,
+        image_bytes: bytes,
+        mode: str = "cloud",
+        model_name: Optional[str] = None,
+        vision_prompt: str = (
+            "Describe all visible text, tables, diagrams, charts, and key visual "
+            "elements in this image in detail. If there is text, transcribe it exactly."
+        ),
+    ) -> str:
+        """
+        Send a single image to a vision-capable LLM and return a textual description.
+
+        Uses multimodal content blocks (image_url with base64 data URI) as required
+        by both Groq and Ollama Vision APIs.
+
+        IMPORTANT: This method deliberately bypasses _trim_history.
+        _trim_history calls len(msg.get("content", "")) which works only when
+        content is a str. Vision messages use content: list[dict], so calling
+        _trim_history on them would return wrong char counts. Since describe_image
+        is a single-turn, stateless call with no chat history, bypassing is correct.
+        """
+        import base64
+        b64 = base64.b64encode(image_bytes).decode("utf-8")
+        content = [
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+            {"type": "text", "text": vision_prompt},
+        ]
+        messages = [{"role": "user", "content": content}]
+
+        if mode == "local":
+            return await self._run_local_vision(messages, model_name)
+        else:
+            if not self.groq_client:
+                raise ValueError("Cloud mode selected but GROQ_API_KEY is missing.")
+            return await self._run_cloud_vision(messages, model_name)
+
+    async def _run_cloud_vision(
+        self, messages: list, model_name: Optional[str] = None
+    ) -> str:
+        # Default: Groq's best vision-capable model available on free tier.
+        # Supports Ukrainian/Polish text recognition without extra language packs.
+        model = model_name or "meta-llama/llama-4-scout-17b-16e-instruct"
+        completion = await self.groq_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=1024,
+        )
+        return completion.choices[0].message.content
+
+    async def _run_local_vision(
+        self, messages: list, model_name: Optional[str] = None
+    ) -> str:
+        """
+        Call a locally-running Ollama vision model (e.g. llava, llama3.2-vision).
+        Creates a fresh Client in a worker thread — same pattern as _run_local —
+        to avoid httpx.Client event-loop conflicts in ollama v0.6+.
+        """
+        if not self.ollama_available:
+            raise RuntimeError(
+                "Ollama package not installed. Cannot run local vision inference."
+            )
+        ollama_host = self._ollama_host
+        # Common vision models: llava, llava:13b, llama3.2-vision, moondream
+        model = model_name or "llava"
+
+        def _sync_call():
+            from ollama import Client
+            client = Client(host=ollama_host)
+            return client.chat(model=model, messages=messages)
+
+        # 5-minute timeout — vision inference is significantly slower than text
+        response = await asyncio.wait_for(
+            asyncio.to_thread(_sync_call),
+            timeout=300,
+        )
+        return response["message"]["content"]
+
+
 # --- Lazy singleton ---
 _llm_service: Optional[LLMService] = None
 

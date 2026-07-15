@@ -341,11 +341,16 @@ def parse_json_to_chunks(file_path: Path, filename: str) -> List[str]:
     return chunks
 
 
-def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str]]:
+def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "VisionPayload", "ScannedPDFPayload"]:
     """
-    Pure synchronous parser — reads file from disk and returns extracted text.
-    Designed to be called via asyncio.to_thread() so it never blocks the event loop.
+    Pure synchronous parser — reads file from disk and returns extracted text,
+    a List[str] of pre-built chunks, or a sentinel object for formats that
+    require async vision-LLM processing (images, scanned PDFs).
+
+    Sentinels (VisionPayload, ScannedPDFPayload) are handled by
+    process_pdf_background in the async context where llm_service is accessible.
     """
+    from services.vision_pipeline import VisionPayload, ScannedPDFPayload
     file_bytes = file_path.read_bytes()
 
     if filename.lower().endswith('.pdf'):
@@ -406,6 +411,10 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str]]:
 
     if filename.lower().endswith('.json'):
         return parse_json_to_chunks(file_path, filename)
+
+    # Standalone image files — return sentinel for async vision processing
+    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+        return VisionPayload(file_bytes=file_bytes, filename=filename)
 
     # Plain text with encoding auto-detection
     for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
@@ -493,9 +502,58 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
             # The event loop remains free to serve other users during this call.
             text_or_chunks = await asyncio.to_thread(_parse_file_sync, tmp_path, filename)
 
-            # Smarter chunking using Langchain's RecursiveCharacterTextSplitter
+            # Vision pipeline — handled here in the async context because
+            # _parse_file_sync (sync) cannot await llm_service.describe_image().
+            # fake_req is built below for summary; we resolve LLM config once and
+            # reuse it for vision calls too — Privacy Guard is never bypassed.
+            from services.vision_pipeline import (
+                VisionPayload, ScannedPDFPayload,
+                describe_image_bytes, process_scanned_pdf,
+            )
+            from services.llm_service import llm_service as _llm_svc
+            from services.llm_config_resolver import resolve_llm_config
+            from models.schemas import QueryRequest, ChatMessage
+
+            # Resolve space LLM config once — used for both vision and summary calls.
+            _vision_req = QueryRequest(
+                messages=[ChatMessage(role="user", content="vision")],
+                thinking_mode="auditor",
+            )
+            if not _llm_svc.groq_client:
+                _vision_req.mode = "local"
+            resolve_llm_config(_vision_req, space)
+
             chunks = []
-            if isinstance(text_or_chunks, list):
+            if isinstance(text_or_chunks, VisionPayload):
+                # Standalone image: one chunk with visual description
+                description = await describe_image_bytes(
+                    text_or_chunks.file_bytes, _llm_svc,
+                    _vision_req.mode, _vision_req.model
+                )
+                if description:
+                    chunks = [
+                        f"=== Source File: {filename} ===\n"
+                        f"Visual Content Description:\n{description}"
+                    ]
+                else:
+                    raise ValueError(
+                        f"Vision pipeline returned no description for image '{filename}'. "
+                        "Check that a vision-capable model is available."
+                    )
+
+            elif isinstance(text_or_chunks, ScannedPDFPayload):
+                # Scanned PDF: one chunk per page (capped at MAX_OCR_PAGES)
+                chunks = await process_scanned_pdf(
+                    text_or_chunks.file_bytes, filename,
+                    _llm_svc, _vision_req.mode, _vision_req.model
+                )
+                if not chunks:
+                    raise ValueError(
+                        f"Vision pipeline returned no content for scanned PDF '{filename}'. "
+                        "Check that a vision-capable model is available."
+                    )
+
+            elif isinstance(text_or_chunks, list):
                 chunks = text_or_chunks
             elif isinstance(text_or_chunks, str) and text_or_chunks:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -523,9 +581,8 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
             # Bug 5 fix: sample chunks distributed across the full document
             # instead of only reading the first 3 (which are usually title/TOC).
             try:
-                from services.llm_service import llm_service
-                from services.llm_config_resolver import resolve_llm_config
-
+                # All imports already resolved in the vision block above (_llm_svc,
+                # resolve_llm_config, QueryRequest, ChatMessage).
                 max_chars = 6000
                 if space and space.max_tokens:
                     max_chars = max(1500, min(space.max_tokens * 3, 12000))
@@ -546,17 +603,16 @@ Format headings clearly as bold text like **Document Category:** or **Key Takeaw
 Document Sample:
 "{summary_input}"
 """
-                from models.schemas import QueryRequest, ChatMessage
                 fake_req = QueryRequest(
                     messages=[ChatMessage(role="user", content=summary_prompt)],
                     thinking_mode="auditor",
                 )
-                if not llm_service.groq_client:
+                if not _llm_svc.groq_client:
                     fake_req.mode = "local"
 
                 resolve_llm_config(fake_req, space)
 
-                summary_text, _ = await llm_service.generate_response(fake_req, "")
+                summary_text, _ = await _llm_svc.generate_response(fake_req, "")
                 if summary_text:
                     doc.summary = summary_text.strip()
                     session.add(doc)

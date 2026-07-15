@@ -284,3 +284,118 @@ def test_parse_csv_multiline_field(tmp_path):
     assert "Row 2: Jane Doe | Marketing | OK" in combined
     # The embedded newline continuation must NOT appear as a separate row
     assert "Row 3:" not in combined
+
+
+# --- Phase 3c-core: Vision pipeline tests ---
+
+def test_image_sentinel_roundtrip(tmp_path):
+    """_parse_file_sync returns a VisionPayload sentinel for image files,
+    NOT a string or list — confirming vision processing is deferred to async context."""
+    from services.pdf_parser import _parse_file_sync
+    from services.vision_pipeline import VisionPayload
+
+    # Minimal 1x1 white JPEG (valid image bytes)
+    import struct, zlib
+    # Use a tiny valid JPEG (smallest possible)
+    tiny_jpeg = (
+        b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00'
+        b'\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t'
+        b'\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a'
+        b'\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\x1e>'
+        b'\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00'
+        b'\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b'
+        b'\xff\xc4\x00\xb5\x10\x00\x02\x01\x03\x03\x02\x04\x03\x05\x05\x04'
+        b'\x04\x00\x00\x01}\x01\x02\x03\x00\x04\x11\x05\x12!1A\x06\x13Qa'
+        b'\x07"q\x142\x81\x91\xa1\x08#B\xb1\xc1\x15R\xd1\xf0$3br\x82\t\n'
+        b'\xff\xda\x00\x08\x01\x01\x00\x00?\x00\xf5\x00\xff\xd9'
+    )
+    p = tmp_path / "test_image.jpg"
+    p.write_bytes(tiny_jpeg)
+
+    result = _parse_file_sync(p, "test_image.jpg")
+    assert isinstance(result, VisionPayload), (
+        f"Expected VisionPayload sentinel, got {type(result).__name__}"
+    )
+    assert result.filename == "test_image.jpg"
+    assert result.file_bytes == tiny_jpeg
+
+
+def test_png_sentinel_roundtrip(tmp_path):
+    """_parse_file_sync returns VisionPayload for .png files too."""
+    from services.pdf_parser import _parse_file_sync
+    from services.vision_pipeline import VisionPayload
+
+    # Minimal 1x1 red PNG
+    import zlib, struct
+    def create_png():
+        def chunk(name, data):
+            c = name + data
+            return struct.pack('>I', len(data)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
+        sig = b'\x89PNG\r\n\x1a\n'
+        ihdr = chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
+        raw = b'\x00\xff\x00\x00'  # filter byte + RGB
+        idat = chunk(b'IDAT', zlib.compress(raw))
+        iend = chunk(b'IEND', b'')
+        return sig + ihdr + idat + iend
+
+    p = tmp_path / "test_image.png"
+    p.write_bytes(create_png())
+
+    result = _parse_file_sync(p, "test_image.png")
+    assert isinstance(result, VisionPayload)
+
+
+def test_describe_image_bytes_best_effort_on_failure():
+    """describe_image_bytes returns '' instead of raising when vision LLM fails.
+    This ensures a single bad image never crashes the whole document ingestion."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+    from services.vision_pipeline import describe_image_bytes
+
+    mock_llm = MagicMock()
+    mock_llm.describe_image = AsyncMock(side_effect=RuntimeError("No vision model available"))
+
+    result = asyncio.run(
+        describe_image_bytes(b"fake_image_bytes", mock_llm, mode="local", model_name=None)
+    )
+    assert result == "", f"Expected empty string on failure, got: {repr(result)}"
+
+
+def test_process_scanned_pdf_page_limit(tmp_path):
+    """process_scanned_pdf truncates to MAX_OCR_PAGES when PDF has more pages."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from services.vision_pipeline import process_scanned_pdf, MAX_OCR_PAGES
+
+    mock_llm = MagicMock()
+    mock_llm.describe_image = AsyncMock(return_value="Page description text.")
+
+    # Create a mock pypdfium2 document with 35 pages (> MAX_OCR_PAGES=30)
+    mock_page = MagicMock()
+    mock_bitmap = MagicMock()
+    mock_pil = MagicMock()
+
+    def fake_save(buf, format, quality):
+        buf.write(b"fake_jpeg")
+    mock_pil.save = fake_save
+
+    mock_bitmap.to_pil.return_value = mock_pil
+    mock_page.render.return_value = mock_bitmap
+
+    mock_doc = MagicMock()
+    mock_doc.__len__ = MagicMock(return_value=35)
+    mock_doc.__getitem__ = MagicMock(return_value=mock_page)
+    mock_doc.close = MagicMock()
+
+    with patch("services.vision_pipeline.pdfium") as mock_pdfium:
+        mock_pdfium.PdfDocument.return_value = mock_doc
+        chunks = asyncio.run(
+            process_scanned_pdf(b"fake_pdf", "scan.pdf", mock_llm, "cloud", None)
+        )
+
+    assert len(chunks) <= MAX_OCR_PAGES, (
+        f"Expected <= {MAX_OCR_PAGES} chunks, got {len(chunks)}"
+    )
+    for chunk in chunks:
+        assert "Source File: scan.pdf" in chunk
