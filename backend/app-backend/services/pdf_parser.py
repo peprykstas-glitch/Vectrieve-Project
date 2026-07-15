@@ -123,14 +123,14 @@ def extract_text_from_html(file_bytes: bytes) -> str:
             self.in_style_or_script = False
 
         def handle_starttag(self, tag, attrs):
-            if tag in ('style', 'script', 'head', 'meta', 'link'):
+            if tag in ('style', 'script', 'head'):
                 self.in_style_or_script = True
             elif tag in ('p', 'div', 'li', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'):
                 if self.text_parts and not self.text_parts[-1].endswith('\n'):
                     self.text_parts.append('\n')
 
         def handle_endtag(self, tag):
-            if tag in ('style', 'script', 'head', 'meta', 'link'):
+            if tag in ('style', 'script', 'head'):
                 self.in_style_or_script = False
             elif tag in ('p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'):
                 if self.text_parts and not self.text_parts[-1].endswith('\n'):
@@ -143,10 +143,16 @@ def extract_text_from_html(file_bytes: bytes) -> str:
         def get_text(self) -> str:
             return "".join(self.text_parts)
 
-    try:
-        html_str = file_bytes.decode('utf-8')
-    except UnicodeDecodeError:
+    html_str = None
+    for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
+        try:
+            html_str = file_bytes.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    if html_str is None:
         html_str = file_bytes.decode('latin-1', errors='ignore')
+
     parser = HTMLTextStripper()
     parser.feed(html_str)
     return parser.get_text().strip()

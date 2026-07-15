@@ -133,6 +133,7 @@ def test_parse_file_sync_markdown(tmp_path):
 def test_parse_file_sync_html(tmp_path):
     """_parse_file_sync correctly parses HTML files, stripping tags, head, style, and scripts."""
     from services.pdf_parser import _parse_file_sync
+    # Include void elements <meta> and <link> to verify they do not cause infinite text suppression
     html_content = """
     <html>
       <head>
@@ -141,7 +142,9 @@ def test_parse_file_sync_html(tmp_path):
         <script>console.log('ignored');</script>
       </head>
       <body>
+        <meta charset="utf-8">
         <h1>Heading Content</h1>
+        <link rel="stylesheet" href="style.css">
         <p>Paragraph text here.</p>
       </body>
     </html>
@@ -156,3 +159,14 @@ def test_parse_file_sync_html(tmp_path):
     assert "Ignored Title" not in result
     assert "body { color: red; }" not in result
     assert "console.log" not in result
+
+
+def test_parse_file_sync_html_windows1251(tmp_path):
+    """_parse_file_sync correctly decodes and parses HTML in windows-1251 encoding."""
+    from services.pdf_parser import _parse_file_sync
+    # Cyrillic text in windows-1251
+    html_content = "<html><body><h1>Привіт Світ</h1></body></html>"
+    p = tmp_path / "test_1251.html"
+    p.write_bytes(html_content.encode("windows-1251"))
+    result = _parse_file_sync(p, "test_1251.html")
+    assert "Привіт Світ" in result
