@@ -540,5 +540,20 @@ async def test_sample_chunks_budget_backstop():
     assert res_limited == ["chunk_one_medium"]
 
 
+async def test_pdf_summary_respects_space_hard_limit():
+    from services.llm_config_resolver import resolve_llm_config
+    from models.schemas import QueryRequest, ChatMessage
+    from models.sql_models import Space
+
+    space = Space(id="s1", name="Local-only", user_id=1, llm_provider="local")
+    fake_req = QueryRequest(
+        messages=[ChatMessage(role="user", content="summarize this")],
+        mode="cloud",
+    )
+    resolve_llm_config(fake_req, space)
+    assert fake_req.mode == "local"
+
+
+
 
 
