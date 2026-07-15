@@ -118,3 +118,41 @@ def test_parse_file_sync_docx(tmp_path):
     p.write_bytes(docx_bytes.getvalue())
     result = _parse_file_sync(p, "test.docx")
     assert "Docx via path test." in result
+
+
+def test_parse_file_sync_markdown(tmp_path):
+    """_parse_file_sync correctly reads markdown files as plain text."""
+    from services.pdf_parser import _parse_file_sync
+    p = tmp_path / "test.md"
+    p.write_text("# Markdown Title\n- Item 1\n- Item 2", encoding="utf-8")
+    result = _parse_file_sync(p, "test.md")
+    assert "# Markdown Title" in result
+    assert "- Item 1" in result
+
+
+def test_parse_file_sync_html(tmp_path):
+    """_parse_file_sync correctly parses HTML files, stripping tags, head, style, and scripts."""
+    from services.pdf_parser import _parse_file_sync
+    html_content = """
+    <html>
+      <head>
+        <title>Ignored Title</title>
+        <style>body { color: red; }</style>
+        <script>console.log('ignored');</script>
+      </head>
+      <body>
+        <h1>Heading Content</h1>
+        <p>Paragraph text here.</p>
+      </body>
+    </html>
+    """
+    p = tmp_path / "test.html"
+    p.write_text(html_content, encoding="utf-8")
+    result = _parse_file_sync(p, "test.html")
+    # Verify that clean prose text is extracted
+    assert "Heading Content" in result
+    assert "Paragraph text here." in result
+    # Verify that headers, styles, and scripts are stripped
+    assert "Ignored Title" not in result
+    assert "body { color: red; }" not in result
+    assert "console.log" not in result

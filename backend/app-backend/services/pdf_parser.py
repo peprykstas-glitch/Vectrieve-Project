@@ -107,6 +107,39 @@ def extract_text_from_epub(file_bytes: bytes) -> str:
         return "\n\n".join(full_text)
 
 
+def extract_text_from_html(file_bytes: bytes) -> str:
+    from html.parser import HTMLParser
+    
+    class HTMLTextStripper(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.text_parts: List[str] = []
+            self.in_style_or_script = False
+
+        def handle_starttag(self, tag, attrs):
+            if tag in ('style', 'script', 'head', 'meta', 'link'):
+                self.in_style_or_script = True
+
+        def handle_endtag(self, tag):
+            if tag in ('style', 'script', 'head', 'meta', 'link'):
+                self.in_style_or_script = False
+
+        def handle_data(self, data):
+            if not self.in_style_or_script:
+                self.text_parts.append(data)
+
+        def get_text(self) -> str:
+            return "".join(self.text_parts)
+
+    try:
+        html_str = file_bytes.decode('utf-8')
+    except UnicodeDecodeError:
+        html_str = file_bytes.decode('latin-1', errors='ignore')
+    parser = HTMLTextStripper()
+    parser.feed(html_str)
+    return parser.get_text().strip()
+
+
 def _parse_file_sync(file_path: Path, filename: str) -> str:
     """
     Pure synchronous parser — reads file from disk and returns extracted text.
@@ -161,6 +194,9 @@ def _parse_file_sync(file_path: Path, filename: str) -> str:
     if filename.lower().endswith('.epub'):
         return extract_text_from_epub(file_bytes)
 
+    if filename.lower().endswith(('.html', '.htm')):
+        return extract_text_from_html(file_bytes)
+
     # Plain text with encoding auto-detection
     for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
         try:
@@ -169,7 +205,7 @@ def _parse_file_sync(file_path: Path, filename: str) -> str:
             continue
 
     raise ValueError(
-        "Unsupported binary file format. Only PDF, PPTX, DOCX, EPUB, and text files are supported."
+        "Unsupported binary file format. Only PDF, PPTX, DOCX, EPUB, HTML, Markdown, and text files are supported."
     )
 
 

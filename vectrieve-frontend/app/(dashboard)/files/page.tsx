@@ -118,6 +118,7 @@ export default function KnowledgeBasePage() {
           onChange={handleFileUpload} 
           className="hidden" 
           multiple
+          accept=".pdf,.docx,.epub,.txt,.md,.markdown,.html,.htm"
         />
 
         {/* Dynamic Action Bar */}
