@@ -44,10 +44,16 @@ def extract_text_from_epub(file_bytes: bytes) -> str:
         def handle_starttag(self, tag, attrs):
             if tag in ('style', 'script'):
                 self.in_style_or_script = True
+            elif tag in ('p', 'div', 'li', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'):
+                if self.text_parts and not self.text_parts[-1].endswith('\n'):
+                    self.text_parts.append('\n')
 
         def handle_endtag(self, tag):
             if tag in ('style', 'script'):
                 self.in_style_or_script = False
+            elif tag in ('p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'):
+                if self.text_parts and not self.text_parts[-1].endswith('\n'):
+                    self.text_parts.append('\n')
 
         def handle_data(self, data):
             if not self.in_style_or_script:
@@ -119,10 +125,16 @@ def extract_text_from_html(file_bytes: bytes) -> str:
         def handle_starttag(self, tag, attrs):
             if tag in ('style', 'script', 'head', 'meta', 'link'):
                 self.in_style_or_script = True
+            elif tag in ('p', 'div', 'li', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'):
+                if self.text_parts and not self.text_parts[-1].endswith('\n'):
+                    self.text_parts.append('\n')
 
         def handle_endtag(self, tag):
             if tag in ('style', 'script', 'head', 'meta', 'link'):
                 self.in_style_or_script = False
+            elif tag in ('p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'):
+                if self.text_parts and not self.text_parts[-1].endswith('\n'):
+                    self.text_parts.append('\n')
 
         def handle_data(self, data):
             if not self.in_style_or_script:
