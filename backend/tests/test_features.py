@@ -402,13 +402,13 @@ async def test_space_isolation_end_to_end(client: AsyncClient, test_session):
 async def test_resolve_llm_config():
     from models.schemas import QueryRequest, ChatMessage
     from models.sql_models import Space
-    from api.endpoints.chat import _resolve_llm_config
+    from services.llm_config_resolver import resolve_llm_config
 
     # Test 1: Fallback to defaults when no space is selected and query request is empty
     req1 = QueryRequest(
         messages=[ChatMessage(role="user", content="hello")]
     )
-    _resolve_llm_config(req1, space=None)
+    resolve_llm_config(req1, space=None)
     assert req1.mode == "cloud"
     assert req1.model is None
     assert req1.temperature is None
@@ -431,7 +431,7 @@ async def test_resolve_llm_config():
         mode="cloud",
         model="gpt-4"
     )
-    _resolve_llm_config(req2, space=space_w_limits)
+    resolve_llm_config(req2, space=space_w_limits)
     assert req2.mode == "local"
     assert req2.model == "llama-local-7b"
     assert req2.temperature == 0.7
@@ -444,7 +444,7 @@ async def test_resolve_llm_config():
         max_tokens=150,
         top_p=0.95
     )
-    _resolve_llm_config(req3, space=space_w_limits)
+    resolve_llm_config(req3, space=space_w_limits)
     assert req3.mode == "local"
     assert req3.model == "llama-local-7b"
     assert req3.temperature == 0.9
@@ -525,6 +525,20 @@ async def test_require_admin_endpoint_allowed(test_session):
         assert "pool" in data["telemetry"]
 
     app.dependency_overrides.clear()
+
+
+async def test_sample_chunks_budget_backstop():
+    from services.pdf_parser import _sample_chunks
+    chunks = ["chunk_one_medium", "chunk_two_longer_text", "chunk_three_very_long_chunk_here"]
+    
+    # Check regular sampling
+    res_normal = _sample_chunks(chunks, n=3, max_chars=1000)
+    assert len(res_normal) == 3
+
+    # Check budget constraints: total chars budget = 30
+    res_limited = _sample_chunks(chunks, n=3, max_chars=30)
+    assert res_limited == ["chunk_one_medium"]
+
 
 
 

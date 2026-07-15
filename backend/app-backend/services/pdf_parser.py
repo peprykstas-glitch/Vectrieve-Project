@@ -227,19 +227,27 @@ def _parse_file_sync(file_path: Path, filename: str) -> str:
     )
 
 
-def _sample_chunks(chunks: List[str], n: int = 8) -> List[str]:
+def _sample_chunks(chunks: List[str], n: int = 8, max_chars: int = 6000) -> List[str]:
     """
-    Sample n chunks distributed evenly across the full document.
-    Gives a representative cross-section instead of always reading
-    the first 3 chunks (which are usually the title/TOC).
+    Uniform sampling with a hard character-budget backstop.
+    Guards against dense chunks blowing the context window even when chunk count is capped.
     """
     total = len(chunks)
     if total <= n:
-        return chunks
-    # Distribute indices evenly across document: 0%, ~14%, ~28%, ..., 100%
-    step = (total - 1) / (n - 1)
-    indices = sorted(set(round(i * step) for i in range(n)))
-    return [chunks[i] for i in indices]
+        sampled = chunks
+    else:
+        step = (total - 1) / (n - 1)
+        indices = sorted(set(round(i * step) for i in range(n)))
+        sampled = [chunks[i] for i in indices]
+
+    result: List[str] = []
+    running_len = 0
+    for chunk in sampled:
+        if running_len + len(chunk) > max_chars and result:
+            break
+        result.append(chunk)
+        running_len += len(chunk)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -279,6 +287,12 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
             if not doc:
                 return
 
+            space = None
+            if space_id:
+                from models.sql_models import Space
+                space_res = await session.execute(select(Space).where(Space.id == space_id))
+                space = space_res.scalar_one_or_none()
+
             doc.status = DocumentStatus.PROCESSING.value
             await session.commit()
             await send_ws(DocumentStatus.PROCESSING.value)
@@ -316,7 +330,13 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
             # instead of only reading the first 3 (which are usually title/TOC).
             try:
                 from services.llm_service import llm_service
-                sampled = _sample_chunks(chunks, n=8)
+                from services.llm_config_resolver import resolve_llm_config
+
+                max_chars = 6000
+                if space and space.max_tokens:
+                    max_chars = max(1500, min(space.max_tokens * 3, 12000))
+
+                sampled = _sample_chunks(chunks, n=8, max_chars=max_chars)
                 summary_input = "\n\n".join(sampled)
                 summary_prompt = f"""
 You are Vectrieve Core, a premium business document intelligence analyzer.
@@ -336,10 +356,11 @@ Document Sample:
                 fake_req = QueryRequest(
                     messages=[ChatMessage(role="user", content=summary_prompt)],
                     thinking_mode="auditor",
-                    mode="cloud"
                 )
                 if not llm_service.groq_client:
                     fake_req.mode = "local"
+
+                resolve_llm_config(fake_req, space)
 
                 summary_text, _ = await llm_service.generate_response(fake_req, "")
                 if summary_text:
