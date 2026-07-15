@@ -62,7 +62,7 @@ async def register_user(
     # 2. Створення об'єкта користувача (хешуємо безпечний пароль)
     hashed = await get_password_hash(safe_password)
     
-    admin_list = {u.strip().lower() for u in settings.ADMIN_USERNAMES.split(",") if u.strip()}
+    admin_list = {u.strip().lower() for u in settings.ADMIN_EMAILS.split(",") if u.strip()}
     is_admin = user_in.email.strip().lower() in admin_list
 
     new_user = User(

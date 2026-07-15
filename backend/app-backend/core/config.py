@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # An empty default triggers auto-generation of a random key (dev only).
     SECRET_KEY: str = ""
     GROQ_API_KEY: str = ""
-    ADMIN_USERNAMES: str = ""
+    ADMIN_EMAILS: str = ""
     SENTRY_DSN: str = ""
     ELEVENLABS_API_KEY: str = ""
     ELEVENLABS_VOICE_MAX: str = "nPczCjzI2devNBz1zQrb"
