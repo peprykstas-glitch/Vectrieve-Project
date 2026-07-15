@@ -112,3 +112,5 @@ ollama==0.1.7
 psutil==5.9.5
 pytest==7.4.3
 pytest-asyncio==0.22.0
+openpyxl==3.1.5
+et-xmlfile==2.0.0

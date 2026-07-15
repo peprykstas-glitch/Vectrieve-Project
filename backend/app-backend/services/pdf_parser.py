@@ -2,7 +2,7 @@ import asyncio
 import io
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from models.document import Document, DocumentStatus, DocumentChunk
 from core.database import get_session_factory
@@ -158,7 +158,183 @@ def extract_text_from_html(file_bytes: bytes) -> str:
     return parser.get_text().strip()
 
 
-def _parse_file_sync(file_path: Path, filename: str) -> str:
+def parse_csv_to_chunks(file_path: Path, filename: str) -> List[str]:
+    import csv
+    
+    chunks = []
+    try:
+        # Detect encoding safely
+        file_bytes = file_path.read_bytes()
+        html_str = None
+        for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
+            try:
+                html_str = file_bytes.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        if html_str is None:
+            html_str = file_bytes.decode('latin-1', errors='ignore')
+            
+        reader = csv.reader(html_str.splitlines())
+        rows = list(reader)
+    except Exception as e:
+        print(f"Error reading CSV: {e}")
+        return [f"Error reading CSV file '{filename}': {str(e)}"]
+
+    if not rows:
+        return []
+
+    headers = [col.strip() for col in rows[0]]
+    data_rows = rows[1:]
+    
+    if not data_rows:
+        return [f"Table: {filename}\nColumns: {' | '.join(headers)}\nNo data rows."]
+
+    group_size = 10
+    for i in range(0, len(data_rows), group_size):
+        group = data_rows[i:i+group_size]
+        chunk_lines = [
+            f"=== Source File: {filename} ===",
+            f"Format: Table Row Group (Rows {i+1} to {i+len(group)})",
+            f"Columns: {' | '.join(headers)}",
+            "---"
+        ]
+        for idx, row in enumerate(group):
+            row_num = i + 1 + idx
+            row_str = " | ".join(val.strip() for val in row)
+            chunk_lines.append(f"Row {row_num}: {row_str}")
+        
+        chunks.append("\n".join(chunk_lines))
+        
+    return chunks
+
+
+def parse_excel_to_chunks(file_path: Path, filename: str) -> List[str]:
+    import pandas as pd
+    
+    chunks = []
+    try:
+        dict_dfs = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
+    except Exception as e:
+        print(f"Error reading Excel: {e}")
+        return [f"Error reading Excel file '{filename}': {str(e)}"]
+
+    for sheet_name, df in dict_dfs.items():
+        df = df.dropna(how='all')
+        if df.empty:
+            continue
+            
+        headers = [str(col).strip() for col in df.columns]
+        data_rows = df.values.tolist()
+        
+        if not data_rows:
+            chunks.append(f"Table: {filename} (Sheet: {sheet_name})\nColumns: {' | '.join(headers)}\nNo data rows.")
+            continue
+            
+        group_size = 10
+        for i in range(0, len(data_rows), group_size):
+            group = data_rows[i:i+group_size]
+            chunk_lines = [
+                f"=== Source File: {filename} (Sheet: {sheet_name}) ===",
+                f"Format: Table Row Group (Rows {i+1} to {i+len(group)})",
+                f"Columns: {' | '.join(headers)}",
+                "---"
+            ]
+            for idx, row in enumerate(group):
+                row_num = i + 1 + idx
+                row_cells = []
+                for val in row:
+                    if pd.isna(val):
+                        row_cells.append("")
+                    else:
+                        row_cells.append(str(val).strip())
+                row_str = " | ".join(row_cells)
+                chunk_lines.append(f"Row {row_num}: {row_str}")
+            
+            chunks.append("\n".join(chunk_lines))
+            
+    return chunks
+
+
+def parse_json_to_chunks(file_path: Path, filename: str) -> List[str]:
+    import json
+    
+    try:
+        file_bytes = file_path.read_bytes()
+        json_data = json.loads(file_bytes.decode('utf-8', errors='ignore'))
+    except Exception as e:
+        print(f"Error reading JSON: {e}")
+        return [f"Error reading JSON file '{filename}': {str(e)}"]
+
+    chunks = []
+    
+    if isinstance(json_data, list) and all(isinstance(item, dict) for item in json_data if item):
+        keys_set = []
+        for item in json_data:
+            for k in item.keys():
+                if k not in keys_set:
+                    keys_set.append(k)
+        
+        headers = keys_set
+        group_size = 10
+        for i in range(0, len(json_data), group_size):
+            group = json_data[i:i+group_size]
+            chunk_lines = [
+                f"=== Source File: {filename} ===",
+                f"Format: JSON Record Group (Records {i+1} to {i+len(group)})",
+                f"Columns: {' | '.join(headers)}",
+                "---"
+            ]
+            for idx, item in enumerate(group):
+                record_num = i + 1 + idx
+                row_cells = [str(item.get(k, "")).strip() for k in headers]
+                row_str = " | ".join(row_cells)
+                chunk_lines.append(f"Record {record_num}: {row_str}")
+                
+            chunks.append("\n".join(chunk_lines))
+            
+    elif isinstance(json_data, dict):
+        for key, val in json_data.items():
+            val_str = json.dumps(val, indent=2, ensure_ascii=False)
+            if len(val_str) < 1500:
+                chunks.append(
+                    f"=== Source File: {filename} ===\n"
+                    f"Key: {key}\n"
+                    f"Value:\n{val_str}"
+                )
+            else:
+                from langchain_text_splitters import RecursiveCharacterTextSplitter
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=1000,
+                    chunk_overlap=200,
+                    separators=["\n\n", "\n", " ", ""]
+                )
+                sub_chunks = splitter.split_text(val_str)
+                for s_idx, sc in enumerate(sub_chunks):
+                    chunks.append(
+                        f"=== Source File: {filename} ===\n"
+                        f"Key: {key} (Part {s_idx+1}/{len(sub_chunks)})\n"
+                        f"Value:\n{sc}"
+                    )
+    else:
+        val_str = json.dumps(json_data, indent=2, ensure_ascii=False)
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        sub_chunks = splitter.split_text(val_str)
+        for s_idx, sc in enumerate(sub_chunks):
+            chunks.append(
+                f"=== Source File: {filename} ===\n"
+                f"JSON Data (Part {s_idx+1}/{len(sub_chunks)}):\n{sc}"
+            )
+            
+    return chunks
+
+
+def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str]]:
     """
     Pure synchronous parser — reads file from disk and returns extracted text.
     Designed to be called via asyncio.to_thread() so it never blocks the event loop.
@@ -215,6 +391,15 @@ def _parse_file_sync(file_path: Path, filename: str) -> str:
     if filename.lower().endswith(('.html', '.htm')):
         return extract_text_from_html(file_bytes)
 
+    if filename.lower().endswith('.csv'):
+        return parse_csv_to_chunks(file_path, filename)
+
+    if filename.lower().endswith(('.xlsx', '.xls')):
+        return parse_excel_to_chunks(file_path, filename)
+
+    if filename.lower().endswith('.json'):
+        return parse_json_to_chunks(file_path, filename)
+
     # Plain text with encoding auto-detection
     for encoding in ('utf-8', 'windows-1251', 'utf-16', 'latin-1'):
         try:
@@ -223,7 +408,7 @@ def _parse_file_sync(file_path: Path, filename: str) -> str:
             continue
 
     raise ValueError(
-        "Unsupported binary file format. Only PDF, PPTX, DOCX, EPUB, HTML, Markdown, and text files are supported."
+        "Unsupported binary file format. Only PDF, PPTX, DOCX, EPUB, HTML, CSV, Excel, JSON, Markdown, and text files are supported."
     )
 
 
@@ -299,18 +484,20 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
 
             # Bug 1 fix: offload ALL CPU-bound parsing to a thread pool worker.
             # The event loop remains free to serve other users during this call.
-            text = await asyncio.to_thread(_parse_file_sync, tmp_path, filename)
+            text_or_chunks = await asyncio.to_thread(_parse_file_sync, tmp_path, filename)
 
             # Smarter chunking using Langchain's RecursiveCharacterTextSplitter
             chunks = []
-            if text:
+            if isinstance(text_or_chunks, list):
+                chunks = text_or_chunks
+            elif isinstance(text_or_chunks, str) and text_or_chunks:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
                 splitter = RecursiveCharacterTextSplitter(
                     chunk_size=1000,
                     chunk_overlap=200,
                     separators=["\n\n", "\n", " ", ""]
                 )
-                chunks = splitter.split_text(text)
+                chunks = splitter.split_text(text_or_chunks)
 
             if not chunks:
                 raise ValueError("No extractable text found in file. Make sure it contains digital text (not a scanned image).")

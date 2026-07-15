@@ -170,3 +170,83 @@ def test_parse_file_sync_html_windows1251(tmp_path):
     p.write_bytes(html_content.encode("windows-1251"))
     result = _parse_file_sync(p, "test_1251.html")
     assert "Привіт Світ" in result
+
+
+def test_parse_file_sync_csv(tmp_path):
+    """_parse_file_sync correctly parses CSV into row-grouped chunks with headers."""
+    from services.pdf_parser import _parse_file_sync
+    csv_content = "Name,Role,Salary\nJohn,Sales,100\nJane,Support,150\nBob,Dev,200"
+    p = tmp_path / "test.csv"
+    p.write_text(csv_content, encoding="utf-8")
+    
+    chunks = _parse_file_sync(p, "test.csv")
+    assert isinstance(chunks, list)
+    assert len(chunks) == 1
+    assert "=== Source File: test.csv ===" in chunks[0]
+    assert "Columns: Name | Role | Salary" in chunks[0]
+    assert "Row 1: John | Sales | 100" in chunks[0]
+    assert "Row 2: Jane | Support | 150" in chunks[0]
+    assert "Row 3: Bob | Dev | 200" in chunks[0]
+
+
+def test_parse_file_sync_excel(tmp_path):
+    """_parse_file_sync correctly parses Excel worksheets into row-grouped chunks with headers."""
+    from services.pdf_parser import _parse_file_sync
+    import pandas as pd
+    
+    df = pd.DataFrame({
+        "Name": ["John", "Jane"],
+        "Role": ["Sales", "Support"]
+    })
+    
+    p = tmp_path / "test.xlsx"
+    df.to_excel(p, index=False, engine="openpyxl")
+    
+    chunks = _parse_file_sync(p, "test.xlsx")
+    assert isinstance(chunks, list)
+    assert len(chunks) == 1
+    assert "=== Source File: test.xlsx (Sheet: Sheet1) ===" in chunks[0]
+    assert "Columns: Name | Role" in chunks[0]
+    assert "Row 1: John | Sales" in chunks[0]
+    assert "Row 2: Jane | Support" in chunks[0]
+
+
+def test_parse_file_sync_json_list(tmp_path):
+    """_parse_file_sync correctly parses flat list-of-dicts JSON into row-grouped chunks."""
+    from services.pdf_parser import _parse_file_sync
+    import json
+    
+    data = [
+        {"Name": "John", "Role": "Sales"},
+        {"Name": "Jane", "Role": "Support"}
+    ]
+    p = tmp_path / "test.json"
+    p.write_text(json.dumps(data), encoding="utf-8")
+    
+    chunks = _parse_file_sync(p, "test.json")
+    assert isinstance(chunks, list)
+    assert len(chunks) == 1
+    assert "Format: JSON Record Group" in chunks[0]
+    assert "Columns: Name | Role" in chunks[0]
+    assert "Record 1: John | Sales" in chunks[0]
+
+
+def test_parse_file_sync_json_nested(tmp_path):
+    """_parse_file_sync correctly chunks nested config JSON by top-level keys."""
+    from services.pdf_parser import _parse_file_sync
+    import json
+    
+    data = {
+        "settings": {"theme": "dark", "version": 1},
+        "users": ["user1", "user2"]
+    }
+    p = tmp_path / "test_nested.json"
+    p.write_text(json.dumps(data), encoding="utf-8")
+    
+    chunks = _parse_file_sync(p, "test_nested.json")
+    assert isinstance(chunks, list)
+    assert len(chunks) == 2
+    
+    keys = [c for c in chunks if "Key: settings" in c or "Key: users" in c]
+    assert len(keys) == 2
+
