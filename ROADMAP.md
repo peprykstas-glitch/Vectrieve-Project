@@ -22,7 +22,10 @@
 * Configure hyperparameters (temperature, max_tokens, top_p) per space.
 * **Core Rule Configuration:** Space-level settings act as **hard limits** for provider/model selection (preventing unauthorized cost surprises or security risks), and **soft defaults** for temperature/max_tokens (allowing override per-query via `QueryRequest` if needed).
 * Store settings in the `Space` table and load them dynamically during LLM RAG prompt generation (`_prepare_rag_context`).
-* **Technical Debt / Future Improvement:** Currently, model-provider compatibility is validated using exact match lists and suffix/prefix heuristics to prevent blocking custom/new models (Option 1). Future iterations should implement dynamic validation (Option 2) by querying `ollama_client.list()` for local models and `groq_client.models.list()` for cloud models to verify existence in real-time.
+* **Technical Debt / Future Improvement:**
+  * **Dynamic Model Validation:** Currently, model-provider compatibility is validated using exact match lists and suffix/prefix heuristics to prevent blocking custom/new models (Option 1). Future iterations should implement dynamic validation (Option 2) by querying `ollama_client.list()` for local models and `groq_client.models.list()` for cloud models to verify existence in real-time.
+  * **Stale Sidebar State:** When the currently active space is deleted, the frontend sidebar UI does not automatically transition state, leading to a stale/broken reference. Implement cleanup actions to reset the selected space to `null` or a global default.
+  * **Precise Token Counting:** Query telemetry currently estimates token throughput using raw character length calculations (e.g. `char_count // 4`). This should be replaced with precise token counting using usage metadata returned in LLM API completion payloads.
 
 ### 2. RBAC Foundation + Admin Analytics
 * Add `User.is_admin: bool` (or a minimal `Role` enum) seeded via environment variables, CLI tools, or migration scripts. **Specific personal emails must never be hardcoded in the codebase.**
@@ -39,6 +42,8 @@
 * Support `.csv`, `.xlsx`, and `.json` files.
 * Replace `RecursiveCharacterTextSplitter` with a **row-grouped parser** that chunks tables into logical rows while prefixing or injecting header/column metadata into every chunk to preserve table structure.
 * Scope MVP retrieval to standard row-group semantic matching (no natural language text-to-SQL execution in v1).
+* **Technical Debt / Future Improvements:**
+  * **JSON Encoding Fallback:** `parse_json_to_chunks` currently performs standard UTF-8 decoding with `errors='ignore'`, which silently discards invalid bytes. Align this with other parsers (CSV/HTML) to support robust encoding fallback verification (e.g. windows-1251 cyrillic detection).
 
 ### 3c. Ingestion: Vision/OCR
 * Support images (`.png`, `.jpg`) and scanned image-only PDFs using OCR (e.g. Tesseract or cloud Vision APIs).
@@ -48,6 +53,7 @@
   * **Hardcoded Vision Models:** The defaults for vision models (`meta-llama/llama-4-scout-17b-16e-instruct` for Groq, `llava` for Ollama) are hardcoded in `llm_service.py`. These must be verified against current model catalogs before release to prevent silent failures returning empty descriptions.
   * **Simulated Local Streaming:** Currently, local streaming (`mode == 'local'`) in `generate_response_stream` is simulated by fetching the complete response and splitting it by words with a delay. Future versions should implement true token-by-token streaming using Ollama's native streaming (`stream=True` in `ollama.Client.chat()`).
   * **Resource Safety & Event Loop:** Scanned PDF parsing and rendering are offloaded to worker threads via `asyncio.to_thread` with a strict `try/finally` block to release pypdfium2 C-level resources. Ensure these patterns are reused for any future binary parsers.
+  * **PPTX Image Limits and Parallelism:** Presentation image processing currently runs sequentially, slide-by-slide. To prevent starvation and latency blowups on huge files, implement a `MAX_PPTX_IMAGES` hard cap (mirroring `MAX_OCR_PAGES`) and consider using `asyncio.gather` for parallelized vision inference.
 
 
 ### 3d. Ingestion: Audio Transcription
