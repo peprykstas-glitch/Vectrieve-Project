@@ -30,6 +30,45 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
+    # Automatically migrate existing Spaces to have SpaceMember records as Owners
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    from sqlmodel import select
+    from models.sql_models import Space, SpaceMember, SpaceRole
+
+    session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with session_factory() as session:
+        try:
+            # Query all spaces and existing space members
+            spaces_res = await session.execute(select(Space))
+            spaces = spaces_res.scalars().all()
+
+            members_res = await session.execute(select(SpaceMember))
+            members = members_res.scalars().all()
+
+            existing_pairs = {(m.space_id, m.user_id) for m in members}
+
+            migrated_count = 0
+            for space in spaces:
+                pair = (space.id, space.user_id)
+                if pair not in existing_pairs:
+                    new_member = SpaceMember(
+                        space_id=space.id,
+                        user_id=space.user_id,
+                        role=SpaceRole.OWNER
+                    )
+                    session.add(new_member)
+                    existing_pairs.add(pair)
+                    migrated_count += 1
+
+            if migrated_count > 0:
+                await session.commit()
+                print(f"✅ Data Migration: Created {migrated_count} SpaceMember owner records for existing Spaces.")
+        except Exception as e:
+            await session.rollback()
+            print(f"⚠️ Data Migration failed: {e}")
+
+
 
 def get_session_factory():
     """Session factory for background tasks"""

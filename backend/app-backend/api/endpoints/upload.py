@@ -19,17 +19,30 @@ _CHUNK_SIZE = 256 * 1024
 
 router = APIRouter()
 
-async def _validate_space_ownership(
+async def _validate_space_membership(
     space_id: Optional[str], user_id: int, session: AsyncSession
 ) -> Optional[str]:
-    """Ensures space_id (if passed) belongs to current user. Otherwise raise 404."""
+    """Ensures space_id (if passed) exists and current user has OWNER or EDITOR role in it."""
     if not space_id or space_id in ("null", "undefined"):
         return None
-    res = await session.execute(
-        select(Space).where(Space.id == space_id).where(Space.user_id == user_id)
+
+    # Check if space exists first
+    space_res = await session.execute(select(Space).where(Space.id == space_id))
+    if not space_res.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Space not found")
+
+    # Check membership and role
+    from models.sql_models import SpaceMember, SpaceRole
+    stmt = (
+        select(SpaceMember)
+        .where(SpaceMember.space_id == space_id)
+        .where(SpaceMember.user_id == user_id)
     )
-    if not res.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Space not found or access denied.")
+    member_res = await session.execute(stmt)
+    member = member_res.scalar_one_or_none()
+
+    if not member or member.role not in (SpaceRole.OWNER, SpaceRole.EDITOR):
+        raise HTTPException(status_code=403, detail="Not authorized to write to this space")
     return space_id
 
 @router.post(
@@ -51,7 +64,7 @@ async def upload_file(
     and dispatch background processing. The file is NEVER fully loaded into
     RAM — prevents OOM when multiple users upload large files concurrently.
     """
-    space_id = await _validate_space_ownership(space_id, current_user.id, session)
+    space_id = await _validate_space_membership(space_id, current_user.id, session)
 
     # Bug 4 fix: stream to disk chunk-by-chunk instead of file.read() into RAM
     suffix = Path(file.filename or "upload").suffix or ".bin"
@@ -95,13 +108,37 @@ async def list_files(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """List all documents for the current user, optionally filtered by space."""
-    stmt = (
-        select(Document)
-        .where(Document.user_id == current_user.id)
-        .where(Document.space_id == space_id)
-        .order_by(Document.upload_timestamp.desc())
-    )
+    """List all documents for the current user, filtered by space with membership check."""
+    if space_id:
+        from models.sql_models import Space, SpaceMember
+        # Check space existence
+        space_res = await session.execute(select(Space).where(Space.id == space_id))
+        if not space_res.scalar_one_or_none():
+            raise HTTPException(status_code=404, detail="Space not found")
+
+        # Check membership
+        member_stmt = (
+            select(SpaceMember)
+            .where(SpaceMember.space_id == space_id)
+            .where(SpaceMember.user_id == current_user.id)
+        )
+        member_res = await session.execute(member_stmt)
+        if not member_res.scalar_one_or_none():
+            raise HTTPException(status_code=403, detail="Access denied to this space")
+
+        stmt = (
+            select(Document)
+            .where(Document.space_id == space_id)
+            .order_by(Document.upload_timestamp.desc())
+        )
+    else:
+        stmt = (
+            select(Document)
+            .where(Document.user_id == current_user.id)
+            .where(Document.space_id.is_(None))
+            .order_by(Document.upload_timestamp.desc())
+        )
+
     result = await session.execute(stmt)
     return result.scalars().all()
 
@@ -111,12 +148,27 @@ async def get_file(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Get status of a specific document."""
-    stmt = select(Document).where(Document.id == file_id, Document.user_id == current_user.id)
+    """Get status of a specific document with space membership checks."""
+    stmt = select(Document).where(Document.id == file_id)
     result = await session.execute(stmt)
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    if doc.space_id:
+        from models.sql_models import SpaceMember
+        member_stmt = (
+            select(SpaceMember)
+            .where(SpaceMember.space_id == doc.space_id)
+            .where(SpaceMember.user_id == current_user.id)
+        )
+        member_res = await session.execute(member_stmt)
+        if not member_res.scalar_one_or_none():
+            raise HTTPException(status_code=403, detail="Access denied to this space's documents")
+    else:
+        if doc.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied to this private document")
+
     return doc
 
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -126,17 +178,36 @@ async def delete_file(
     current_user: User = Depends(get_current_user),
     vs: Optional[VectorService] = Depends(get_vector_service),
 ):
-    """Delete a document and its associated vector data."""
-    stmt = select(Document).where(Document.id == file_id, Document.user_id == current_user.id)
+    """Delete a document and its associated vector data, respecting space roles and ownership."""
+    stmt = select(Document).where(Document.id == file_id)
     result = await session.execute(stmt)
     doc = result.scalar_one_or_none()
     
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    # Author is always allowed to delete
+    is_authorized = (doc.user_id == current_user.id)
+
+    if not is_authorized and doc.space_id:
+        # OWNER or EDITOR of space is also allowed to delete
+        from models.sql_models import SpaceMember, SpaceRole
+        member_stmt = (
+            select(SpaceMember)
+            .where(SpaceMember.space_id == doc.space_id)
+            .where(SpaceMember.user_id == current_user.id)
+        )
+        member_res = await session.execute(member_stmt)
+        member = member_res.scalar_one_or_none()
+        if member and member.role in (SpaceRole.OWNER, SpaceRole.EDITOR):
+            is_authorized = True
+
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this document")
         
-    # Delete vectors from Qdrant using the injected dependency
+    # Delete vectors from Qdrant using the actual document author's user_id
     if vs:
-        vs.delete_file(doc.filename, current_user.id, space_id=doc.space_id)
+        vs.delete_file(doc.filename, doc.user_id, space_id=doc.space_id)
     else:
         print(f"⚠️ VectorService unavailable — skipping vector deletion for '{doc.filename}'")
     

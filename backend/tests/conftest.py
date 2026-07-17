@@ -40,13 +40,51 @@ async def test_session():
 from api.deps import get_current_user
 from models.user import User
 
+from fastapi import Request, HTTPException, Depends
+from sqlmodel import select
+
+@pytest_asyncio.fixture(scope="function")
+async def test_user(test_session: AsyncSession):
+    user = User(id=1, username="owner@example.com", hashed_password="dummy", is_active=True, is_admin=False)
+    test_session.add(user)
+    await test_session.commit()
+    await test_session.refresh(user)
+    return user
+
+@pytest_asyncio.fixture(scope="function")
+async def test_user_2(test_session: AsyncSession):
+    user = User(id=2, username="viewer@example.com", hashed_password="dummy", is_active=True, is_admin=False)
+    test_session.add(user)
+    await test_session.commit()
+    await test_session.refresh(user)
+    return user
+
 @pytest_asyncio.fixture(scope="function")
 async def client(test_session: AsyncSession):
     async def override_get_session():
         yield test_session
 
-    async def override_get_current_user():
-        return User(id=1, username="test@example.com", hashed_password="dummy", is_active=True)
+    async def override_get_current_user(request: Request, session: AsyncSession = Depends(override_get_session)):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            # Fallback to user 1 for backward compatibility
+            stmt = select(User).where(User.id == 1)
+            res = await session.execute(stmt)
+            d_user = res.scalar_one_or_none()
+            if not d_user:
+                d_user = User(id=1, username="owner@example.com", hashed_password="dummy", is_active=True)
+                session.add(d_user)
+                await session.commit()
+                await session.refresh(d_user)
+            return d_user
+            
+        token = auth_header.replace("Bearer ", "").strip()
+        stmt = select(User).where(User.username == token)
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
 
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_current_user] = override_get_current_user

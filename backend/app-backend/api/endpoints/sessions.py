@@ -69,12 +69,21 @@ async def create_session(
     if body.space_id in ("null", "undefined"):
         body.space_id = None
     if body.space_id:
-        from models.sql_models import Space
-        space_res = await session.execute(
-            select(Space).where(Space.id == body.space_id).where(Space.user_id == current_user.id)
-        )
+        from models.sql_models import Space, SpaceMember
+        # Check space existence
+        space_res = await session.execute(select(Space).where(Space.id == body.space_id))
         if not space_res.scalar_one_or_none():
-            raise HTTPException(status_code=404, detail="Space not found or access denied.")
+            raise HTTPException(status_code=404, detail="Space not found")
+        
+        # Check membership
+        member_stmt = (
+            select(SpaceMember)
+            .where(SpaceMember.space_id == body.space_id)
+            .where(SpaceMember.user_id == current_user.id)
+        )
+        member_res = await session.execute(member_stmt)
+        if not member_res.scalar_one_or_none():
+            raise HTTPException(status_code=403, detail="Access denied to this space")
 
     chat_session = ChatSession(
         id=str(uuid.uuid4()),

@@ -2,6 +2,20 @@ import uuid
 from typing import Optional
 from datetime import datetime
 from sqlmodel import SQLModel, Field
+from enum import Enum
+
+
+class SpaceRole(str, Enum):
+    OWNER = "Owner"
+    EDITOR = "Editor"
+    VIEWER = "Viewer"
+
+
+class SpaceMember(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    space_id: str = Field(foreign_key="space.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    role: SpaceRole = Field(default=SpaceRole.VIEWER)
 
 
 class Space(SQLModel, table=True):

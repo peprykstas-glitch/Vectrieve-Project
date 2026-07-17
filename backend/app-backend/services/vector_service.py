@@ -221,12 +221,7 @@ class VectorService:
             client_to_use = self.cloud_client if (mode == "cloud" and self.cloud_client) else self.local_client
             
             from qdrant_client.http import models
-            must_conditions = [
-                models.FieldCondition(
-                    key="user_id",
-                    match=models.MatchValue(value=user_id),
-                )
-            ]
+            must_conditions = []
             if space_id:
                 must_conditions.append(
                     models.FieldCondition(
@@ -235,6 +230,12 @@ class VectorService:
                     )
                 )
             else:
+                must_conditions.append(
+                    models.FieldCondition(
+                        key="user_id",
+                        match=models.MatchValue(value=user_id),
+                    )
+                )
                 must_conditions.append(
                     models.IsEmptyCondition(is_empty=models.PayloadField(key="space_id"))
                 )
@@ -281,10 +282,13 @@ class VectorService:
                         stmt = (
                             select(DocumentChunk, Document)
                             .join(Document, DocumentChunk.document_id == Document.id)
-                            .where(DocumentChunk.user_id == user_id)
                             .where(DocumentChunk.chunk_index >= 0)  # Exclude AI summary chunk
                         )
-                        stmt = stmt.where(Document.space_id == space_id)
+                        if space_id:
+                            stmt = stmt.where(Document.space_id == space_id)
+                        else:
+                            stmt = stmt.where(DocumentChunk.user_id == user_id).where(Document.space_id.is_(None))
+
                         if filenames:
                             stmt = stmt.where(Document.filename.in_(filenames))
                         stmt = (
@@ -301,11 +305,14 @@ class VectorService:
                         stmt = (
                             select(DocumentChunk, Document)
                             .join(Document, DocumentChunk.document_id == Document.id)
-                            .where(DocumentChunk.user_id == user_id)
                             .where(DocumentChunk.chunk_index >= 0)  # Exclude AI summary chunk
                             .where(or_(*conditions))
                         )
-                        stmt = stmt.where(Document.space_id == space_id)
+                        if space_id:
+                            stmt = stmt.where(Document.space_id == space_id)
+                        else:
+                            stmt = stmt.where(DocumentChunk.user_id == user_id).where(Document.space_id.is_(None))
+
                         if filenames:
                             stmt = stmt.where(Document.filename.in_(filenames))
                         stmt = stmt.limit(dense_limit)

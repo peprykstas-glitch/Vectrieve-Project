@@ -21,9 +21,11 @@ async def list_spaces(
     current_user: User = Depends(get_current_user),
 ):
     """List all spaces owned by the current user."""
+    from models.sql_models import SpaceMember
     stmt = (
         select(Space)
-        .where(Space.user_id == current_user.id)
+        .join(SpaceMember)
+        .where(SpaceMember.user_id == current_user.id)
         .order_by(Space.created_at.desc())
     )
     result = await session.execute(stmt)
@@ -49,6 +51,15 @@ async def create_space(
         **llm_config_data
     )
     session.add(space)
+    
+    from models.sql_models import SpaceMember, SpaceRole
+    member = SpaceMember(
+        space_id=space.id,
+        user_id=current_user.id,
+        role=SpaceRole.OWNER
+    )
+    session.add(member)
+
     await session.commit()
     await session.refresh(space)
     return space
@@ -62,11 +73,18 @@ async def update_space(
     current_user: User = Depends(get_current_user),
 ):
     """Update space details."""
-    stmt = select(Space).where(Space.id == space_id).where(Space.user_id == current_user.id)
+    from models.sql_models import SpaceMember, SpaceRole
+    stmt = (
+        select(Space)
+        .join(SpaceMember)
+        .where(Space.id == space_id)
+        .where(SpaceMember.user_id == current_user.id)
+        .where(SpaceMember.role.in_([SpaceRole.OWNER, SpaceRole.EDITOR]))
+    )
     res = await session.execute(stmt)
     space = res.scalar_one_or_none()
     if not space:
-        raise HTTPException(status_code=404, detail="Space not found")
+        raise HTTPException(status_code=403, detail="Not authorized to update this space or space not found")
 
     if body.name is not None:
         space.name = body.name
@@ -90,14 +108,21 @@ async def delete_space(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a space and all its associated documents, vectors, and chat history."""
-    stmt = select(Space).where(Space.id == space_id).where(Space.user_id == current_user.id)
+    from models.sql_models import SpaceMember, SpaceRole
+    stmt = (
+        select(Space)
+        .join(SpaceMember)
+        .where(Space.id == space_id)
+        .where(SpaceMember.user_id == current_user.id)
+        .where(SpaceMember.role == SpaceRole.OWNER)
+    )
     res = await session.execute(stmt)
     space = res.scalar_one_or_none()
     if not space:
-        raise HTTPException(status_code=404, detail="Space not found")
+        raise HTTPException(status_code=403, detail="Not authorized to delete this space or space not found")
 
     # 1. Delete all documents, chunks, and vectors in this space
-    doc_stmt = select(Document).where(Document.space_id == space_id).where(Document.user_id == current_user.id)
+    doc_stmt = select(Document).where(Document.space_id == space_id)
     doc_res = await session.execute(doc_stmt)
     docs = doc_res.scalars().all()
 
@@ -105,7 +130,7 @@ async def delete_space(
     for doc in docs:
         if vs:
             try:
-                vs.delete_file(doc.filename, current_user.id, space_id=space_id)
+                vs.delete_file(doc.filename, doc.user_id, space_id=space_id)
             except Exception as e:
                 print(f"⚠️ Vector deletion failed for '{doc.filename}' during space deletion: {e}")
         
@@ -116,7 +141,7 @@ async def delete_space(
         await session.delete(doc)
 
     # 2. Delete all chat sessions and history in this space
-    sess_stmt = select(ChatSession).where(ChatSession.space_id == space_id).where(ChatSession.user_id == current_user.id)
+    sess_stmt = select(ChatSession).where(ChatSession.space_id == space_id)
     sess_res = await session.execute(sess_stmt)
     sessions = sess_res.scalars().all()
 
@@ -126,7 +151,12 @@ async def delete_space(
         )
         await session.delete(sess)
 
-    # 3. Delete the Space itself
+    # 3. Delete SpaceMember records
+    await session.execute(
+        sql_delete(SpaceMember).where(SpaceMember.space_id == space_id)
+    )
+
+    # 4. Delete the Space itself
     await session.delete(space)
     await session.commit()
     return None

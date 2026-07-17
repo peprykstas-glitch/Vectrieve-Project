@@ -54,15 +54,22 @@ async def _prepare_rag_context(
 
     # --- Resolve Space (if provided) and verify OWNERSHIP ---
     if request.space_id:
-        from models.sql_models import Space
-        space_res = await session.execute(
-            select(Space)
-            .where(Space.id == request.space_id)
-            .where(Space.user_id == current_user.id)
-        )
+        from models.sql_models import Space, SpaceMember
+        # Check space existence
+        space_res = await session.execute(select(Space).where(Space.id == request.space_id))
         space = space_res.scalar_one_or_none()
         if not space:
-            raise HTTPException(status_code=404, detail="Space not found or access denied.")
+            raise HTTPException(status_code=404, detail="Space not found")
+
+        # Check membership
+        member_stmt = (
+            select(SpaceMember)
+            .where(SpaceMember.space_id == request.space_id)
+            .where(SpaceMember.user_id == current_user.id)
+        )
+        member_res = await session.execute(member_stmt)
+        if not member_res.scalar_one_or_none():
+            raise HTTPException(status_code=403, detail="Access denied to this space")
 
     resolve_llm_config(request, space)
 
@@ -118,13 +125,18 @@ async def _prepare_rag_context(
             session_factory = get_session_factory()
             async with session_factory() as check_session:
                 for fname in request.attached_filenames:
-                    stmt_doc = (
-                        select(DocModel)
-                        .where(DocModel.user_id == current_user.id)
-                        .where(DocModel.filename == fname)
-                    )
                     if request.space_id:
-                        stmt_doc = stmt_doc.where(DocModel.space_id == request.space_id)
+                        stmt_doc = (
+                            select(DocModel)
+                            .where(DocModel.space_id == request.space_id)
+                            .where(DocModel.filename == fname)
+                        )
+                    else:
+                        stmt_doc = (
+                            select(DocModel)
+                            .where(DocModel.user_id == current_user.id)
+                            .where(DocModel.filename == fname)
+                        )
                     res_doc = await check_session.execute(stmt_doc)
                     doc_rows = res_doc.scalars().all()
                     # Pick the most recently uploaded one
