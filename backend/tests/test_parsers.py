@@ -362,8 +362,14 @@ def test_describe_image_bytes_best_effort_on_failure():
     assert result == "", f"Expected empty string on failure, got: {repr(result)}"
 
 
+
 def test_process_scanned_pdf_page_limit(tmp_path):
-    """process_scanned_pdf truncates to MAX_OCR_PAGES when PDF has more pages."""
+    """process_scanned_pdf truncates to MAX_OCR_PAGES when PDF has more pages.
+
+    Mocks _render_page_to_jpeg (the sync helper now called via asyncio.to_thread)
+    rather than pdfium.PdfDocument directly, reflecting the refactored architecture
+    where CPU-bound rasterization is isolated from the async loop.
+    """
     import asyncio
     from unittest.mock import AsyncMock, MagicMock, patch
     from services.vision_pipeline import process_scanned_pdf, MAX_OCR_PAGES
@@ -371,34 +377,107 @@ def test_process_scanned_pdf_page_limit(tmp_path):
     mock_llm = MagicMock()
     mock_llm.describe_image = AsyncMock(return_value="Page description text.")
 
-    # Create a mock pypdfium2 document with 35 pages (> MAX_OCR_PAGES=30)
-    mock_page = MagicMock()
-    mock_bitmap = MagicMock()
-    mock_pil = MagicMock()
-
-    def fake_save(buf, format, quality):
-        buf.write(b"fake_jpeg")
-    mock_pil.save = fake_save
-
-    mock_bitmap.to_pil.return_value = mock_pil
-    mock_page.render.return_value = mock_bitmap
-
     mock_doc = MagicMock()
-    mock_doc.__len__ = MagicMock(return_value=35)
-    mock_doc.__getitem__ = MagicMock(return_value=mock_page)
+    mock_doc.__len__ = MagicMock(return_value=35)  # 35 > MAX_OCR_PAGES=30
     mock_doc.close = MagicMock()
 
-    with patch("services.vision_pipeline.pdfium") as mock_pdfium:
+    with patch("services.vision_pipeline.pdfium") as mock_pdfium, \
+         patch("services.vision_pipeline._render_page_to_jpeg", return_value=b"fake_jpeg") as mock_render:
         mock_pdfium.PdfDocument.return_value = mock_doc
         chunks, truncation_warning = asyncio.run(
             process_scanned_pdf(b"fake_pdf", "scan.pdf", mock_llm, "cloud", None)
         )
 
-    assert len(chunks) <= MAX_OCR_PAGES, (
-        f"Expected <= {MAX_OCR_PAGES} chunks, got {len(chunks)}"
+    # Only MAX_OCR_PAGES pages rendered, not 35
+    assert mock_render.call_count == MAX_OCR_PAGES, (
+        f"Expected {MAX_OCR_PAGES} render calls, got {mock_render.call_count}"
     )
+    assert len(chunks) <= MAX_OCR_PAGES
     for chunk in chunks:
         assert "Source File: scan.pdf" in chunk
     # Truncation warning must be non-None and mention page counts
     assert truncation_warning is not None
     assert "30 of 35" in truncation_warning
+
+
+def test_scanned_pdf_sentinel_fallback(tmp_path):
+    """_parse_file_sync returns ScannedPDFPayload for a PDF with no extractable text.
+
+    This is the critical path that makes the vision pipeline reachable for scanned
+    documents. Previously _parse_file_sync returned an empty string for such PDFs,
+    which fell through to the 'No extractable text' ValueError — vision was unreachable.
+    """
+    from unittest.mock import MagicMock, patch
+    from services.pdf_parser import _parse_file_sync
+    from services.vision_pipeline import ScannedPDFPayload
+
+    # Simulate a scanned PDF where every page.extract_text() returns ""
+    mock_page = MagicMock()
+    mock_page.extract_text.return_value = ""
+
+    mock_reader = MagicMock()
+    mock_reader.pages = [mock_page, mock_page]  # two empty pages
+
+    p = tmp_path / "scan.pdf"
+    p.write_bytes(b"%PDF-1.4 fake")  # content irrelevant — reader is mocked
+
+    # _parse_file_sync executes `from pypdf import PdfReader` inside the function.
+    # Patching the PdfReader class at its source (pypdf.PdfReader) is the correct
+    # target — this is what the local `from ... import` binds at call time.
+    with patch("pypdf.PdfReader", return_value=mock_reader):
+        result = _parse_file_sync(p, "scan.pdf")
+
+    assert isinstance(result, ScannedPDFPayload), (
+        f"Expected ScannedPDFPayload for empty PDF, got {type(result).__name__}"
+    )
+    assert result.filename == "scan.pdf"
+
+
+def test_resize_image_bytes_caps_dimensions():
+    """_resize_image_bytes caps the longest side to MAX_IMAGE_SIDE pixels.
+
+    Verifies that a large image (3000×2000) is resized down and the result
+    is a valid JPEG with longest side <= MAX_IMAGE_SIDE, not the original size.
+    """
+    import struct, zlib
+    from PIL import Image as PILImage
+    import io as _io
+    from services.vision_pipeline import _resize_image_bytes, MAX_IMAGE_SIDE
+
+    # Create a large synthetic RGB image (3000×2000) — well above MAX_IMAGE_SIDE
+    large_img = PILImage.new("RGB", (3000, 2000), color=(128, 64, 32))
+    buf = _io.BytesIO()
+    large_img.save(buf, format="JPEG", quality=90)
+    large_bytes = buf.getvalue()
+
+    resized = _resize_image_bytes(large_bytes)
+
+    # Load result and check dimensions
+    result_img = PILImage.open(_io.BytesIO(resized))
+    w, h = result_img.size
+    assert max(w, h) <= MAX_IMAGE_SIDE, (
+        f"Longest side {max(w, h)} exceeds MAX_IMAGE_SIDE={MAX_IMAGE_SIDE}"
+    )
+    # Aspect ratio preserved: 3000/2000 = 1.5 → 1920/1280 = 1.5
+    assert abs(w / h - 3000 / 2000) < 0.01, "Aspect ratio was not preserved"
+
+
+def test_resize_image_bytes_does_not_upscale():
+    """_resize_image_bytes never enlarges a small image — thumbnail() contract."""
+    from PIL import Image as PILImage
+    import io as _io
+    from services.vision_pipeline import _resize_image_bytes, MAX_IMAGE_SIDE
+
+    # Small image well below MAX_IMAGE_SIDE
+    small_img = PILImage.new("RGB", (400, 300), color=(0, 128, 255))
+    buf = _io.BytesIO()
+    small_img.save(buf, format="JPEG", quality=90)
+    small_bytes = buf.getvalue()
+
+    resized = _resize_image_bytes(small_bytes)
+    result_img = PILImage.open(_io.BytesIO(resized))
+    w, h = result_img.size
+    # Must not be larger than original
+    assert w <= 400 and h <= 300, (
+        f"Image was upscaled: {w}×{h} > original 400×300"
+    )

@@ -361,7 +361,13 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "V
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
-        return text
+        if text.strip():
+            return text
+        # Scanned / image-only PDF: no extractable text found.
+        # Return a sentinel so process_pdf_background can run the vision pipeline.
+        # This is the fallback path for documents where pypdf yields nothing —
+        # typically scans, photo PDFs, or PDFs with only embedded images.
+        return ScannedPDFPayload(file_bytes=file_bytes, filename=filename)
 
     if filename.lower().endswith('.pptx'):
         from pptx import Presentation
@@ -525,9 +531,15 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
 
             chunks = []
             if isinstance(text_or_chunks, VisionPayload):
-                # Standalone image: one chunk with visual description
+                # Standalone image: resize first (CPU-bound), then describe.
+                # _resize_image_bytes caps longest side at MAX_IMAGE_SIDE=1920px
+                # so we never send multi-MB base64 payloads to Groq/Ollama.
+                from services.vision_pipeline import _resize_image_bytes
+                resized_bytes = await asyncio.to_thread(
+                    _resize_image_bytes, text_or_chunks.file_bytes
+                )
                 description = await describe_image_bytes(
-                    text_or_chunks.file_bytes, _llm_svc,
+                    resized_bytes, _llm_svc,
                     _vision_req.mode, _vision_req.model
                 )
                 if description:
