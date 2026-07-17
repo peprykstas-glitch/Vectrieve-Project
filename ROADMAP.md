@@ -44,6 +44,11 @@
 * Support images (`.png`, `.jpg`) and scanned image-only PDFs using OCR (e.g. Tesseract or cloud Vision APIs).
 * Support presentations (`.pptx`) by chunking slides individually.
 * **MVP Strategy:** Process images using a vision model (e.g. Llama-3-Vision) to generate a textual caption/summary, and insert the caption text into the existing dense vector collection using `nomic-embed-text`. CLIP-style multimodal vector spaces are deferred.
+* **Technical Debt / Future Improvements:**
+  * **Hardcoded Vision Models:** The defaults for vision models (`meta-llama/llama-4-scout-17b-16e-instruct` for Groq, `llava` for Ollama) are hardcoded in `llm_service.py`. These must be verified against current model catalogs before release to prevent silent failures returning empty descriptions.
+  * **Simulated Local Streaming:** Currently, local streaming (`mode == 'local'`) in `generate_response_stream` is simulated by fetching the complete response and splitting it by words with a delay. Future versions should implement true token-by-token streaming using Ollama's native streaming (`stream=True` in `ollama.Client.chat()`).
+  * **Resource Safety & Event Loop:** Scanned PDF parsing and rendering are offloaded to worker threads via `asyncio.to_thread` with a strict `try/finally` block to release pypdfium2 C-level resources. Ensure these patterns are reused for any future binary parsers.
+
 
 ### 3d. Ingestion: Audio Transcription
 * Support `.mp3`, `.wav`, and `.m4a` files using Whisper APIs or local Whisper models.
