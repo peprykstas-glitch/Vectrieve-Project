@@ -637,9 +637,12 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
                 # PPTX with images: process each slide, describe images, and reconstruct presentation.
                 # Images are resized in worker threads. Descriptions are embedded inline.
                 slide_texts = []
+                failed_image_count = 0
+                total_image_count = 0
                 for slide in text_or_chunks.slides:
                     slide_parts = [slide.slide_text]
                     for img_idx, img_bytes in enumerate(slide.images):
+                        total_image_count += 1
                         resized_bytes = await asyncio.to_thread(_resize_image_bytes, img_bytes)
                         description = await describe_image_bytes(
                             resized_bytes, _llm_svc,
@@ -649,7 +652,19 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
                             slide_parts.append(
                                 f"\n[Slide Image {img_idx+1} Description]:\n{description}"
                             )
+                        else:
+                            failed_image_count += 1
                     slide_texts.append("\n".join(slide_parts))
+
+                if failed_image_count:
+                    warning = (
+                        f"⚠️ {failed_image_count} of {total_image_count} images could not be "
+                        f"described (vision model unavailable or inference failed) and were "
+                        f"skipped. Text and remaining images were indexed normally."
+                    )
+                    doc.error_log = warning
+                    session.add(doc)
+                    await session.commit()
 
                 combined_text = "\n\n".join(slide_texts)
                 if combined_text.strip():

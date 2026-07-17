@@ -750,3 +750,107 @@ def test_pptx_vision_pipeline_integration(tmp_path):
     assert "[Slide Image 1 Description]" in combined_chunk_text
     assert "A red circle chart." in combined_chunk_text
 
+
+def test_pptx_vision_pipeline_partial_failure(tmp_path):
+    """Verifies that if some images in a PPTX file fail to get described,
+    we record a warning in doc.error_log but allow other images and text
+    to be indexed successfully (status remains COMPLETED)."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from services.vision_pipeline import PPTXPayload, PPTXSlidePayload
+    from services.pdf_parser import process_pdf_background
+    from models.document import Document
+    from PIL import Image as PILImage
+    import io
+
+    # Generate two valid PNG images
+    img1 = PILImage.new("RGB", (10, 10), color=(255, 0, 0))
+    img2 = PILImage.new("RGB", (10, 10), color=(0, 255, 0))
+    buf1, buf2 = io.BytesIO(), io.BytesIO()
+    img1.save(buf1, format="PNG")
+    img2.save(buf2, format="PNG")
+    png1, png2 = buf1.getvalue(), buf2.getvalue()
+
+    # Create dummy database document object
+    doc = Document(
+        id=888,
+        filename="partial.pptx",
+        space_id="test_space",
+        status="PENDING",
+        error_log=None
+    )
+
+    # Slide 1 contains two images
+    slide_payload = PPTXSlidePayload(
+        slide_index=1,
+        slide_text="=== Slide 1 ===\nText content.",
+        images=[png1, png2]
+    )
+    payload = PPTXPayload(filename="partial.pptx", slides=[slide_payload])
+
+    # Mocks
+    mock_db_session = MagicMock()
+    mock_db_session.__aenter__ = AsyncMock(return_value=mock_db_session)
+    mock_db_session.__aexit__ = AsyncMock()
+    mock_db_session.execute = AsyncMock()
+    mock_db_session.commit = AsyncMock()
+    mock_db_session.add = MagicMock()
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = doc
+    mock_db_session.execute.return_value = mock_result
+
+    mock_ws_manager = MagicMock()
+    mock_ws_manager.send_personal_message = AsyncMock()
+
+    # Mock LLM: first image succeeds, second returns "" (simulates failure)
+    mock_llm = MagicMock()
+    mock_llm.describe_image = AsyncMock(side_effect=["Description 1", ""])
+    mock_llm.generate_response = AsyncMock(return_value=("Summary", "model"))
+
+    mock_session_factory = MagicMock(return_value=mock_db_session)
+
+    mock_vector_service = MagicMock()
+    mock_vector_service.upsert_batch = AsyncMock()
+
+    temp_file = tmp_path / "partial.pptx"
+    temp_file.write_bytes(b"dummy")
+
+    with patch("services.pdf_parser.get_session_factory", return_value=mock_session_factory), \
+         patch("services.ws_manager.manager", mock_ws_manager), \
+         patch("services.pdf_parser._parse_file_sync", return_value=payload), \
+         patch("services.llm_service.llm_service", mock_llm), \
+         patch("services.vector_service.get_vector_service", return_value=mock_vector_service), \
+         patch("services.pdf_parser._resolve_vision_provider", return_value=("cloud", None)):
+
+        asyncio.run(process_pdf_background(
+            doc_id=888,
+            tmp_path=temp_file,
+            filename="partial.pptx",
+            space_id="test-space",
+            user_id="user1"
+        ))
+
+    # Document must be COMPLETED
+    assert doc.status == "COMPLETED"
+    
+    # Assert warning was recorded in error_log
+    assert doc.error_log is not None
+    assert "1 of 2 images could not be described" in doc.error_log
+
+    # Verify chunks
+    added_chunks = []
+    for call_args in mock_db_session.add.call_args_list:
+        obj = call_args[0][0]
+        from models.document import DocumentChunk
+        if isinstance(obj, DocumentChunk):
+            added_chunks.append(obj.content)
+
+    combined_text = " ".join(added_chunks)
+    assert "Text content." in combined_text
+    assert "[Slide Image 1 Description]" in combined_text
+    assert "Description 1" in combined_text
+    # Should NOT have Slide Image 2 Description
+    assert "[Slide Image 2 Description]" not in combined_text
+
+
