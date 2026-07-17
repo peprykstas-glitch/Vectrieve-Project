@@ -574,3 +574,179 @@ def test_resize_image_bytes_does_not_upscale():
     assert w <= 400 and h <= 300, (
         f"Image was upscaled: {w}×{h} > original 400×300"
     )
+
+
+def test_parse_pptx_without_images_returns_str(tmp_path):
+    """If a presentation contains only text and no images, it must bypass the vision sentinel
+    and return raw text directly to minimize ingestion overhead."""
+    from pptx import Presentation
+    from services.pdf_parser import _parse_file_sync
+
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[0])
+    title = slide.shapes.title
+    title.text = "Hello Test Presentation"
+    subtitle = slide.placeholders[1]
+    subtitle.text = "Slide subtitle text without images"
+
+    p = tmp_path / "text_only.pptx"
+    prs.save(p)
+
+    result = _parse_file_sync(p, "text_only.pptx")
+    assert isinstance(result, str), f"Expected str for text-only presentation, got {type(result).__name__}"
+    assert "Hello Test Presentation" in result
+    assert "Slide subtitle text without images" in result
+
+
+def test_parse_pptx_with_images_returns_payload(tmp_path):
+    """If a presentation contains one or more Picture shapes (even nested inside Groups),
+    it must return a PPTXPayload sentinel containing slide text and raw image bytes."""
+    from pptx import Presentation
+    from services.pdf_parser import _parse_file_sync
+    from services.vision_pipeline import PPTXPayload
+    from PIL import Image as PILImage
+    import io
+
+    # Generate a tiny PNG image
+    img = PILImage.new("RGB", (10, 10), color=(255, 0, 0))
+    img_buf = io.BytesIO()
+    img.save(img_buf, format="PNG")
+    img_bytes = img_buf.getvalue()
+
+    prs = Presentation()
+    # Slide 1: only text
+    slide1 = prs.slides.add_slide(prs.slide_layouts[0])
+    slide1.shapes.title.text = "Slide 1 Title"
+
+    # Slide 2: text + image
+    slide2 = prs.slides.add_slide(prs.slide_layouts[6]) # blank
+    txBox = slide2.shapes.add_textbox(0, 0, 100000, 100000)
+    tf = txBox.text_frame
+    tf.text = "Slide 2 text with picture"
+    
+    # Add image to Slide 2
+    slide2.shapes.add_picture(io.BytesIO(img_bytes), 0, 200000, width=50000, height=50000)
+
+    p = tmp_path / "with_image.pptx"
+    prs.save(p)
+
+    result = _parse_file_sync(p, "with_image.pptx")
+    assert isinstance(result, PPTXPayload), f"Expected PPTXPayload, got {type(result).__name__}"
+    assert len(result.slides) == 2
+    
+    # Slide 1 payload check
+    assert result.slides[0].slide_index == 1
+    assert "Slide 1 Title" in result.slides[0].slide_text
+    assert len(result.slides[0].images) == 0
+
+    # Slide 2 payload check
+    assert result.slides[1].slide_index == 2
+    assert "Slide 2 text with picture" in result.slides[1].slide_text
+    assert len(result.slides[1].images) == 1
+    assert len(result.slides[1].images[0]) > 0
+
+
+def test_pptx_vision_pipeline_integration(tmp_path):
+    """Verifies that PPTXPayload sentinel is correctly handled inside process_pdf_background.
+    It should invoke vision descriptions for images and insert them into the reconstructed slide text
+    before chunking with RecursiveCharacterTextSplitter."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from services.vision_pipeline import PPTXPayload, PPTXSlidePayload
+    from services.pdf_parser import process_pdf_background
+    from models.document import Document
+
+    from PIL import Image as PILImage
+    import io
+    img = PILImage.new("RGB", (10, 10), color=(0, 255, 0))
+    img_buf = io.BytesIO()
+    img.save(img_buf, format="PNG")
+    tiny_png_bytes = img_buf.getvalue()
+
+    # Create dummy database document object
+    doc = Document(
+        id=999,
+        filename="pres.pptx",
+        space_id="test_space",
+        status="PENDING",
+        error_log=None
+    )
+
+    # Mock PPTXPayload returned by _parse_file_sync
+    # Slide 1 contains 1 image blob
+    slide_payload = PPTXSlidePayload(
+        slide_index=1,
+        slide_text="=== Slide 1 ===\nSlide text description.",
+        images=[tiny_png_bytes]
+    )
+    payload = PPTXPayload(filename="pres.pptx", slides=[slide_payload])
+
+    # Mocks for database, WS manager and LLM
+    mock_db_session = MagicMock()
+    mock_db_session.__aenter__ = AsyncMock(return_value=mock_db_session)
+    mock_db_session.__aexit__ = AsyncMock()
+    mock_db_session.execute = AsyncMock()
+    mock_db_session.commit = AsyncMock()
+    mock_db_session.add = MagicMock()
+
+    # Stub executing select statement to return our mock doc
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = doc
+    mock_db_session.execute.return_value = mock_result
+
+    # Mock WS sending
+    mock_ws_manager = MagicMock()
+    mock_ws_manager.send_personal_message = AsyncMock()
+
+    # Mock LLM describes image and generates summary
+    mock_llm = MagicMock()
+    mock_llm.describe_image = AsyncMock(return_value="A red circle chart.")
+    mock_llm.generate_response = AsyncMock(return_value=("Brief Summary", "model"))
+
+    mock_session_factory = MagicMock(return_value=mock_db_session)
+
+    # Mock vector service
+    mock_vector_service = MagicMock()
+    mock_vector_service.upsert_batch = AsyncMock()
+
+    # Create dummy temp file so tmp_path.unlink() doesn't fail or raise warnings
+    temp_file = tmp_path / "pres.pptx"
+    temp_file.write_bytes(b"dummy presentation data")
+
+    with patch("services.pdf_parser.get_session_factory", return_value=mock_session_factory), \
+         patch("services.ws_manager.manager", mock_ws_manager), \
+         patch("services.pdf_parser._parse_file_sync", return_value=payload), \
+         patch("services.llm_service.llm_service", mock_llm), \
+         patch("services.vector_service.get_vector_service", return_value=mock_vector_service), \
+         patch("services.pdf_parser._resolve_vision_provider", return_value=("cloud", None)):
+
+        # Run process_pdf_background async orchestration task
+        asyncio.run(process_pdf_background(
+            doc_id=999,
+            tmp_path=temp_file,
+            filename="pres.pptx",
+            space_id="test-space",
+            user_id="user1"
+        ))
+
+    # Assertions
+    assert doc.status == "COMPLETED"
+    assert doc.error_log is None
+    
+    # Verify that mock_db_session.add was called to insert chunks
+    # DocumentChunk has content attribute containing chunk text
+    added_chunks = []
+    for call_args in mock_db_session.add.call_args_list:
+        obj = call_args[0][0]
+        from models.document import DocumentChunk
+        if isinstance(obj, DocumentChunk):
+            added_chunks.append(obj.content)
+
+    assert len(added_chunks) > 0
+    
+    # The chunk text must contain BOTH the original slide text and the LLM image description
+    combined_chunk_text = " ".join(added_chunks)
+    assert "Slide text description." in combined_chunk_text
+    assert "[Slide Image 1 Description]" in combined_chunk_text
+    assert "A red circle chart." in combined_chunk_text
+

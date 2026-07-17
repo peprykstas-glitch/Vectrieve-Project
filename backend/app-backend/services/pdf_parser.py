@@ -367,16 +367,34 @@ def _resolve_vision_provider(llm_svc, space) -> tuple:
     return mode, None  # model intentionally None — see docstring
 
 
-def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "VisionPayload", "ScannedPDFPayload"]:
+def _extract_images_from_shape(shape, images_list: list) -> None:
+    """
+    Recursively traverse presentation shapes to find MSO_SHAPE_TYPE.PICTURE elements,
+    extracting their raw image blobs. Recursion is required to extract pictures
+    nested inside group shapes (MSO_SHAPE_TYPE.GROUP).
+    """
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+    try:
+        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+            if shape.image and shape.image.blob:
+                images_list.append(shape.image.blob)
+        elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+            for child in shape.shapes:
+                _extract_images_from_shape(child, images_list)
+    except Exception:
+        pass
+
+
+def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "VisionPayload", "ScannedPDFPayload", "PPTXPayload"]:
     """
     Pure synchronous parser — reads file from disk and returns extracted text,
     a List[str] of pre-built chunks, or a sentinel object for formats that
-    require async vision-LLM processing (images, scanned PDFs).
+    require async vision-LLM processing (images, scanned PDFs, PPTX with pictures).
 
-    Sentinels (VisionPayload, ScannedPDFPayload) are handled by
+    Sentinels (VisionPayload, ScannedPDFPayload, PPTXPayload) are handled by
     process_pdf_background in the async context where llm_service is accessible.
     """
-    from services.vision_pipeline import VisionPayload, ScannedPDFPayload
+    from services.vision_pipeline import VisionPayload, ScannedPDFPayload, PPTXPayload, PPTXSlidePayload
     file_bytes = file_path.read_bytes()
 
     if filename.lower().endswith('.pdf'):
@@ -398,9 +416,15 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "V
     if filename.lower().endswith('.pptx'):
         from pptx import Presentation
         prs = Presentation(io.BytesIO(file_bytes))
+        
+        has_any_images = False
+        slides_payload = []
         slide_texts = []
+
         for i, slide in enumerate(prs.slides):
             parts = [f"--- Slide {i+1} ---"]
+            slide_images = []
+
             for shape in slide.shapes:
                 if shape.has_text_frame:
                     for paragraph in shape.text_frame.paragraphs:
@@ -415,6 +439,10 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "V
                             table_data.append(" | ".join(row_cells))
                     if table_data:
                         parts.append("\n".join(table_data))
+                
+                # Recursively extract pictures nested in the slide shape hierarchy
+                _extract_images_from_shape(shape, slide_images)
+
             try:
                 notes_slide = slide.notes_slide
                 if notes_slide and notes_slide.notes_text_frame:
@@ -423,7 +451,23 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "V
                         parts.append(f"Speaker Notes:\n{notes_text}")
             except Exception:
                 pass
-            slide_texts.append("\n".join(parts))
+
+            slide_text = "\n".join(parts)
+            slide_texts.append(slide_text)
+
+            if slide_images:
+                has_any_images = True
+            
+            slides_payload.append(
+                PPTXSlidePayload(
+                    slide_index=i + 1,
+                    slide_text=slide_text,
+                    images=slide_images
+                )
+            )
+
+        if has_any_images:
+            return PPTXPayload(filename=filename, slides=slides_payload)
         return "\n\n".join(slide_texts)
 
     if filename.lower().endswith('.docx'):
@@ -537,7 +581,7 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
             # Vision pipeline — handled here in the async context because
             # _parse_file_sync (sync) cannot await llm_service.describe_image().
             from services.vision_pipeline import (
-                VisionPayload, ScannedPDFPayload,
+                VisionPayload, ScannedPDFPayload, PPTXPayload,
                 describe_image_bytes, process_scanned_pdf,
             )
             from services.vision_pipeline import _resize_image_bytes
@@ -587,6 +631,38 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
                     raise ValueError(
                         f"Vision pipeline returned no content for scanned PDF '{filename}'. "
                         "Check that a vision-capable model is available."
+                    )
+
+            elif isinstance(text_or_chunks, PPTXPayload):
+                # PPTX with images: process each slide, describe images, and reconstruct presentation.
+                # Images are resized in worker threads. Descriptions are embedded inline.
+                slide_texts = []
+                for slide in text_or_chunks.slides:
+                    slide_parts = [slide.slide_text]
+                    for img_idx, img_bytes in enumerate(slide.images):
+                        resized_bytes = await asyncio.to_thread(_resize_image_bytes, img_bytes)
+                        description = await describe_image_bytes(
+                            resized_bytes, _llm_svc,
+                            _vision_mode, None
+                        )
+                        if description:
+                            slide_parts.append(
+                                f"\n[Slide Image {img_idx+1} Description]:\n{description}"
+                            )
+                    slide_texts.append("\n".join(slide_parts))
+
+                combined_text = "\n\n".join(slide_texts)
+                if combined_text.strip():
+                    from langchain_text_splitters import RecursiveCharacterTextSplitter
+                    splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=1000,
+                        chunk_overlap=200,
+                        separators=["\n\n", "\n", " ", ""]
+                    )
+                    chunks = splitter.split_text(combined_text)
+                else:
+                    raise ValueError(
+                        f"Vision pipeline returned no content for presentation '{filename}'."
                     )
 
             elif isinstance(text_or_chunks, list):

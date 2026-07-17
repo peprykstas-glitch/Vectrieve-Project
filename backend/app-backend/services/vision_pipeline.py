@@ -2,7 +2,7 @@
 vision_pipeline.py — Vision/OCR ingestion helpers for Vectrieve AI.
 
 Provides:
-  - VisionPayload / ScannedPDFPayload — sentinel dataclasses returned by
+  - VisionPayload / ScannedPDFPayload / PPTXPayload — sentinel dataclasses returned by
     _parse_file_sync when a file requires async vision-LLM processing.
     The sync parser cannot await llm_service.describe_image(), so it returns
     a sentinel; process_pdf_background handles the actual vision call.
@@ -71,6 +71,27 @@ class ScannedPDFPayload:
     """
     file_bytes: bytes
     filename: str
+
+
+@dataclass
+class PPTXSlidePayload:
+    """
+    Carries slide text and extracted raw image blobs from a single PPTX slide
+    to be described via vision LLM in the background task.
+    """
+    slide_index: int
+    slide_text: str
+    images: List[bytes]
+
+
+@dataclass
+class PPTXPayload:
+    """
+    Returned by _parse_file_sync when a PPTX presentation contains images
+    and must be processed in the async vision pipeline.
+    """
+    filename: str
+    slides: List[PPTXSlidePayload]
 
 
 # ---------------------------------------------------------------------------
