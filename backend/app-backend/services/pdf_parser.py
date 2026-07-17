@@ -337,8 +337,34 @@ def parse_json_to_chunks(file_path: Path, filename: str) -> List[str]:
                 f"=== Source File: {filename} ===\n"
                 f"JSON Data (Part {s_idx+1}/{len(sub_chunks)}):\n{sc}"
             )
-            
+
     return chunks
+
+
+def _resolve_vision_provider(llm_svc, space) -> tuple:
+    """
+    Determine the vision inference provider (cloud/local) from Space config.
+
+    Intentionally returns model_name=None — never forwards space.llm_model to
+    vision calls. space.llm_model is a text chat model (e.g. 'llama-3.3-70b-
+    versatile') configured for conversational Q&A. Text models reject image
+    payloads; forwarding the name causes a silent FAILED in describe_image_bytes.
+
+    The vision model name is left as None so describe_image/_run_cloud_vision/
+    _run_local_vision use their own vision-specific defaults:
+      - cloud: 'meta-llama/llama-4-scout-17b-16e-instruct' (Groq)
+      - local: 'llava' (Ollama)
+
+    Only the provider (cloud/local) hard-limit is respected — that IS about
+    privacy/locality and must not be bypassed.
+
+    Returns:
+        (mode: str, model_name: None)
+    """
+    mode = "local" if not llm_svc.groq_client else "cloud"
+    if space and space.llm_provider:
+        mode = space.llm_provider
+    return mode, None  # model intentionally None — see docstring
 
 
 def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "VisionPayload", "ScannedPDFPayload"]:
@@ -510,37 +536,29 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
 
             # Vision pipeline — handled here in the async context because
             # _parse_file_sync (sync) cannot await llm_service.describe_image().
-            # fake_req is built below for summary; we resolve LLM config once and
-            # reuse it for vision calls too — Privacy Guard is never bypassed.
             from services.vision_pipeline import (
                 VisionPayload, ScannedPDFPayload,
                 describe_image_bytes, process_scanned_pdf,
             )
+            from services.vision_pipeline import _resize_image_bytes
             from services.llm_service import llm_service as _llm_svc
             from services.llm_config_resolver import resolve_llm_config
             from models.schemas import QueryRequest, ChatMessage
 
-            # Resolve space LLM config once — used for both vision and summary calls.
-            _vision_req = QueryRequest(
-                messages=[ChatMessage(role="user", content="vision")],
-                thinking_mode="auditor",
-            )
-            if not _llm_svc.groq_client:
-                _vision_req.mode = "local"
-            resolve_llm_config(_vision_req, space)
+            # Vision provider resolution — see _resolve_vision_provider docstring.
+            # space.llm_model (text chat model) is intentionally NOT forwarded here.
+            _vision_mode, _vision_model = _resolve_vision_provider(_llm_svc, space)
+
 
             chunks = []
             if isinstance(text_or_chunks, VisionPayload):
                 # Standalone image: resize first (CPU-bound), then describe.
-                # _resize_image_bytes caps longest side at MAX_IMAGE_SIDE=1920px
-                # so we never send multi-MB base64 payloads to Groq/Ollama.
-                from services.vision_pipeline import _resize_image_bytes
                 resized_bytes = await asyncio.to_thread(
                     _resize_image_bytes, text_or_chunks.file_bytes
                 )
                 description = await describe_image_bytes(
                     resized_bytes, _llm_svc,
-                    _vision_req.mode, _vision_req.model
+                    _vision_mode, None  # None → vision-specific model default
                 )
                 if description:
                     chunks = [
@@ -556,11 +574,10 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
             elif isinstance(text_or_chunks, ScannedPDFPayload):
                 # Scanned PDF: one chunk per page (capped at MAX_OCR_PAGES).
                 # process_scanned_pdf returns (chunks, truncation_warning);
-                # if the file was truncated, we write the warning to doc.error_log
-                # so the user sees it in the UI — same visibility as FAILED messages.
+                # if the file was truncated, we write the warning to doc.error_log.
                 chunks, _truncation_warning = await process_scanned_pdf(
                     text_or_chunks.file_bytes, filename,
-                    _llm_svc, _vision_req.mode, _vision_req.model
+                    _llm_svc, _vision_mode, None  # None → vision-specific model default
                 )
                 if _truncation_warning:
                     doc.error_log = _truncation_warning

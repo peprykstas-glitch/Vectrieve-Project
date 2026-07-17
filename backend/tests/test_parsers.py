@@ -288,6 +288,99 @@ def test_parse_csv_multiline_field(tmp_path):
 
 # --- Phase 3c-core: Vision pipeline tests ---
 
+def test_vision_mode_ignores_space_llm_model():
+    """Vision calls must never inherit space.llm_model — that is a text chat model.
+
+    Regression test for the bug where resolve_llm_config was called for _vision_req,
+    propagating space.llm_model (e.g. 'llama-3.3-70b-versatile') as model_name to
+    describe_image_bytes. Text models reject vision payloads, causing a silent FAILED.
+
+    _resolve_vision_provider must return model_name=None regardless of space config.
+    Only the provider (cloud/local) hard-limit is respected.
+    """
+    from unittest.mock import MagicMock
+    from services.pdf_parser import _resolve_vision_provider
+
+    # Space with both a custom provider AND a custom text model
+    mock_space = MagicMock()
+    mock_space.llm_provider = "cloud"
+    mock_space.llm_model = "llama-3.3-70b-versatile"   # text model, NOT vision
+
+    # LLM service with Groq available
+    mock_svc = MagicMock()
+    mock_svc.groq_client = True  # groq available → default would be "cloud"
+
+    mode, model = _resolve_vision_provider(mock_svc, mock_space)
+
+    assert mode == "cloud", f"Expected provider 'cloud' from space.llm_provider, got {mode!r}"
+    assert model is None, (
+        f"model_name must be None for vision calls — space.llm_model ({mock_space.llm_model!r}) "
+        "must never be forwarded to vision. Got: {model!r}"
+    )
+
+def test_vision_provider_respects_local_hard_limit():
+    """If space.llm_provider='local', vision calls must use local mode even if groq is available."""
+    from unittest.mock import MagicMock
+    from services.pdf_parser import _resolve_vision_provider
+
+    mock_space = MagicMock()
+    mock_space.llm_provider = "local"
+    mock_space.llm_model = "some-text-model"
+
+    mock_svc = MagicMock()
+    mock_svc.groq_client = True  # groq is available, but space says local
+
+    mode, model = _resolve_vision_provider(mock_svc, mock_space)
+
+    assert mode == "local", f"Expected 'local' hard-limit from space, got {mode!r}"
+    assert model is None
+
+
+def test_render_page_to_jpeg_real_pdfium(tmp_path):
+    """_render_page_to_jpeg calls real pypdfium2 C-level APIs — no mocking of pdfium.
+
+    Creates a minimal PDF using pypdf.PdfWriter (already in deps), writes it to
+    a temp file, opens with real pdfium.PdfDocument, renders page 0, and verifies
+    the result is valid JPEG bytes with dimensions within MAX_IMAGE_SIDE.
+
+    Purpose: catch API mismatches (doc[i] vs doc.get_page(i), bitmap method names,
+    to_pil() signature) that are invisible to mock-only tests but crash immediately
+    on the first real scanned PDF in production.
+    """
+    import io as _io
+    import pypdfium2 as pdfium
+    from PIL import Image as PILImage
+    from pypdf import PdfWriter
+    from services.vision_pipeline import _render_page_to_jpeg, MAX_IMAGE_SIDE
+
+    # Build a minimal single-page PDF with pypdf
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    pdf_buf = _io.BytesIO()
+    writer.write(pdf_buf)
+    pdf_bytes = pdf_buf.getvalue()
+
+    # Open with real pdfium — this exercises the actual C-level PDF parser
+    doc = pdfium.PdfDocument(pdf_bytes)
+    try:
+        assert len(doc) == 1, "Expected exactly 1 page in test PDF"
+
+        jpeg_bytes = _render_page_to_jpeg(doc, 0)
+    finally:
+        doc.close()
+
+    # Result must be non-empty valid JPEG
+    assert len(jpeg_bytes) > 0, "render returned empty bytes"
+    assert jpeg_bytes[:2] == b'\xff\xd8', "Result is not a valid JPEG (wrong magic bytes)"
+
+    # Dimensions must be within resize cap
+    img = PILImage.open(_io.BytesIO(jpeg_bytes))
+    w, h = img.size
+    assert max(w, h) <= MAX_IMAGE_SIDE, (
+        f"Rendered page exceeds MAX_IMAGE_SIDE={MAX_IMAGE_SIDE}: got {w}×{h}"
+    )
+
+
 def test_image_sentinel_roundtrip(tmp_path):
     """_parse_file_sync returns a VisionPayload sentinel for image files,
     NOT a string or list — confirming vision processing is deferred to async context."""

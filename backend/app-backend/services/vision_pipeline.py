@@ -179,8 +179,15 @@ async def process_scanned_pdf(
     Individual page failures are skipped (best-effort); the document still
     gets indexed with whatever pages succeeded.
     """
-    doc = pdfium.PdfDocument(file_bytes)
-    total_pages = len(doc)
+    # Open the document and measure its length in a worker thread —
+    # pdfium.PdfDocument() parses the PDF cross-reference table (CPU-bound C code).
+    # len(doc) is a cheap attribute read but is included here to keep all
+    # pdfium calls off the event loop, consistent with the to_thread contract.
+    def _open_doc() -> tuple:
+        d = pdfium.PdfDocument(file_bytes)
+        return d, len(d)
+
+    doc, total_pages = await asyncio.to_thread(_open_doc)
     truncation_warning: Optional[str] = None
 
     if total_pages > MAX_OCR_PAGES:
@@ -195,17 +202,22 @@ async def process_scanned_pdf(
         page_indices = range(total_pages)
 
     chunks: List[str] = []
-    for i in page_indices:
-        # Offload CPU-bound render+resize to a worker thread.
-        # This keeps the event loop free for other requests during rasterization.
-        image_bytes_page = await asyncio.to_thread(_render_page_to_jpeg, doc, i)
+    try:
+        for i in page_indices:
+            # Offload CPU-bound render+resize to a worker thread.
+            # This keeps the event loop free for other requests during rasterization.
+            image_bytes_page = await asyncio.to_thread(_render_page_to_jpeg, doc, i)
 
-        description = await describe_image_bytes(image_bytes_page, llm_service, mode, model_name)
-        if description:
-            chunks.append(
-                f"=== Source File: {filename} (Page {i + 1}) ===\n"
-                f"Visual Content Description:\n{description}"
-            )
+            description = await describe_image_bytes(image_bytes_page, llm_service, mode, model_name)
+            if description:
+                chunks.append(
+                    f"=== Source File: {filename} (Page {i + 1}) ===\n"
+                    f"Visual Content Description:\n{description}"
+                )
+    finally:
+        # Always release the native pdfium C-level object.
+        # Without try/finally, an exception on a damaged page mid-loop would
+        # bypass this call and leak the pdfium document handle indefinitely.
+        doc.close()
 
-    doc.close()
     return chunks, truncation_warning
