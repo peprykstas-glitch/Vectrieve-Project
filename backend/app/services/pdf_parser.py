@@ -273,10 +273,20 @@ def parse_excel_to_chunks(file_path: Path, filename: str) -> List[str]:
 def parse_json_to_chunks(file_path: Path, filename: str) -> List[str]:
     import json
 
-    # No try/except wrapper — JSON decode errors propagate to process_pdf_background
-    # which converts them to status=FAILED + error_log (avoids fake-success chunks).
+    # Multi-encoding decode with fallback for Windows-1251 (Cyrillic) and Latin-1
     file_bytes = file_path.read_bytes()
-    json_data = json.loads(file_bytes.decode('utf-8', errors='ignore'))
+    decoded_text = None
+    for enc in ("utf-8", "utf-8-sig", "windows-1251", "latin-1"):
+        try:
+            decoded_text = file_bytes.decode(enc)
+            break
+        except UnicodeDecodeError:
+            continue
+
+    if decoded_text is None:
+        decoded_text = file_bytes.decode("utf-8", errors="ignore")
+
+    json_data = json.loads(decoded_text)
 
     chunks = []
     

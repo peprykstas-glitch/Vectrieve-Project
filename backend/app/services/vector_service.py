@@ -77,15 +77,16 @@ class VectorService:
         from qdrant_client.http import models
 
         try:
-            client.get_collection(self.collection_name)
-        except Exception:
-            logger.info(f"🔨 Creating collection '{self.collection_name}' with size {self.vector_size}...")
-            client.recreate_collection(
-                collection_name=self.collection_name,
-                vectors_config=models.VectorParams(
-                    size=self.vector_size, distance=models.Distance.COSINE
-                ),
-            )
+            if not client.collection_exists(self.collection_name):
+                logger.info(f"🔨 Creating collection '{self.collection_name}' with size {self.vector_size}...")
+                client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=models.VectorParams(
+                        size=self.vector_size, distance=models.Distance.COSINE
+                    ),
+                )
+        except Exception as e:
+            logger.warning(f"Collection check/create notice: {e}")
 
     async def upsert_batch(self, texts: List[str], filename: str, user_id: int, space_id: Optional[str] = None):
         """
