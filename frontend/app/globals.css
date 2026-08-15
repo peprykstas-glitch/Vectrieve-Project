@@ -305,6 +305,45 @@
   transition: color 0.15s;
 }
 
-.chat-prose a:hover {
-  color: #a5b4fc;
-}
+/* ── Collapsed sidebar: precision center alignment ── */
+[data-collapsible="icon"] [data-sidebar="sidebar"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  overflow: visible !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="header"],
+[data-collapsible="icon"] [data-sidebar="content"],
+[data-collapsible="icon"] [data-sidebar="footer"],
+[data-collapsible="icon"] [data-sidebar="group"],
+[data-collapsible="icon"] [data-sidebar="menu"] {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="menu-item"] {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="menu-button"] {
+  width: 2rem !important;
+  height: 2rem !important;
+  padding: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="menu-button"] > svg {
+  margin: 0 auto !important;
+}

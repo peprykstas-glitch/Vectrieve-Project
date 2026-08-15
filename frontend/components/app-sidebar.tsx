@@ -199,7 +199,7 @@ function UserCard() {
   const initials = email ? email[0].toUpperCase() : '?'
 
   return (
-    <div className="group flex items-center gap-3 px-2 py-2 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent">
+    <div className="group flex items-center gap-3 px-2 py-2 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:w-full">
       {/* Avatar */}
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-bold shadow-md">
         {initials}
@@ -426,12 +426,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/5 bg-zinc-950 z-40">
-      <SidebarHeader className="h-16 flex justify-center p-2 border-b border-white/5">
+      <SidebarHeader className="h-16 flex items-center justify-center p-2 border-b border-white/5 group-data-[collapsible=icon]:p-0">
         <button 
           onClick={toggleSidebar}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          className="flex items-center w-full gap-3 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
+          className="flex items-center w-full gap-3 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
         >
           <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 transition-all duration-200 hover:scale-105 active:scale-95">
             {hovered ? (
@@ -453,9 +453,9 @@ export function AppSidebar() {
         </button>
       </SidebarHeader>
 
-      <SidebarContent className="p-2 pt-4">
+      <SidebarContent className="p-2 pt-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pt-2">
         <SpaceSwitcher />
-        <SidebarGroup>
+        <SidebarGroup className="group-data-[collapsible=icon]:px-0">
           <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 group-data-[collapsible=icon]:hidden">
             Platform Operations
           </SidebarGroupLabel>
@@ -490,7 +490,7 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-4 group-data-[collapsible=icon]:hidden">
+        <SidebarGroup className="mt-4 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:px-0">
           <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
             Recent Chats
           </SidebarGroupLabel>
@@ -512,7 +512,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Collapsed mode: only show New Chat icon */}
-        <SidebarGroup className="mt-4 hidden group-data-[collapsible=icon]:block">
+        <SidebarGroup className="mt-4 hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:px-0">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -529,7 +529,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/5 p-2">
+      <SidebarFooter className="border-t border-white/5 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
         <UserCard />
       </SidebarFooter>
     </Sidebar>

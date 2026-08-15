@@ -176,10 +176,22 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
         transition={{ duration: 0.25, ease: "easeOut" }}
         className={`flex gap-3.5 w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
       >
-        {/* Assistant Avatar (Clean, minimal, Claude-like) */}
+        {/* Assistant Avatar (Branded Vectrieve Core Emblem) */}
         {msg.role === "assistant" && (
-          <div className="relative flex shrink-0 h-8 w-8 rounded-lg items-center justify-center bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mt-1 shadow-sm">
-            <Bot size={16} className={msg.isStreaming ? "animate-pulse text-indigo-300" : ""} />
+          <div className="relative flex shrink-0 h-8 w-8 rounded-xl items-center justify-center bg-zinc-900/90 border border-white/10 mt-0.5 shadow-[0_2px_10px_rgba(0,0,0,0.3)] overflow-hidden group">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="/logo-icon.png" 
+              alt="Vectrieve Core" 
+              className={`h-4.5 w-4.5 object-contain transition-all duration-300 ${
+                msg.isStreaming 
+                  ? "animate-pulse drop-shadow-[0_0_10px_rgba(0,212,255,0.8)] scale-105" 
+                  : "drop-shadow-[0_0_6px_rgba(0,212,255,0.4)] group-hover:scale-110"
+              }`} 
+            />
+            {msg.isStreaming && (
+              <span className="absolute inset-0 rounded-xl ring-1 ring-cyan-500/40 animate-ping opacity-30 pointer-events-none" />
+            )}
           </div>
         )}
 
