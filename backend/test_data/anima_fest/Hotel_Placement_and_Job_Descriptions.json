@@ -1,0 +1,37 @@
+{
+  "agency": "Anima Fest Experience",
+  "departments": [
+    {
+      "department_name": "Front Office & Reception",
+      "required_languages": ["English B2", "Spanish B1 (Mandatory)", "German or French is an asset"],
+      "key_responsibilities": [
+        "Guest check-in and check-out procedures",
+        "Managing room keys, magnetic cards and guest inquiries",
+        "Providing tourist information about the island / local area",
+        "Handling customer feedback and basic complaint resolution"
+      ],
+      "uniform_policy": "Hotel provides formal shirt/blouse, blazer and nametag. Intern must bring black formal trousers/skirt and black leather shoes.",
+      "security_deposit": "€30 refundable deposit for master keycard and locker padlock."
+    },
+    {
+      "department_name": "Food & Beverage (F&B Service)",
+      "required_languages": ["English B1 (Conversational)", "Basic Spanish A2 is recommended"],
+      "key_responsibilities": [
+        "Buffet setup, restocking, and table clearing",
+        "Beverage service in pool bar, main restaurant, and lounge",
+        "Adhering strictly to HACCP food safety standards"
+      ],
+      "uniform_policy": "Hotel provides waiter vest, apron, and polo shirts. Intern must bring black service trousers and non-slip black shoes."
+    },
+    {
+      "department_name": "Animation & Entertainment",
+      "required_languages": ["English B1/B2", "Energy, public speaking and sports affinity"],
+      "key_responsibilities": [
+        "Organizing daytime sports activities (volleyball, water polo, darts)",
+        "Kids Club supervision (face painting, mini-disco)",
+        "Participating in evening shows and musical dance performances"
+      ],
+      "uniform_policy": "Hotel provides sports animation t-shirts and shorts."
+    }
+  ]
+}

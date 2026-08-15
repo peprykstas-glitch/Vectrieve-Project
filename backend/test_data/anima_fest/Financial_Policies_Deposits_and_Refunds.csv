@@ -1,0 +1,6 @@
+Policy_Code,Category,Fee_Amount_EUR,Refundable_Condition,Non_Refundable_Condition,Processing_Timeline
+FP-01,Registration Deposit,150,100% Refundable only if student fails official language screening,Non-refundable if student withdraws voluntarily,5 working days
+FP-02,Placement Confirmation Fee,350,100% Refundable if Spanish Embassy issues official written visa denial letter,Non-refundable if student rejects 3 confirmed hotel offers matching profile,14 working days
+FP-03,Cancellation > 45 Days,0,Partial refund minus €100 administrative handling fee,N/A,10 working days
+FP-04,Cancellation < 30 Days,0,No refund granted due to finalized hotel staff allocation,100% non-refundable,Immediate
+FP-05,Flight Expenses,0,N/A - Flight bookings are 100% student self-funded,Agency does not reimburse personal flights,N/A
