@@ -228,16 +228,8 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                     </details>
                   )}
 
-                  {/* Clean Markdown Prose with Generous Breathing Room */}
-                  <div className="prose prose-invert prose-zinc max-w-none text-zinc-200 text-[15px] leading-7 
-                    prose-p:my-3 prose-p:leading-7 prose-p:text-zinc-200 
-                    prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mt-6 prose-headings:mb-3 
-                    prose-h3:text-xs prose-h3:font-bold prose-h3:text-indigo-400 prose-h3:uppercase prose-h3:tracking-widest
-                    prose-ul:my-3 prose-ul:pl-5 prose-ul:space-y-2 prose-ol:my-3 prose-ol:pl-5 prose-ol:space-y-2 prose-li:text-zinc-200 prose-li:leading-relaxed
-                    prose-strong:text-white prose-strong:font-semibold
-                    prose-table:my-4 prose-th:text-white prose-th:font-semibold prose-th:border-b prose-th:border-zinc-800 prose-th:pb-2 prose-th:text-xs
-                    prose-td:border-b prose-td:border-zinc-900 prose-td:py-2.5 prose-td:text-xs prose-td:text-zinc-300
-                  ">
+                  {/* Chat Prose — powered by globals.css .chat-prose */}
+                  <div className="chat-prose max-w-none">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{

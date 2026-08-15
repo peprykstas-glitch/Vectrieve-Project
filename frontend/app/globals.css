@@ -157,3 +157,154 @@
   scrollbar-width: thin !important;
   scrollbar-color: rgba(82, 82, 91, 0.45) transparent !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   VECTRIEVE CHAT PROSE — Gemini / ChatGPT / Claude-grade Typography
+   ═══════════════════════════════════════════════════════════════════ */
+
+.chat-prose {
+  /* Font Rendering — crisp on Windows & macOS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+
+  /* Base text — 15px with generous 1.8 line-height like Gemini */
+  font-size: 15px;
+  line-height: 1.8;
+  color: #d4d4d8; /* zinc-300 */
+  letter-spacing: -0.006em;
+  word-spacing: 0.02em;
+}
+
+/* ── Paragraphs ── */
+.chat-prose p {
+  margin: 0.75em 0;
+  color: #d4d4d8;
+}
+
+.chat-prose > p:first-child {
+  margin-top: 0;
+}
+
+.chat-prose > p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Headings: Clean separation line + indigo accent like Gemini ── */
+.chat-prose h1,
+.chat-prose h2 {
+  font-size: 1.05em;
+  font-weight: 700;
+  color: #e4e4e7; /* zinc-200 */
+  margin: 1.5em 0 0.6em 0;
+  letter-spacing: -0.01em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.35em;
+}
+
+.chat-prose h3 {
+  font-size: 0.72em;
+  font-weight: 700;
+  color: #818cf8; /* indigo-400 */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 1.6em 0 0.65em 0;
+}
+
+.chat-prose h4 {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #e4e4e7;
+  margin: 1.2em 0 0.4em 0;
+}
+
+/* ── Bold — high-contrast but NOT overwhelming ── */
+.chat-prose strong,
+.chat-prose b {
+  font-weight: 600;
+  color: #fafafa; /* zinc-50 — bright white accent on lead keywords */
+}
+
+/* ── Lists — the crucial readability element ── */
+.chat-prose ul,
+.chat-prose ol {
+  margin: 0.65em 0;
+  padding-left: 1.25em;
+}
+
+.chat-prose ul {
+  list-style-type: disc;
+}
+
+.chat-prose ol {
+  list-style-type: decimal;
+}
+
+.chat-prose li {
+  margin: 0.4em 0;
+  line-height: 1.7;
+  color: #d4d4d8;
+  padding-left: 0.2em;
+}
+
+.chat-prose li::marker {
+  color: #6366f1; /* indigo-500 marker dots */
+}
+
+/* Nested lists */
+.chat-prose li > ul,
+.chat-prose li > ol {
+  margin-top: 0.3em;
+  margin-bottom: 0.1em;
+}
+
+/* ── Blockquote ── */
+.chat-prose blockquote {
+  border-left: 3px solid #6366f1;
+  padding: 0.3em 0 0.3em 1em;
+  margin: 0.8em 0;
+  color: #a1a1aa; /* zinc-400 */
+  font-style: italic;
+}
+
+/* ── Tables ── */
+.chat-prose table {
+  margin: 1em 0;
+  border-collapse: collapse;
+  font-size: 0.85em;
+  width: 100%;
+}
+
+.chat-prose th {
+  font-weight: 600;
+  color: #fafafa;
+  border-bottom: 2px solid #3f3f46; /* zinc-700 */
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.chat-prose td {
+  border-bottom: 1px solid #27272a; /* zinc-800 */
+  padding: 0.5em 0.75em;
+  color: #d4d4d8;
+}
+
+/* ── Horizontal rule ── */
+.chat-prose hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 1.5em 0;
+}
+
+/* ── Links ── */
+.chat-prose a {
+  color: #818cf8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+
+.chat-prose a:hover {
+  color: #a5b4fc;
+}
