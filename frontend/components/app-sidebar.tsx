@@ -62,6 +62,19 @@ function ChatHistoryList() {
     fetchSessions()
   }, [pathname, currentSessionId, spaceId, fetchSessions])
 
+  // Listen for custom 'session-created' event (fired by useChat after replaceState)
+  React.useEffect(() => {
+    const handleSessionCreated = () => {
+      // Immediate re-fetch: will show "New Chat..." placeholder title
+      fetchSessions()
+      // Delayed re-fetch: gives the backend time to auto-generate the real title
+      const timer = setTimeout(() => fetchSessions(), 3500)
+      return () => clearTimeout(timer)
+    }
+    window.addEventListener("session-created", handleSessionCreated)
+    return () => window.removeEventListener("session-created", handleSessionCreated)
+  }, [fetchSessions])
+
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -477,8 +490,8 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 group-data-[collapsible=icon]:hidden">
+        <SidebarGroup className="mt-4 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
             Recent Chats
           </SidebarGroupLabel>
           <SidebarMenu>
@@ -490,11 +503,28 @@ export function AppSidebar() {
               >
                 <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
                   <MessageSquare strokeWidth={1.5} className="shrink-0" />
-                  <span className="font-medium group-data-[collapsible=icon]:hidden">+ New Chat</span>
+                  <span className="font-medium">+ New Chat</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <ChatHistoryList />
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* Collapsed mode: only show New Chat icon */}
+        <SidebarGroup className="mt-4 hidden group-data-[collapsible=icon]:block">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="New Chat"
+                className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200"
+              >
+                <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
+                  <Plus strokeWidth={2} className="shrink-0" />
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

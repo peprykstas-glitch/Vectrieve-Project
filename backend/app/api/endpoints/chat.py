@@ -1,6 +1,7 @@
 import uuid
 import json
 import time
+import asyncio
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.responses import StreamingResponse
@@ -29,8 +30,15 @@ async def generate_chat_title_background(session_id: str, user_query: str, ai_re
     """Generates a short title for a new chat session using the LLM."""
     try:
         title = await llm_service.generate_title(user_query, ai_response)
-        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-        async with async_session() as session:
+        if not title or title == "New Chat":
+            # Fallback: use first 5 words of user query
+            words = user_query.strip().split()
+            title = " ".join(words[:5])
+            if len(words) > 5:
+                title += "…"
+        from core.database import get_session_factory
+        session_factory = get_session_factory()
+        async with session_factory() as session:
             statement = select(ChatSession).where(ChatSession.id == session_id)
             result = await session.execute(statement)
             chat_session = result.scalar_one_or_none()
@@ -38,8 +46,26 @@ async def generate_chat_title_background(session_id: str, user_query: str, ai_re
                 chat_session.title = title
                 session.add(chat_session)
                 await session.commit()
+                print(f"✅ Auto-title for session {session_id[:8]}...: '{title}'")
     except Exception as e:
-        print(f"Error generating title: {e}")
+        print(f"❌ Error generating title for session {session_id[:8]}...: {e}")
+        # Fallback: set title to first words of the query
+        try:
+            words = user_query.strip().split()
+            fallback_title = " ".join(words[:5]) + ("…" if len(words) > 5 else "")
+            from core.database import get_session_factory
+            session_factory = get_session_factory()
+            async with session_factory() as db:
+                stmt = select(ChatSession).where(ChatSession.id == session_id)
+                res = await db.execute(stmt)
+                obj = res.scalar_one_or_none()
+                if obj:
+                    obj.title = fallback_title
+                    db.add(obj)
+                    await db.commit()
+                    print(f"⚠️ Fallback title set: '{fallback_title}'")
+        except Exception as fb_err:
+            print(f"❌ Even fallback title failed: {fb_err}")
 
 
 async def _prepare_rag_context(
@@ -457,9 +483,12 @@ async def handle_query_stream(
             import logging
             logging.getLogger(__name__).warning(f"⚠️ Stream telemetry logging failed (non-blocking): {telemetry_err}")
 
+        # Generate title using asyncio.create_task (not background_tasks)
+        # because background_tasks.add_task inside a streaming generator
+        # is unreliable — FastAPI may not execute them after the generator ends.
         if is_new_session and response_text:
-            background_tasks.add_task(
-                generate_chat_title_background, session_id, user_query, response_text
+            asyncio.create_task(
+                generate_chat_title_background(session_id, user_query, response_text)
             )
 
     return StreamingResponse(

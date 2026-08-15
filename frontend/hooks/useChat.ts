@@ -283,6 +283,8 @@ export function useChat(
                   const newUrl = new URL(window.location.href);
                   newUrl.searchParams.set("session", event.session_id);
                   window.history.replaceState({}, "", newUrl.toString());
+                  // Notify sidebar to refresh session list
+                  window.dispatchEvent(new CustomEvent("session-created", { detail: { sessionId: event.session_id } }));
                 }
               }
               // Attach sources to the placeholder message
