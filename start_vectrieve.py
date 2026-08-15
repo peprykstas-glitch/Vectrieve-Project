@@ -66,7 +66,9 @@ def read_output(pipe, tag, color):
                 break
             clean_line = line.strip()
             if clean_line:
-                # Filter out noisy repetitive next.js turbo panic messages or routine poll logs if unwanted
+                # Filter out harmless noisy Next.js Turbopack panic traces on Windows
+                if any(ignored in clean_line for ignored in ("Turbopack", "next-panic", "github.com/vercel/next.js/discussions")):
+                    continue
                 print(f"{color}[{tag}]{RESET} {clean_line}", flush=True)
     except Exception:
         pass
