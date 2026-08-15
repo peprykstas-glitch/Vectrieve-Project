@@ -162,6 +162,9 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
       }
     }
 
+    // Strip inline parenthetical document references like (Official_Communication_Templates_and_Triggers.md, Segment 1)
+    markdownContent = markdownContent.replace(/\s*\([A-Za-z0-9_\-]+\.(?:md|pdf|json|csv|txt|docx|pptx|xlsx)[^)]*\)/gi, "");
+
     // Clean up excessive multi-newline gaps from LLM streaming
     markdownContent = markdownContent.replace(/\n{3,}/g, "\n\n");
 
@@ -225,15 +228,15 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                     </details>
                   )}
 
-                  {/* Clean Markdown Prose without double whitespace-pre-wrap */}
-                  <div className="prose prose-invert prose-zinc max-w-none text-zinc-200 text-[14.5px] leading-relaxed 
-                    prose-p:my-2 prose-p:leading-relaxed prose-p:text-zinc-200 
-                    prose-headings:text-white prose-headings:font-semibold prose-headings:tracking-tight prose-headings:mt-4 prose-headings:mb-2 
-                    prose-h3:text-sm prose-h3:uppercase prose-h3:tracking-wider prose-h3:text-zinc-300
-                    prose-ul:my-2 prose-ul:pl-4 prose-ol:my-2 prose-ol:pl-4 prose-li:my-1 prose-li:text-zinc-200
+                  {/* Clean Markdown Prose with Generous Breathing Room */}
+                  <div className="prose prose-invert prose-zinc max-w-none text-zinc-200 text-[15px] leading-7 
+                    prose-p:my-3 prose-p:leading-7 prose-p:text-zinc-200 
+                    prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mt-6 prose-headings:mb-3 
+                    prose-h3:text-xs prose-h3:font-bold prose-h3:text-indigo-400 prose-h3:uppercase prose-h3:tracking-widest
+                    prose-ul:my-3 prose-ul:pl-5 prose-ul:space-y-2 prose-ol:my-3 prose-ol:pl-5 prose-ol:space-y-2 prose-li:text-zinc-200 prose-li:leading-relaxed
                     prose-strong:text-white prose-strong:font-semibold
-                    prose-table:my-3 prose-th:text-white prose-th:font-semibold prose-th:border-b prose-th:border-zinc-800 prose-th:pb-1.5 prose-th:text-xs
-                    prose-td:border-b prose-td:border-zinc-900 prose-td:py-1.5 prose-td:text-xs prose-td:text-zinc-300
+                    prose-table:my-4 prose-th:text-white prose-th:font-semibold prose-th:border-b prose-th:border-zinc-800 prose-th:pb-2 prose-th:text-xs
+                    prose-td:border-b prose-td:border-zinc-900 prose-td:py-2.5 prose-td:text-xs prose-td:text-zinc-300
                   ">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}

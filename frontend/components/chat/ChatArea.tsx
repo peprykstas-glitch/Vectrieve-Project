@@ -232,36 +232,36 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] rounded-full bg-purple-500/5 blur-[100px] pointer-events-none" />
 
-      {/* Premium Frosted Floating Header */}
-      <div className="shrink-0 h-14 border-b border-white/5 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-6 relative z-20">
+      {/* Slim Floating Accessory Header */}
+      <div className="shrink-0 h-10 border-b border-white/5 bg-zinc-950/40 backdrop-blur-sm flex items-center justify-between px-5 relative z-20">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
             </span>
-            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
-              Vectrieve Core Node
+            <span className="text-[11px] font-semibold text-zinc-400 tracking-wider">
+              Vectrieve Core
             </span>
           </div>
 
-          <div className={`hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
+          <div className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium tracking-wide border ${
             computeMode === "local" 
-              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]" 
-              : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_8px_rgba(99,102,241,0.1)]"
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
+              : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
           }`}>
-            <ShieldCheck className="w-3 h-3" />
-            {computeMode === "local" ? "GDPR Air-Gap Shield Active" : "Secure Encrypted Cloud Tunnel"}
+            <ShieldCheck className="w-2.5 h-2.5" />
+            {computeMode === "local" ? "GDPR Air-Gap" : "Encrypted Cloud"}
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {sessionId && messages.length > 1 && (
             <button 
               onClick={() => setShowAudioBrief(true)}
-              className="px-3 py-1.5 text-[10px] font-semibold bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 hover:text-white hover:bg-emerald-600 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(16,185,129,0.05)]"
+              className="px-2.5 py-1 text-[10px] font-semibold bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 hover:text-white hover:bg-emerald-600 rounded-md transition-all flex items-center gap-1 cursor-pointer"
             >
-              <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400 group-hover:text-white" />
+              <Radio className="w-3 h-3 animate-pulse" />
               Audio Briefing
             </button>
           )}
@@ -270,17 +270,17 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
             <>
               <button 
                 onClick={exportAsMarkdown}
-                className="px-3 py-1.5 text-[10px] font-semibold bg-zinc-900 border border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1 text-[10px] font-medium bg-zinc-900/80 border border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-all flex items-center gap-1 cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" />
-                Export MD
+                <Download className="w-3 h-3" />
+                MD
               </button>
               <button 
                 onClick={exportAsPDF}
-                className="px-3 py-1.5 text-[10px] font-semibold bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1 text-[10px] font-medium bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-md transition-all flex items-center gap-1 cursor-pointer"
               >
-                <Printer className="w-3.5 h-3.5" />
-                Print PDF
+                <Printer className="w-3 h-3" />
+                PDF
               </button>
             </>
           )}
@@ -288,9 +288,9 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       </div>
 
       {/* CENTRALIZED MESSAGE FEED */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth custom-scrollbar relative z-10">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 scroll-smooth custom-scrollbar relative z-10">
         <div className="flex flex-col items-center w-full min-h-full">
-          <div className="w-full max-w-3xl flex flex-col gap-6 pb-6 flex-1 justify-center">
+          <div className="w-full max-w-4xl flex flex-col gap-6 pb-6 flex-1 justify-center">
             {showWelcomeHero ? (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}

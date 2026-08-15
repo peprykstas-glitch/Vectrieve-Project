@@ -27,8 +27,8 @@ function DashboardHeader() {
   }, [])
   
   return (
-    <header className="flex shrink-0 items-center justify-between px-6 py-3.5 border-b border-white/5 bg-zinc-900/10 backdrop-blur-xl z-30 transition-all duration-300">
-      <div className="flex items-center gap-4 md:hidden">
+    <header className="flex shrink-0 items-center justify-between px-5 py-2 h-11 border-b border-white/5 bg-zinc-950/70 backdrop-blur-md z-30 transition-all duration-300">
+      <div className="flex items-center gap-3 md:hidden">
         <SidebarTrigger className="text-zinc-400 hover:text-white cursor-pointer" />
       </div>
 
