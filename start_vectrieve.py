@@ -191,6 +191,14 @@ def main():
     else:
         log("SUCCESS", "Qdrant and PostgreSQL storage engines verified active.", GREEN)
 
+    # 2b. Local AI & Embedding Engine (Ollama)
+    log("STEP", "Verifying Local AI & Embedding Engine (Ollama)...", BOLD)
+    if not is_port_in_use(11434):
+        log("INFO", "Starting Ollama background server...", DIM)
+        start_process("ollama serve", os.getcwd(), "OLLAMA", YELLOW)
+        wait_for_service("http://localhost:11434/api/tags", timeout_sec=8)
+    log("SUCCESS", "Ollama Embedding & Local AI Engine verified active.", GREEN)
+
     # 3. Database Schema Migration via Alembic
     log("STEP", "Applying migrations and verifying database state...", BOLD)
     venv_python = os.path.abspath(os.path.join("backend", "venv", "Scripts", "python.exe"))
