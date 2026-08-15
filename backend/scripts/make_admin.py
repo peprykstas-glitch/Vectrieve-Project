@@ -16,13 +16,13 @@ async def make_admin(username: str):
         result = await session.execute(statement)
         user = result.scalar_one_or_none()
         if not user:
-            print(f"❌ User '{username}' not found.")
+            print(f"[FAIL] User '{username}' not found.")
             return False
         
         user.is_admin = True
         session.add(user)
         await session.commit()
-        print(f"✅ User '{username}' successfully promoted to Admin.")
+        print(f"[OK] User '{username}' successfully promoted to Admin.")
         return True
 
 if __name__ == "__main__":

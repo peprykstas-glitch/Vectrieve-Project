@@ -46,7 +46,9 @@ export function useFiles() {
         if (!res.ok) return;
         const { token } = await res.json();
         
-        ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL || 'ws://localhost:8000'}/ws?token=${token}`);
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const wsBase = apiBase.replace(/^http/, 'ws');
+        ws = new WebSocket(`${wsBase}/ws?token=${token}`);
         
         ws.onmessage = (event) => {
           try {

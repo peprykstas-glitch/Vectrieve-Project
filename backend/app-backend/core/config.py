@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     RERANKER_MODEL_NAME: str = "Xenova/ms-marco-MiniLM-L-6-v2"
 
     # --- AI Models ---
-    MODEL_NAME: str = "llama-3.3-70b-versatile"
+    MODEL_NAME: str = "openai/gpt-oss-120b"
     LOCAL_MODEL_NAME: str = "qwen2.5-coder:7b"
     OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
 

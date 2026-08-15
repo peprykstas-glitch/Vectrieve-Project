@@ -40,26 +40,12 @@ class VectorService:
             logger.warning("⚠️ Cloud Qdrant not configured in .env")
         
         self.collection_name = settings.COLLECTION_NAME + "_nomic"
+        self.embed_model = "nomic-embed-text"
+        self.vector_size = 768
 
         logger.info("🚀 Compiling Ollama Embedding Client...")
         self.ollama_client = Client(host=settings.OLLAMA_BASE_URL)
-        # Verify the embedding model exists
-        models = [m.model for m in self.ollama_client.list().models]
-        if not any('nomic-embed-text' in m for m in models):
-            try:
-                logger.info("⏳ Downloading nomic-embed-text model. This might take a minute...")
-                self.ollama_client.pull('nomic-embed-text')
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to pull embedding model: {e}")
-                
-        self.embed_model = "nomic-embed-text"
         
-        # Test embedding to get dimension
-        test_embed = self._embed_text("test")
-        if not test_embed:
-            raise RuntimeError("Failed to generate test embedding with Ollama.")
-            
-        self.vector_size = len(test_embed)
         self._ensure_collection_exists(self.local_client)
         if self.cloud_client:
             try:

@@ -16,8 +16,8 @@ export default function RegisterPage() {
       />
       <div className="z-10 w-full max-w-xl px-6 flex flex-col items-center">
         <div className="flex items-center gap-2 mb-8">
-          <Hexagon className="w-8 h-8 text-white fill-white/10" strokeWidth={1.5} />
-          <span className="text-2xl font-semibold tracking-tight text-white">Vectrieve</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Vectrieve AI" className="h-9 w-auto object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.25)]" />
         </div>
         <RegisterForm />
       </div>

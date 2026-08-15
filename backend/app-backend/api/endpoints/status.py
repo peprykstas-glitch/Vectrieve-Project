@@ -50,15 +50,14 @@ async def list_local_models(current_user: User = Depends(get_current_user)):
 @router.get("/models/pull-stream")
 async def pull_model_stream(model: str, current_user: User = Depends(get_current_user)):
     """SSE streaming endpoint to pull a model from Ollama library."""
-    from ollama import Client
+    from ollama import AsyncClient
     from core.config import settings
 
-    # Define synchronous generator so FastAPI runs it inside thread pool (no blocking)
-    def sse_generator():
+    async def sse_generator():
         try:
-            client = Client(host=settings.OLLAMA_BASE_URL)
-            response = client.pull(model=model, stream=True)
-            for chunk in response:
+            client = AsyncClient(host=settings.OLLAMA_BASE_URL)
+            response = await client.pull(model=model, stream=True)
+            async for chunk in response:
                 status_text = chunk.get("status", "")
                 completed = chunk.get("completed") or 0
                 total = chunk.get("total") or 0

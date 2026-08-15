@@ -7,6 +7,7 @@ from models.user import User
 
 router = APIRouter()
 
+@router.websocket("")
 @router.websocket("/")
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
     user_id = None

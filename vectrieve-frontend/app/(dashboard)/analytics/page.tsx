@@ -219,7 +219,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-zinc-400">Pool Overflow</span>
-                        <span className="text-white font-semibold">{data.telemetry.pool.overflow}</span>
+                        <span className="text-white font-semibold">{Math.max(0, data.telemetry.pool.overflow ?? 0)}</span>
                       </div>
                     </div>
                     <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden mt-2">

@@ -392,16 +392,23 @@ export function AppSidebar() {
           onMouseLeave={() => setHovered(false)}
           className="flex items-center w-full gap-3 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
         >
-          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-indigo-300/30 transition-all duration-200 hover:scale-105 active:scale-95">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 transition-all duration-200 hover:scale-105 active:scale-95">
             {hovered ? (
               <PanelLeft className="h-4 w-4 text-white drop-shadow-md animate-in fade-in duration-200" />
             ) : (
-              <BrainCircuit className="h-4 w-4 text-white drop-shadow-md animate-in fade-in duration-200" />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src="/logo-icon.png" alt="Vectrieve" className="h-5 w-5 object-contain drop-shadow-[0_0_8px_rgba(0,212,255,0.4)]" />
             )}
           </div>
-          <span className="truncate text-[15px] font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-400 group-data-[collapsible=icon]:hidden transition-opacity duration-200">
-            Vectrieve Core
-          </span>
+          {/* Brand text beside icon — hidden when sidebar is collapsed */}
+          <div className="flex items-center gap-1.5 font-bold tracking-tight group-data-[collapsible=icon]:hidden transition-opacity duration-200">
+            <span className="text-[15px] font-bold tracking-tight text-white font-sans">
+              Vectrieve
+            </span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              AI
+            </span>
+          </div>
         </button>
       </SidebarHeader>
 

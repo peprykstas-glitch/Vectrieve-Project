@@ -7,7 +7,7 @@ import { useGlobalSettings } from "@/components/global-settings";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { Sparkles, Activity, Database, ShieldCheck, BrainCircuit, Download, Printer, Plus, Radio } from "lucide-react";
+import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import AudioBrief from "./AudioBrief";
 
@@ -298,12 +298,18 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="flex flex-col items-center justify-center text-center my-auto py-8"
               >
-                {/* Glowing Brain Core Badge */}
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-md animate-pulse" />
-                  <div className="relative flex h-14 w-14 rounded-2xl items-center justify-center bg-zinc-900 border border-zinc-800 shadow-xl text-indigo-400">
-                    <BrainCircuit className="w-7 h-7 animate-pulse" />
-                  </div>
+                {/* Floating Vectrieve Brand Mark with Ambient Glow (no box/tile) */}
+                <div className="relative mb-6 group flex items-center justify-center">
+                  {/* Soft radial glow aura */}
+                  <div className="absolute w-28 h-28 bg-gradient-to-tr from-cyan-500/25 via-violet-500/30 to-indigo-500/20 rounded-full blur-2xl pointer-events-none transition-all duration-700 group-hover:scale-125 group-hover:opacity-100" />
+                  
+                  {/* Floating Logo Icon */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logo-icon.png"
+                    alt="Vectrieve Core"
+                    className="relative w-14 h-14 object-contain drop-shadow-[0_0_20px_rgba(0,212,255,0.45)] transition-transform duration-300 group-hover:scale-110 select-none pointer-events-none"
+                  />
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">

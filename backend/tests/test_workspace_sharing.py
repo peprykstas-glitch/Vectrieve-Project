@@ -3,36 +3,51 @@ from httpx import AsyncClient
 from sqlmodel import select
 from models.sql_models import Space, SpaceMember, SpaceRole
 from models.document import Document
-from core.database import init_db
 
 
 @pytest.mark.anyio
-async def test_automatic_space_owner_migration(test_session, test_user):
-    """Verifies that init_db() automatically migrates existing spaces by seeding
-    SpaceMember records designating their creators as SpaceRole.OWNER."""
-    # 1. Create a space manually without a SpaceMember record
-    space = Space(
-        id="test-migrated-space",
-        name="Legacy Space",
-        user_id=test_user.id
+async def test_spacemember_alembic_migration_exists():
+    """Verifies that the Alembic migration for SpaceMember exists and has
+    both upgrade() and downgrade() functions."""
+    import importlib.util
+    from pathlib import Path
+
+    migration_path = (
+        Path(__file__).resolve().parent.parent
+        / "alembic" / "versions" / "a1b2c3d4e5f6_add_spacemember_table.py"
     )
+    assert migration_path.exists(), f"Migration file not found: {migration_path}"
+
+    spec = importlib.util.spec_from_file_location("migration_mod", migration_path)
+    migration_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration_mod)
+
+    assert hasattr(migration_mod, 'upgrade')
+    assert hasattr(migration_mod, 'downgrade')
+    assert migration_mod.down_revision == '31dcc69db8de'
+
+
+@pytest.mark.anyio
+async def test_spacemember_orm_creation(test_session, test_user):
+    """Verifies SpaceMember can be created via ORM (the unit-level check
+    that init_db scan-and-seed was replaced with Alembic data migration)."""
+    space = Space(id="orm-creation-test", name="ORM Test Space", user_id=test_user.id)
     test_session.add(space)
     await test_session.commit()
 
-    # Confirm no members exist yet
-    stmt_check = select(SpaceMember).where(SpaceMember.space_id == space.id)
-    res_check = await test_session.execute(stmt_check)
-    assert res_check.scalar_one_or_none() is None
+    member = SpaceMember(
+        space_id=space.id,
+        user_id=test_user.id,
+        role=SpaceRole.OWNER,
+    )
+    test_session.add(member)
+    await test_session.commit()
 
-    # 2. Trigger init_db() to run the data migration
-    await init_db()
-
-    # 3. Verify owner record was automatically created
-    res_after = await test_session.execute(stmt_check)
-    member = res_after.scalar_one_or_none()
-    assert member is not None
-    assert member.user_id == test_user.id
-    assert member.role == SpaceRole.OWNER
+    stmt = select(SpaceMember).where(SpaceMember.space_id == space.id)
+    res = await test_session.execute(stmt)
+    loaded = res.scalar_one()
+    assert loaded.user_id == test_user.id
+    assert loaded.role == SpaceRole.OWNER
 
 
 @pytest.mark.anyio
@@ -160,3 +175,81 @@ async def test_document_ingestion_and_deletion_rbac(client: AsyncClient, test_se
     # Editor is authorized to delete
     r_del_editor = await client.delete("/upload/1234", headers=headers_viewer)
     assert r_del_editor.status_code == 204
+
+
+@pytest.mark.anyio
+async def test_space_member_management_api(client: AsyncClient, test_session, test_user, test_user_2):
+    """Verifies list, invite, update role, and delete member endpoints on space."""
+    # 1. Setup space with test_user as OWNER
+    space = Space(id="member-api-space", name="Member API Space", user_id=test_user.id)
+    test_session.add(space)
+    owner_mem = SpaceMember(space_id=space.id, user_id=test_user.id, role=SpaceRole.OWNER)
+    test_session.add(owner_mem)
+    await test_session.commit()
+
+    headers_owner = {"Authorization": f"Bearer {test_user.username}"}
+    headers_user2 = {"Authorization": f"Bearer {test_user_2.username}"}
+
+    # 2. List Members (Owner sees 1 member)
+    r_list = await client.get(f"/spaces/{space.id}/members", headers=headers_owner)
+    assert r_list.status_code == 200
+    members = r_list.json()
+    assert len(members) == 1
+    assert members[0]["user_id"] == test_user.id
+    assert members[0]["role"] == "OWNER"
+
+    # 2.1 GUARD TEST: Sole Owner attempting to demote self to VIEWER must be REJECTED (400)
+    r_self_demote = await client.put(
+        f"/spaces/{space.id}/members/{test_user.id}",
+        json={"role": "VIEWER"},
+        headers=headers_owner
+    )
+    assert r_self_demote.status_code == 400
+    assert "sole Owner" in r_self_demote.json()["detail"]
+
+    # User 2 cannot list members before joining (403)
+    r_unauth = await client.get(f"/spaces/{space.id}/members", headers=headers_user2)
+    assert r_unauth.status_code == 403
+
+    # 3. Invite User 2 as VIEWER with case-insensitive & trimmed username ("  VIEWER@example.com  ")
+    r_invite = await client.post(
+        f"/spaces/{space.id}/members",
+        json={"username_or_email": f"  {test_user_2.username.upper()}  ", "role": "VIEWER"},
+        headers=headers_owner
+    )
+    assert r_invite.status_code == 201
+    invited = r_invite.json()
+    assert invited["user_id"] == test_user_2.id
+    assert invited["role"] == "VIEWER"
+
+    # 4. User 2 can now list members
+    r_list_u2 = await client.get(f"/spaces/{space.id}/members", headers=headers_user2)
+    assert r_list_u2.status_code == 200
+    assert len(r_list_u2.json()) == 2
+
+    # User 2 (VIEWER) cannot invite members (403)
+    r_u2_invite = await client.post(
+        f"/spaces/{space.id}/members",
+        json={"username_or_email": "nonexistent@example.com", "role": "VIEWER"},
+        headers=headers_user2
+    )
+    assert r_u2_invite.status_code == 403
+
+    # 5. Update User 2 role to EDITOR
+    r_update = await client.put(
+        f"/spaces/{space.id}/members/{test_user_2.id}",
+        json={"role": "EDITOR"},
+        headers=headers_owner
+    )
+    assert r_update.status_code == 200
+    assert r_update.json()["role"] == "EDITOR"
+
+    # 6. Remove User 2 from space
+    r_del = await client.delete(f"/spaces/{space.id}/members/{test_user_2.id}", headers=headers_owner)
+    assert r_del.status_code == 204
+
+    # Verify User 2 is removed
+    r_list_final = await client.get(f"/spaces/{space.id}/members", headers=headers_owner)
+    assert len(r_list_final.json()) == 1
+
+

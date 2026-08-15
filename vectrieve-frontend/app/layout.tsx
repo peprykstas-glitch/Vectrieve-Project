@@ -8,6 +8,10 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Vectrieve – AI Private Knowledge Base",
   description: "Build a permanent private knowledge base from your documents. Get cited answers – not hallucinations.",
+  icons: {
+    icon: "/logo-icon.png",
+    apple: "/logo-icon.png",
+  },
 };
 
 export default function RootLayout({

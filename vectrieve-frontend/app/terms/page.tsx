@@ -1,7 +1,7 @@
 // app/terms/page.tsx
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { BrainCircuit, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Vectrieve',
@@ -24,10 +24,12 @@ export default function TermsOfServicePage() {
         </Link>
 
         <div className="flex items-center gap-2.5 mb-12">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-500/30">
-            <BrainCircuit className="w-4 h-4 text-white" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-icon.png" alt="Vectrieve" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(0,212,255,0.4)]" />
+          <div className="flex items-center gap-1.5 font-bold tracking-tight">
+            <span className="text-xl font-bold tracking-tight text-white">Vectrieve</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
           </div>
-          <span className="text-xl font-semibold tracking-tight text-white">Vectrieve</span>
         </div>
 
         <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Terms of Service</h1>

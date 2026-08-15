@@ -60,6 +60,15 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Bypass static files, images, favicons, fonts
+  if (
+    path.includes('.') ||
+    path.startsWith('/_next/') ||
+    path.startsWith('/static/')
+  ) {
+    return NextResponse.next();
+  }
+
   // 2. Session-based route protection
   const sessionToken = request.cookies.get('vectrieve_session')?.value;
 
@@ -81,5 +90,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
+  ],
 };

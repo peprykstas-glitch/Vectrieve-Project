@@ -118,3 +118,20 @@ class SpaceRead(BaseModel):
     max_tokens: Optional[int] = None
     top_p: Optional[float] = None
     created_at: datetime
+
+
+# --- 5. Space Member Models ---
+
+class SpaceMemberRead(BaseModel):
+    id: int
+    space_id: str
+    user_id: int
+    username: str
+    role: str
+
+class SpaceMemberInvite(BaseModel):
+    username_or_email: str = Field(..., min_length=1)
+    role: str = Field(default="Viewer")
+
+class SpaceMemberRoleUpdate(BaseModel):
+    role: str = Field(...)

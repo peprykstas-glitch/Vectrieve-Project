@@ -142,7 +142,7 @@ class LLMService:
             if self.groq_client:
                 completion = await self.groq_client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model="llama-3.3-70b-versatile",
+                    model=settings.MODEL_NAME,
                     temperature=0.3,
                     max_tokens=20,
                 )
@@ -180,7 +180,7 @@ Examples:
                 def _ollama_call():
                     import ollama
                     client = ollama.Client(host=self._ollama_host)
-                    m_name = model_name or "qwen2.5-coder:7b"
+                    m_name = model_name or settings.LOCAL_MODEL_NAME
                     res = client.chat(
                         model=m_name,
                         messages=messages,
@@ -191,9 +191,10 @@ Examples:
             else:
                 if not self.groq_client:
                     return []
+                model_to_use = model_name or settings.MODEL_NAME
                 completion = await self.groq_client.chat.completions.create(
                     messages=messages,
-                    model="llama-3.3-70b-versatile",
+                    model=model_to_use,
                     temperature=0.3,
                     max_tokens=120,
                 )

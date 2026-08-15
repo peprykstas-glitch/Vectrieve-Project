@@ -1,21 +1,39 @@
-# Python Virtual Environment
+# Python Virtual Environments
 venv/
 .venv/
+backend/venv/
+backend/.venv/
 
-# Python Cache
+# Node.js Dependencies & Builds
+node_modules/
+vectrieve-frontend/node_modules/
+vectrieve-frontend/.next/
+vectrieve-frontend/out/
+*.tsbuildinfo
+
+# Python Cache & Testing
 __pycache__/
 *.pyc
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Secrets (NEVER upload this!)
+# Secrets & Local Envs (NEVER commit!)
 .env
 *.env
+*.env.local
 
 # IDE / Editor Settings
 .vscode/
 .idea/
 
-# Generated Data Files (created by the app)
-my_faiss.index
-my_notes.json
+# Database & Persistent Volumes
 postgres_data/
 qdrant_data/
+backups/
+backend/backups/
+*.dump
+
+# Media & Audio Cache
+**/cache/tts_audio/
+*.mp3

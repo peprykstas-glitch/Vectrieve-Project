@@ -5,13 +5,13 @@
 | Phase | Feature / Milestone | Complexity | Target Component | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | **Per-Space LLM Configuration** | Medium | Backend API / UI | `[x] Completed` |
-| 2 | **RBAC Foundation + Admin Analytics** | Medium | Auth / User model / UI | `[ ] Backlog` |
-| 3a | **Ingestion: Rich Text Formats** (docx/md/html) | Low | Parser Service | `[ ] Backlog` |
-| 3b | **Ingestion: Structured Data** (csv/xlsx/json) | Medium | Parser Service / Chunking | `[ ] Backlog` |
-| 3c | **Ingestion: Vision/OCR** (images, scanned PDFs, pptx) | Medium–High | Parser Service / Embedding | `[ ] Backlog` |
+| 2 | **RBAC Foundation + Admin Analytics** | Medium | Auth / User model / UI | `[x] Completed` |
+| 3a | **Ingestion: Rich Text Formats** (docx/md/html) | Low | Parser Service | `[x] Completed` |
+| 3b | **Ingestion: Structured Data** (csv/xlsx/json) | Medium | Parser Service / Chunking | `[x] Completed` |
+| 3c | **Ingestion: Vision/OCR** (images, scanned PDFs, pptx) | Medium–High | Parser Service / Embedding | `[x] Completed` |
 | 3d | **Ingestion: Audio Transcription** (Whisper) | High | Parser Service / Infra | `[ ] Backlog` |
-| 4 | **Workspace Sharing — Static Membership** (Owner/Editor/Viewer, no live sync) | Very High | Database / Auth | `[ ] Backlog` |
-| 5 | **Live Collaborative Chat** (realtime sync) | Very High (later) | WebSocket / DB | `[ ] Icebox` |
+| 4a | **Workspace Sharing — Backend** (SpaceMember, RBAC API, Alembic migration) | Very High | Database / Auth / API | `[x] Completed` |
+| 4b | **Workspace Sharing — Frontend UI** (Invite modal, role picker, member list) | Medium | Frontend UI | `[x] Completed` |
 
 ---
 
@@ -61,12 +61,34 @@
 * Add a `TRANSCRIBING` status to the backend file ingestion state machine.
 * Raise client-side polling timeouts in `useChat.ts` (`MAX_POLL_TIME_MS`) to account for longer audio transcribing times.
 
-### 4. Workspace Sharing — Static Membership
-* Introduce a `SpaceMember(space_id, user_id, role)` table mapping membership with roles (`Owner`, `Editor`, `Viewer`).
-* Refactor database query checks in `chat.py`, `upload.py`, `spaces.py`, `sessions.py`, and `vector_service.py` to check for active workspace membership instead of single ownership (`Space.user_id == current_user.id`).
-* **Data Migration:** Create a migration script that automatically populates the `SpaceMember` table by designating the current owner of every existing space as `Owner`.
-* Excludes simultaneous live typing collaboration in v1. Members share space chat history sequentially.
+### 4a. Workspace Sharing — Backend (SpaceMember & RBAC API)
+* Introduced `SpaceMember(space_id, user_id, role)` table mapping membership with roles (`Owner`, `Editor`, `Viewer`).
+* Refactored database query checks in `chat.py`, `upload.py`, `spaces.py`, `sessions.py`, and `vector_service.py` to check for active workspace membership instead of single ownership (`Space.user_id == current_user.id`).
+* **Data Migration:** Applied clean Alembic migration (`a1b2c3d4e5f6_add_spacemember_table.py`) that populates the `SpaceMember` table by designating existing space owners as `Owner`.
+* All backend unit and integration tests passing (`82/82`).
 
-### 5. Live Collaborative Chat (Icebox)
-* Support real-time chat sessions (concurrent streams, presence indicator, cursor tracking, and collaborative state synchronization via WebSockets).
-* Deferred to the Icebox; to be implemented only if Phase 4 telemetry reveals team demand for simultaneous RAG editing sessions.
+### 4b. Workspace Sharing — Frontend UI (Backlog)
+* Implement member management UI inside space settings page.
+* Add "Invite Member" modal allowing space Owners to invite users by email and assign roles (`Owner`, `Editor`, `Viewer`).
+* Display member list with role badge and remove/change role actions.
+
+---
+
+## Explicitly Deferred Decisions
+
+The following decisions were consciously made during implementation and must **not** be revisited without an explicit product request. Each entry documents the reasoning to avoid re-litigating the same question in future sessions.
+
+### Shared chat visibility — Variant B (2026-07-18)
+**Status:** Deferred. Not planned unless explicitly requested.
+
+**What was decided:** `GET /sessions` filters by `ChatSession.user_id == current_user.id`. Each space member sees only their own chat history, even when working inside a shared space.
+
+**Why this is correct by design:** A shared space is a shared *knowledge base* (documents, prompt config) — not a shared conversation log. Two colleagues using the same space to query contracts each have their own private dialogue with the assistant; that dialogue is not automatically a shared artifact. This mirrors Slack threads and Google Docs comments: shared content, private interaction with it.
+
+**Why Variant B was not implemented now:** Enabling cross-member session visibility immediately raises a chain of unresolved questions — read access to `ChatHistory.content` (potentially sensitive), who can delete another member's session (owner-only? creator-only?), and whether `sources` / `attached_filenames` are also exposed. These constitute a separate "shared conversations" feature, not a natural side-effect of workspace sharing.
+
+**If Variant B is ever implemented, it requires:**
+- An explicit read-access policy for `ChatHistory.content` across members.
+- Delete-permission rules (e.g. only session creator or space Owner can delete).
+- A `created_by` field surfaced in the UI so sessions are attributable.
+- A product decision on whether Viewer-role members can read (but not delete) others' sessions.

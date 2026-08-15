@@ -30,13 +30,13 @@ import models
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("📂 Initializing Database...")
+    print("[INFO] Initializing Database...")
     await init_db()
-    print("✅ Database ready!")
+    print("[OK] Database ready!")
     yield
-    print("🛑 Shutting down...")
+    print("[INFO] Shutting down...")
     await engine.dispose()
-    print("💤 Database connection closed.")
+    print("[OK] Database connection closed.")
 
 
 app = FastAPI(
@@ -54,7 +54,11 @@ app.add_middleware(SlowAPIMiddleware)
 # --- CORS for Next.js frontend ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.26:3000",  # LAN access — office network
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

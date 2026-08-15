@@ -100,7 +100,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
           isProcessingFiles ? "border-amber-500/20" : "border-white/5"
         }`}>
           {/* Attachment Button */}
-          <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.docx,.epub,.txt,.md,.markdown,.html,.htm,.csv,.xlsx,.json,.png,.jpg,.jpeg,.webp" />
+          <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.docx,.pptx,.epub,.txt,.md,.markdown,.html,.htm,.csv,.xlsx,.json,.png,.jpg,.jpeg,.webp" />
           <motion.button 
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}

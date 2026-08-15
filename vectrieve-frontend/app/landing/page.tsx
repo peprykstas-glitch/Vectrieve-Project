@@ -1,7 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 import {
-  BrainCircuit,
   FileSearch,
   Layers3,
   ShieldCheck,
@@ -104,12 +103,14 @@ function Navbar() {
     <nav className="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl">
       <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-500/30">
-            <BrainCircuit className="w-4 h-4 text-white" />
+        <Link href="/" className="flex items-center gap-2.5 group">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-icon.png" alt="Vectrieve" className="h-8 w-8 object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.45)] transition-transform duration-200 group-hover:scale-105" />
+          <div className="flex items-center gap-1.5 font-bold tracking-tight">
+            <span className="text-white font-sans text-lg tracking-tight">Vectrieve</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
           </div>
-          <span className="text-white font-semibold text-lg tracking-tight">Vectrieve</span>
-        </div>
+        </Link>
 
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
@@ -172,8 +173,9 @@ function HeroChatMockup() {
 
           {/* AI response */}
           <div className="flex gap-3">
-            <div className="w-7 h-7 shrink-0 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center mt-0.5">
-              <BrainCircuit className="w-3.5 h-3.5 text-white" />
+            <div className="w-7 h-7 shrink-0 rounded-lg bg-zinc-900 border border-white/10 flex items-center justify-center mt-0.5 shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-icon.png" alt="Vectrieve AI" className="w-4 h-4 object-contain drop-shadow-[0_0_6px_rgba(0,212,255,0.5)]" />
             </div>
             <div className="flex-1 space-y-3">
               <div className="rounded-xl rounded-tl-sm border border-white/5 bg-zinc-800/60 px-4 py-3 text-sm text-zinc-300 leading-relaxed">
@@ -464,10 +466,9 @@ export default function LandingPage() {
       <footer className="border-t border-white/5 py-8 px-6">
         <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-600">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-              <BrainCircuit className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-zinc-500 font-medium">Vectrieve</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-icon.png" alt="Vectrieve" className="h-5 w-5 object-contain" />
+            <span className="text-zinc-400 font-medium">Vectrieve</span>
           </div>
           <p>Built by <span className="text-zinc-400">Stanislav Pepryk</span></p>
           <div className="flex items-center gap-6">
