@@ -183,13 +183,13 @@ def main():
 
     # 4. Spawning Backend Application Server
     log("STEP", "Starting FastAPI backend service...", BOLD)
-    backend_app_dir = os.path.abspath(os.path.join("backend", "app-backend"))
+    backend_app_dir = os.path.abspath(os.path.join("backend", "app"))
     backend_cmd = f'"{venv_python}" -u main.py'
     start_process(backend_cmd, backend_app_dir, "BACKEND", CYAN)
 
     # 5. Spawning Frontend Engine
     log("STEP", "Compiling and serving frontend application...", BOLD)
-    frontend_cwd = os.path.abspath("vectrieve-frontend")
+    frontend_cwd = os.path.abspath("frontend")
     frontend_cmd = "npm run dev"
     start_process(frontend_cmd, frontend_cwd, "FRONTEND", GREEN)
 

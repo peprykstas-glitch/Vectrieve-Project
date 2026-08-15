@@ -2,8 +2,8 @@ import os
 import sys
 import asyncio
 
-# Adjust python path to include app-backend
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app-backend")))
+# Adjust python path to include app
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app")))
 
 from sqlmodel import select
 from core.database import get_session_factory

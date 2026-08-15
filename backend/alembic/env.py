@@ -22,8 +22,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Make app-backend importable so SQLModel models can be discovered
-APP_DIR = Path(__file__).resolve().parent.parent / "app-backend"
+# Make backend/app importable so SQLModel models can be discovered
+APP_DIR = Path(__file__).resolve().parent.parent / "app"
 sys.path.insert(0, str(APP_DIR))
 
 # Import all models so their metadata is populated

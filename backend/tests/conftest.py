@@ -7,7 +7,7 @@ from sqlmodel import SQLModel
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../app-backend")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../app")))
 
 from main import app
 from core.database import get_session

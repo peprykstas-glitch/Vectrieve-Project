@@ -6,9 +6,9 @@ backend/.venv/
 
 # Node.js Dependencies & Builds
 node_modules/
-vectrieve-frontend/node_modules/
-vectrieve-frontend/.next/
-vectrieve-frontend/out/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
 *.tsbuildinfo
 
 # Python Cache & Testing
