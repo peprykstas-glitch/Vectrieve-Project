@@ -23,12 +23,13 @@ async def list_spaces(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """List all spaces owned by the current user."""
+    """List all spaces owned by or shared with the current user."""
     from models.sql_models import SpaceMember
     stmt = (
         select(Space)
-        .join(SpaceMember)
-        .where(SpaceMember.user_id == current_user.id)
+        .outerjoin(SpaceMember, SpaceMember.space_id == Space.id)
+        .where((SpaceMember.user_id == current_user.id) | (Space.user_id == current_user.id))
+        .distinct()
         .order_by(Space.created_at.desc())
     )
     result = await session.execute(stmt)
