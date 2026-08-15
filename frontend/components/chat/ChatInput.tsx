@@ -1,5 +1,5 @@
 import React, { useRef, useState, KeyboardEvent } from "react";
-import { Paperclip, ArrowUp, FileText, X, Loader2 } from "lucide-react";
+import { Plus, ArrowUp, FileText, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ChatInputProps {
@@ -20,7 +20,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 180)}px`;
     }
   };
 
@@ -56,102 +56,108 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
   };
 
   const isDisabled = isLoading || isProcessingFiles;
+  const hasContent = (inputValue.trim().length > 0 || files.length > 0) && !isDisabled;
 
   return (
-    <div className="shrink-0 px-4 pb-8 pt-2 w-full flex justify-center bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent relative z-10">
-      <div className="w-full max-w-3xl relative">
-        {files.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-1 mb-2">
-            {files.map((file, idx) => (
-              <div
-                key={idx}
-                className={`flex items-center gap-2 border rounded-xl py-1.5 pl-3 pr-2 text-xs shadow-xl transition-all duration-300 ${
-                  isProcessingFiles
-                    ? "bg-amber-950/30 border-amber-500/30 text-amber-300"
-                    : "bg-zinc-900 border-white/10 text-zinc-300"
-                }`}
-              >
-                {isProcessingFiles ? (
-                  <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-                ) : (
-                  <FileText className="w-3.5 h-3.5 text-indigo-400" />
-                )}
-                <span className="truncate max-w-[150px] font-medium">{file.name}</span>
-                {isProcessingFiles ? (
-                  <span className="text-[10px] text-amber-400 font-semibold uppercase tracking-wide pr-1">
-                    Indexing...
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => removeFile(idx)}
-                    className="p-1 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-white transition-colors border-0 bg-transparent cursor-pointer"
-                    disabled={isDisabled}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Premium Breathing Focus Container */}
-        <div className={`relative flex items-end w-full bg-zinc-900/40 backdrop-blur-xl border rounded-3xl shadow-2xl transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/30 focus-within:bg-zinc-900/70 p-2 ${
-          isProcessingFiles ? "border-amber-500/20" : "border-white/5"
-        }`}>
-          {/* Attachment Button */}
-          <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.docx,.pptx,.epub,.txt,.md,.markdown,.html,.htm,.csv,.xlsx,.json,.png,.jpg,.jpeg,.webp" />
-          <motion.button 
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => fileInputRef.current?.click()}
-            className="p-3 text-zinc-400 hover:text-zinc-200 transition-colors rounded-xl hover:bg-zinc-800/30 flex-shrink-0 border-0 bg-transparent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Attach file"
-            disabled={isDisabled}
-          >
-            <Paperclip size={18} />
-          </motion.button>
-
-          {/* Auto-resizing Textarea */}
-          <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-            placeholder={isProcessingFiles ? "Indexing files, please wait..." : "Query Vectrieve Core..."}
-            className="w-full max-h-[200px] min-h-[44px] bg-transparent border-0 resize-none py-3 px-2 text-[15px] text-zinc-100 placeholder:text-zinc-500 focus:ring-0 focus:outline-none overflow-y-auto custom-scrollbar"
-            rows={1}
-            disabled={isDisabled}
-          />
-
-          {/* Spring-powered Submission Button */}
-          <motion.button
-            whileHover={(!inputValue.trim() && files.length === 0) || isDisabled ? {} : { scale: 1.05 }}
-            whileTap={(!inputValue.trim() && files.length === 0) || isDisabled ? {} : { scale: 0.95 }}
-            onClick={submit}
-            disabled={(!inputValue.trim() && files.length === 0) || isDisabled}
-            className={`p-3 rounded-2xl flex-shrink-0 transition-all duration-300 border-0 cursor-pointer ${
-              (inputValue.trim() || files.length > 0) && !isDisabled
-               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500"
-                : "bg-zinc-800/30 text-zinc-600 cursor-not-allowed"
-            }`}
-            aria-label="Send query"
-          >
-            {isProcessingFiles ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <ArrowUp size={18} className={isLoading ? "animate-pulse" : ""} />
-            )}
-          </motion.button>
+    <div className="w-full flex flex-col items-center">
+      {/* File Upload Attachment Chips */}
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2 px-3 mb-2 w-full justify-start">
+          {files.map((file, idx) => (
+            <div
+              key={idx}
+              className={`flex items-center gap-2 border rounded-xl py-1 pl-3 pr-2 text-xs shadow-lg transition-all duration-200 ${
+                isProcessingFiles
+                  ? "bg-amber-950/40 border-amber-500/30 text-amber-300"
+                  : "bg-zinc-900/90 border-white/10 text-zinc-300 backdrop-blur-md"
+              }`}
+            >
+              {isProcessingFiles ? (
+                <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
+              ) : (
+                <FileText className="w-3 h-3 text-indigo-400" />
+              )}
+              <span className="truncate max-w-[140px] font-medium text-[11px]">{file.name}</span>
+              {isProcessingFiles ? (
+                <span className="text-[9px] text-amber-400 font-semibold uppercase tracking-wide">
+                  Indexing...
+                </span>
+              ) : (
+                <button
+                  onClick={() => removeFile(idx)}
+                  className="p-0.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-colors border-0 bg-transparent cursor-pointer"
+                  disabled={isDisabled}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
+      )}
+
+      {/* Floating Capsule Input Bar (ChatGPT / Claude style) */}
+      <div className={`relative flex items-center w-full bg-zinc-900/80 hover:bg-zinc-900/90 backdrop-blur-2xl border rounded-[28px] shadow-2xl transition-all duration-200 focus-within:border-indigo-500/40 focus-within:ring-2 focus-within:ring-indigo-500/10 focus-within:bg-zinc-900/95 px-2.5 py-1.5 ${
+        isProcessingFiles ? "border-amber-500/30" : "border-white/10"
+      }`}>
+        {/* Hidden File Input */}
+        <input 
+          type="file" 
+          multiple 
+          className="hidden" 
+          ref={fileInputRef} 
+          onChange={handleFileSelect} 
+          accept=".pdf,.docx,.pptx,.epub,.txt,.md,.markdown,.html,.htm,.csv,.xlsx,.json,.png,.jpg,.jpeg,.webp" 
+        />
         
-        <div className="text-center mt-3 text-[10px] text-zinc-600 tracking-wide">
-          {isProcessingFiles
-            ? "⚡ Indexing files into the knowledge base — query will fire automatically when ready."
-            : "Vectrieve Core may produce inaccurate intelligence. Verify critical assertions."}
-        </div>
+        {/* Attach (+) Button */}
+        <button 
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center justify-center h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-all flex-shrink-0 border-0 bg-transparent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label="Attach file"
+          title="Attach document or media"
+          disabled={isDisabled}
+        >
+          <Plus size={18} />
+        </button>
+
+        {/* Auto-Expanding Textarea */}
+        <textarea
+          ref={textareaRef}
+          value={inputValue}
+          onChange={handleInput}
+          onKeyDown={handleKeyDown}
+          placeholder={isProcessingFiles ? "Indexing attached files..." : "Ask Vectrieve anything..."}
+          className="w-full max-h-[180px] min-h-[36px] bg-transparent border-0 resize-none py-2 px-2.5 text-sm sm:text-[14.5px] text-zinc-100 placeholder:text-zinc-500 focus:ring-0 focus:outline-none overflow-y-auto custom-scrollbar leading-relaxed"
+          rows={1}
+          disabled={isDisabled}
+        />
+
+        {/* Circular Send Button */}
+        <button
+          onClick={submit}
+          disabled={!hasContent}
+          className={`flex items-center justify-center h-8 w-8 rounded-full flex-shrink-0 transition-all duration-200 border-0 cursor-pointer ${
+            hasContent
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 active:scale-95"
+              : "bg-zinc-800/50 text-zinc-600 cursor-not-allowed"
+          }`}
+          aria-label="Send query"
+        >
+          {isProcessingFiles ? (
+            <Loader2 size={15} className="animate-spin text-amber-400" />
+          ) : (
+            <ArrowUp size={16} className={isLoading ? "animate-pulse" : ""} />
+          )}
+        </button>
+      </div>
+
+      {/* Subtle Micro-Disclaimer */}
+      <div className="text-center mt-1.5 text-[10px] text-zinc-500/80 tracking-wide select-none">
+        {isProcessingFiles
+          ? "⚡ Indexing files — query will fire automatically when ready."
+          : "Vectrieve Core may produce inaccurate intelligence. Verify critical assertions."}
       </div>
     </div>
   );
 }
-

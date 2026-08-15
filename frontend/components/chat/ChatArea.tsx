@@ -288,7 +288,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       </div>
 
       {/* CENTRALIZED MESSAGE FEED */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 scroll-smooth custom-scrollbar relative z-10">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-5 pb-36 scroll-smooth custom-scrollbar relative z-10">
         <div className="flex flex-col items-center w-full min-h-full">
           <div className="w-full max-w-4xl flex flex-col gap-6 pb-6 flex-1 justify-center">
             {showWelcomeHero ? (
@@ -380,13 +380,17 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
               </div>
             )}
 
-            <div ref={messagesEndRef} className="h-4" />
+            <div ref={messagesEndRef} className="h-8" />
           </div>
         </div>
       </div>
 
-      {/* ADAPTIVE INPUT MECHANISM */}
-      <ChatInput isLoading={isLoading} isProcessingFiles={isProcessingFiles} onSubmit={submitQuery} />
+      {/* FLOATING ADAPTIVE INPUT CAPSULE (ChatGPT / Claude Floating Design) */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent pt-10 pb-4 px-4 flex justify-center">
+        <div className="w-full max-w-4xl pointer-events-auto">
+          <ChatInput isLoading={isLoading} isProcessingFiles={isProcessingFiles} onSubmit={submitQuery} />
+        </div>
+      </div>
 
       {/* Mobile Floating New Chat FAB — visible only on small screens when inside a session */}
       {!showWelcomeHero && (
