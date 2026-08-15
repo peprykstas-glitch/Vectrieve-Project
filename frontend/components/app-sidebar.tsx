@@ -45,6 +45,7 @@ function ChatHistoryList() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const spaceId = searchParams.get('space')
+  const currentSessionId = searchParams.get('session')
 
   const fetchSessions = React.useCallback(async () => {
     try {
@@ -52,19 +53,14 @@ function ChatHistoryList() {
       const data = await apiClient<{id: string, title: string}[]>(`/sessions${query}`)
       setSessions(data)
     } catch (e: any) {
-      console.error(e)
-      if (e.status === 401) {
-        window.location.href = '/login'
-      }
+      console.error("Failed to load sessions:", e)
     }
   }, [spaceId])
 
-  // Refresh when pathname or session param changes (new chat created)
+  // Refresh only when pathname, active session, or space changes
   React.useEffect(() => {
     fetchSessions()
-  }, [pathname, searchParams, spaceId, fetchSessions])
-
-  const currentSessionId = searchParams.get('session')
+  }, [pathname, currentSessionId, spaceId, fetchSessions])
 
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -174,11 +170,7 @@ function UserCard() {
   React.useEffect(() => {
     apiClient<{ email: string }>('/auth/me')
       .then(data => { if (data?.email) setEmail(data.email) })
-      .catch((e: any) => {
-        if (e.status === 401) {
-          window.location.href = '/login'
-        }
-      })
+      .catch(() => {})
   }, [])
 
   const handleSignOut = async () => {
