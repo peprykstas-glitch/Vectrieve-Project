@@ -210,12 +210,15 @@ function UserCard() {
   )
 }
 
+import { SpaceSettingsModal } from "@/components/spaces/SpaceSettingsModal"
+
 function SpaceSwitcher() {
   const { spaces, fetchSpaces, activeSpace: currentSpace } = useGlobalSettings()
   const [isOpen, setIsOpen] = React.useState(false)
   const [newSpaceName, setNewSpaceName] = React.useState("")
   const [newSpacePrompt, setNewSpacePrompt] = React.useState("")
   const [isCreating, setIsCreating] = React.useState(false)
+  const [editingSpace, setEditingSpace] = React.useState<Space | null>(null)
   const searchParams = useSearchParams()
   const pathname = usePathname()
   
@@ -253,8 +256,18 @@ function SpaceSwitcher() {
   
   return (
     <div className="px-2 mb-4 group-data-[collapsible=icon]:hidden relative">
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2 px-1">
-        Current Workspace
+      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2 px-1">
+        <span>Current Workspace</span>
+        {currentSpace && (
+          <button
+            type="button"
+            onClick={() => setEditingSpace(currentSpace)}
+            className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-indigo-300 rounded transition-colors cursor-pointer border-0 bg-transparent"
+            title="Edit Workspace Instructions & Name"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
       
       <button
@@ -266,6 +279,15 @@ function SpaceSwitcher() {
         </span>
         <ChevronDown className="w-3.5 h-3.5 text-zinc-500 shrink-0 ml-1 transition-transform" />
       </button>
+
+      {editingSpace && (
+        <SpaceSettingsModal
+          space={editingSpace}
+          isOpen={Boolean(editingSpace)}
+          onClose={() => setEditingSpace(null)}
+          onSaved={() => fetchSpaces()}
+        />
+      )}
       
       {isOpen && (
         <div className="absolute left-2 right-2 mt-1 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-1 duration-100">
@@ -293,27 +315,41 @@ function SpaceSwitcher() {
                 >
                   {s.name}
                 </button>
-                <button
-                  type="button"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (confirm(`Are you sure you want to delete "${s.name}"? This will delete all documents and chats in this space.`)) {
-                      try {
-                        await apiClient(`/spaces/${s.id}`, { method: 'DELETE' });
-                        if (s.id === currentSpaceId) {
-                          handleSelectSpace(null);
+                <div className="flex items-center gap-1 opacity-0 group-hover/space:opacity-100 transition-opacity mr-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingSpace(s);
+                      setIsOpen(false);
+                    }}
+                    className="p-1 text-zinc-500 hover:text-indigo-300 hover:bg-zinc-700/50 rounded transition-colors cursor-pointer bg-transparent border-0"
+                    title="Edit Space Instructions & Name"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (confirm(`Are you sure you want to delete "${s.name}"? This will delete all documents and chats in this space.`)) {
+                        try {
+                          await apiClient(`/spaces/${s.id}`, { method: 'DELETE' });
+                          if (s.id === currentSpaceId) {
+                            handleSelectSpace(null);
+                          }
+                          fetchSpaces();
+                        } catch (err) {
+                          console.error("Failed to delete space", err);
                         }
-                        fetchSpaces();
-                      } catch (err) {
-                        console.error("Failed to delete space", err);
                       }
-                    }
-                  }}
-                  className="p-1 text-zinc-500 hover:text-red-400 opacity-0 group-hover/space:opacity-100 transition-opacity mr-2 cursor-pointer bg-transparent border-0"
-                  title="Delete Space"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                    }}
+                    className="p-1 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors cursor-pointer bg-transparent border-0"
+                    title="Delete Space"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

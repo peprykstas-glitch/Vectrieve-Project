@@ -1,12 +1,71 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Bot, FileText, ChevronDown, BrainCircuit } from "lucide-react";
+import { User, Bot, FileText, ChevronDown, BrainCircuit, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Message, Source } from "@/hooks/useChat";
 
 interface ChatMessageProps {
   msg: Message;
+}
+
+function CodeBlock({ node, inline, className, children, ...props }: any) {
+  const match = /language-(\w+)/.exec(className || '');
+  const lang = match ? match[1] : '';
+  const textContent = String(children).replace(/\n$/, '');
+  const [copied, setCopied] = React.useState(false);
+
+  if (inline) {
+    return (
+      <code className="text-indigo-300 bg-zinc-950/80 px-1.5 py-0.5 rounded-md font-mono text-xs" {...props}>
+        {children}
+      </code>
+    );
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(textContent);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const isStudentReply = lang === 'student-reply' || lang === 'markdown' || lang === 'text' || lang === 'message';
+
+  return (
+    <div className="relative my-4 rounded-2xl overflow-hidden border border-white/10 bg-zinc-950/90 shadow-xl group/code">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/80 border-b border-white/5 text-[11px]">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-indigo-500/80" />
+          <span className="font-semibold text-zinc-300 uppercase tracking-wider text-[10px]">
+            {isStudentReply ? "Ready-to-Send Reply" : (lang || "Message Block")}
+          </span>
+        </div>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/20 hover:border-indigo-500 transition-all cursor-pointer shadow-sm"
+          title="Copy message to clipboard"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-400 text-[11px]">Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              <span className="text-[11px]">Copy Reply</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Code / Text content */}
+      <div className="p-4 overflow-x-auto custom-scrollbar font-sans text-[13px] leading-relaxed text-zinc-200 whitespace-pre-wrap select-text">
+        {textContent}
+      </div>
+    </div>
+  );
 }
 
 function Citation({ src }: { src: Source }) {
@@ -145,7 +204,12 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                       </div>
                     </details>
                   )}
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code: CodeBlock
+                    }}
+                  >
                     {markdownContent}
                   </ReactMarkdown>
                   {/* Glowing, fading cursor while typing */}
