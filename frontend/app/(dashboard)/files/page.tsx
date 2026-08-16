@@ -131,7 +131,7 @@ export default function KnowledgeBasePage() {
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100 font-sans p-8 overflow-y-auto custom-scrollbar">
+    <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100 font-sans pt-16 px-8 pb-8 overflow-y-auto custom-scrollbar">
       <div className="max-w-6xl mx-auto w-full space-y-8">
         
         {/* Hidden file input for uploading */}

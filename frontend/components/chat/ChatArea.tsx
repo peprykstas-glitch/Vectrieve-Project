@@ -354,7 +354,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] rounded-full bg-purple-500/5 blur-[100px] pointer-events-none" />
 
       {/* CENTRALIZED MESSAGE FEED */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-5 pb-36 scroll-smooth custom-scrollbar relative z-10">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-16 pb-36 scroll-smooth custom-scrollbar relative z-10">
         <div className="flex flex-col items-center w-full min-h-full">
           <div className="w-full max-w-4xl flex flex-col gap-6 pb-6 flex-1 justify-center">
             {showWelcomeHero ? (

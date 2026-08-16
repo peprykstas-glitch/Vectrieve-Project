@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100 overflow-y-auto">
+    <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100 pt-16 overflow-y-auto">
 
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-30 w-full h-14 px-6 border-b border-white/5 bg-zinc-950/90 backdrop-blur-xl flex items-center justify-between shrink-0">

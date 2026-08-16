@@ -27,16 +27,16 @@ function DashboardHeader() {
   }, [])
   
   return (
-    <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-5 h-12 bg-zinc-950/40 backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.3)] transition-all duration-300">
+    <header className="absolute top-0 left-0 right-0 z-30 pointer-events-none flex shrink-0 items-center justify-between px-5 pt-3.5 pb-8 bg-gradient-to-b from-zinc-950/90 via-zinc-950/40 to-transparent transition-all duration-300">
       {/* Left side: Mobile trigger + Cloud Enterprise + Persona selector */}
-      <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
+      <div className="flex items-center gap-2 sm:gap-3 overflow-visible pointer-events-auto">
         <div className="flex items-center gap-3 md:hidden">
           <SidebarTrigger className="text-zinc-400 hover:text-white cursor-pointer" />
         </div>
 
         {mounted && (
           <>
-            <div className="flex items-center gap-1.5 h-7.5 px-3 bg-blue-500/10 hover:bg-blue-500/15 backdrop-blur-xl border border-blue-500/25 text-blue-400 text-[11px] font-medium rounded-full shrink-0 select-none shadow-[0_0_12px_rgba(59,130,246,0.15)] transition-all">
+            <div className="flex items-center gap-1.5 h-8 px-3.5 bg-blue-500/10 hover:bg-blue-500/15 backdrop-blur-2xl border border-blue-500/25 text-blue-400 text-xs font-medium rounded-full shrink-0 select-none shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all">
               <Cloud className="w-3.5 h-3.5 text-blue-400" />
               <span>Cloud Enterprise</span>
             </div>
@@ -44,7 +44,7 @@ function DashboardHeader() {
             <Select value={aiPersona} onValueChange={setAiPersona}>
               <SelectTrigger 
                 aria-label="Select Persona" 
-                className="h-7.5 w-auto min-w-[120px] sm:min-w-[135px] px-3 bg-zinc-900/40 hover:bg-zinc-800/60 backdrop-blur-xl border-white/10 hover:border-white/20 active:scale-[0.97] text-zinc-300 hover:text-white text-[11px] font-medium focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 shadow-sm transition-all duration-200"
+                className="h-8 w-auto min-w-[120px] sm:min-w-[135px] px-3.5 bg-zinc-900/60 hover:bg-zinc-800/80 backdrop-blur-2xl border-white/10 hover:border-white/20 active:scale-[0.97] text-zinc-300 hover:text-white text-xs font-medium focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-200"
               >
                 <SelectValue placeholder="Persona" />
               </SelectTrigger>
@@ -71,7 +71,7 @@ function DashboardHeader() {
       </div>
 
       {/* Right side: Dynamic Frosted Glass Action Pills (Audio Briefing, MD, PDF) */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 pointer-events-auto">
         {mounted && headerRightAction}
       </div>
     </header>
@@ -94,7 +94,7 @@ export default function DashboardLayout({
             SidebarInset acts as the flexible container that reacts to the Sidebar's state. 
             It is structured as a strict column to manage vertical real estate perfectly.
           */}
-          <SidebarInset className="flex flex-col h-screen min-w-0 bg-zinc-950">
+          <SidebarInset className="flex flex-col h-screen min-w-0 bg-zinc-950 relative">
             
             <DashboardHeader />
 
@@ -104,7 +104,7 @@ export default function DashboardLayout({
               window from scrolling. This is the exact container where Analytics, Settings, 
               and the ChatArea will render.
             */}
-            <main className="flex-1 overflow-hidden relative">
+            <main className="flex-1 h-full overflow-hidden relative">
               {children}
             </main>
           </SidebarInset>
