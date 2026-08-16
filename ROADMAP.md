@@ -63,8 +63,18 @@ npx tsc --noEmit
 
 ---
 
-## 🚀 Future Enhancements (Post-MVP Roadmap)
+---
+
+## 🚀 Future Enhancements (Technical Backlog)
 
 * [ ] **Phase 6: Audio Transcription Pipeline**: Ingestion of raw voice notes (`.mp3`, `.m4a`, `.wav`) transcribed directly into vector chunks using Whisper.
+* [ ] **Phase 7: Custom AI Behavioral Presets (Google Gems / Custom GPTs Style)**:
+  * **Configurable Personas**: Enable users and enterprise admins to create, edit, and share custom personas (e.g. *Animafest Student Recruiter*, *Legal Compliance Auditor*, *ETL Spec Writer*) with custom names, operational instructions, and response formatting rules.
+  * **Universal Knowledge Base Decoupling**: Custom personas operate over the exact same underlying workspace knowledge base without requiring separate vector indexes.
+  * **Hierarchical Prompt Composition & Conflict Resolution**:
+    * **Layer 1 (Core Safety & RAG Grounding)**: Grounding rules, strict citation requirements, anti-hallucination invariants.
+    * **Layer 2 (Workspace Context)**: Space-level domain definition (e.g. *Animafest Experience Internship Program*).
+    * **Layer 3 (Custom Persona Behavioral Preset)**: Role-specific instructions (e.g. *"First output bullet points for internal staff, then provide a polished message draft for the candidate"*).
+    * **Layer 4 (Retrieved Evidence Chunks)**: Vector context from Qdrant/PostgreSQL.
 * [ ] **Cross-Workspace Global Search**: Federated multi-space queries for users managing separate departmental spaces (e.g. HR, Sales, Legal).
 * [ ] **Interactive Visual Graph Explorer**: Entity and citation relationship graph visualizing cross-document connections in 2D/3D.
