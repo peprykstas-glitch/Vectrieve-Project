@@ -36,33 +36,10 @@ function DashboardHeader() {
       <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
         {mounted && (
           <>
-            <Select value={computeMode} onValueChange={setComputeMode} disabled={isComputeModeLocked}>
-              <SelectTrigger 
-                aria-label="Select Environment" 
-                className={`h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200 ${
-                  isComputeModeLocked ? "opacity-80 cursor-not-allowed" : ""
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <SelectValue placeholder="Environment" />
-                  {isComputeModeLocked && (
-                    <Lock className="w-2.5 h-2.5 text-zinc-500 shrink-0" />
-                  )}
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-white/10 rounded-xl shadow-2xl">
-                <SelectItem value="cloud" className="text-xs text-zinc-300 focus:bg-zinc-800">
-                  <div className="flex items-center gap-2">
-                    <Cloud className="w-3 h-3 text-blue-400" /> Cloud Compute
-                  </div>
-                </SelectItem>
-                <SelectItem value="local" className="text-xs text-zinc-300 focus:bg-zinc-800">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="w-3 h-3 text-emerald-400" /> Local Neural
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1.5 h-8 px-3.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium rounded-full shrink-0 select-none">
+              <Cloud className="w-3.5 h-3.5 text-blue-400" />
+              <span>Cloud Enterprise</span>
+            </div>
 
             <Select value={aiPersona} onValueChange={setAiPersona}>
               <SelectTrigger aria-label="Select Persona" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200">

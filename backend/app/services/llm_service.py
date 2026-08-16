@@ -113,7 +113,7 @@ class LLMService:
             for m in request.messages:
                 messages.append({"role": m.role, "content": m.content})
 
-        if request.mode == "local":
+        if request.mode == "local" and not self.groq_client:
             return await self._run_local(
                 messages,
                 temperature,
@@ -279,8 +279,8 @@ Examples:
             for m in request.messages:
                 messages.append({"role": m.role, "content": m.content})
 
-        if request.mode == "local":
-            # Local mode doesn't support streaming — fall back to full response
+        if request.mode == "local" and not self.groq_client:
+            # Local mode only if Groq is not configured
             text, used_model = await self._run_local(
                 messages,
                 temperature,
