@@ -174,32 +174,13 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className={`flex gap-3.5 w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+        className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
       >
-        {/* Assistant Avatar (Branded Vectrieve Core Emblem) */}
-        {msg.role === "assistant" && (
-          <div className="relative flex shrink-0 h-8 w-8 rounded-xl items-center justify-center bg-zinc-900/90 border border-white/10 mt-0.5 shadow-[0_2px_10px_rgba(0,0,0,0.3)] overflow-hidden group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/logo-icon.png" 
-              alt="Vectrieve Core" 
-              className={`h-4.5 w-4.5 object-contain transition-all duration-300 ${
-                msg.isStreaming 
-                  ? "animate-pulse drop-shadow-[0_0_10px_rgba(0,212,255,0.8)] scale-105" 
-                  : "drop-shadow-[0_0_6px_rgba(0,212,255,0.4)] group-hover:scale-110"
-              }`} 
-            />
-            {msg.isStreaming && (
-              <span className="absolute inset-0 rounded-xl ring-1 ring-cyan-500/40 animate-ping opacity-30 pointer-events-none" />
-            )}
-          </div>
-        )}
-
         {/* Message Content Body */}
         <div className={`flex flex-col ${
           msg.role === "user" 
-            ? "max-w-[80%] sm:max-w-[70%] items-end" 
-            : "flex-1 min-w-0 items-start"
+            ? "max-w-[85%] sm:max-w-[75%] items-end" 
+            : "w-full min-w-0 items-start"
         }`}>
           {/* User Message: Clean bubble on the right */}
           {msg.role === "user" ? (
@@ -207,21 +188,21 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
               <div className="whitespace-pre-wrap font-normal">{msg.content}</div>
             </div>
           ) : (
-            /* Assistant Message: Clean, open, transparent page flow (like Claude / ChatGPT) */
+            /* Assistant Message: Clean, open, transparent page flow */
             <div className="w-full text-zinc-200 leading-relaxed">
               {isThinking ? (
                 /* Bouncing Dots Thinking State */
-                <div className="flex gap-1.5 items-center justify-start py-2">
+                <div className="flex gap-2 items-center justify-start py-2.5 px-0.5">
                   {[0, 1, 2].map((idx) => (
                     <motion.div
                       key={idx}
-                      className="w-2 h-2 rounded-full bg-indigo-400/80 shadow-[0_0_8px_#818cf8]"
-                      animate={{ y: ["0px", "-5px", "0px"] }}
+                      className="w-2.5 h-2.5 rounded-full bg-zinc-400/80 shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+                      animate={{ y: ["0px", "-6px", "0px"], opacity: [0.3, 1, 0.3] }}
                       transition={{
-                        duration: 0.6,
+                        duration: 0.75,
                         repeat: Infinity,
                         ease: "easeInOut",
-                        delay: idx * 0.15,
+                        delay: idx * 0.18,
                       }}
                     />
                   ))}

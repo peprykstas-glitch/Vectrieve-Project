@@ -443,7 +443,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 flex flex-col gap-3 w-full pl-0 sm:pl-12"
+                    className="mt-6 flex flex-col gap-3 w-full"
                   >
                     <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-3">
                       <span>Suggested Follow-ups</span>
