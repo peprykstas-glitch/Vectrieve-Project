@@ -8,15 +8,16 @@ keys, inject malicious values, or corrupt the server's environment.
 
 This version stores all settings in the UserSettings database table, keyed by
 user_id, and applies changes in-memory immediately (no filesystem writes).
+
+Cloud-only note: Ollama / local model settings have been removed because this
+server runs in Cloud Enterprise mode only. Local model execution is disabled.
 """
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
-from services.vector_service import get_vector_service, VectorService
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from core.database import get_session
 from api.deps import get_current_user
 from models.user import User
@@ -24,13 +25,14 @@ from models.user_settings import UserSettings
 
 router = APIRouter()
 
+# How many free trial queries a user gets before needing their own Groq key.
+TRIAL_QUERY_LIMIT = 20
+
 
 class SettingsUpdate(BaseModel):
-    selected_local_model: Optional[str] = None
     groq_api_key: Optional[str] = None
     qdrant_url: Optional[str] = None
     qdrant_api_key: Optional[str] = None
-    ollama_url: Optional[str] = None
 
 
 @router.get("")
@@ -38,17 +40,29 @@ async def get_settings(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Return the current user's settings, falling back to server defaults."""
+    """Return the current user's settings.
+
+    IMPORTANT: groq_api_key returns the user's OWN key or empty string.
+    The server .env GROQ_API_KEY is NEVER exposed to users — it is only used
+    as the trial key (tracked by trial_queries_used).
+    """
     stmt = select(UserSettings).where(UserSettings.user_id == current_user.id)
     result = await session.execute(stmt)
     user_cfg = result.scalar_one_or_none()
 
+    own_groq_key = (user_cfg.groq_api_key if user_cfg else None) or ""
+    trial_used = user_cfg.trial_queries_used if user_cfg else 0
+    trial_remaining = max(0, TRIAL_QUERY_LIMIT - trial_used)
+
     return {
-        "selected_local_model": (user_cfg.local_model_name if user_cfg else None) or settings.LOCAL_MODEL_NAME,
-        "groq_api_key": (user_cfg.groq_api_key if user_cfg else None) or settings.GROQ_API_KEY,
-        "qdrant_url": (user_cfg.qdrant_url if user_cfg else None) or settings.QDRANT_URL,
-        "qdrant_api_key": (user_cfg.qdrant_api_key if user_cfg else None) or settings.QDRANT_API_KEY,
-        "ollama_url": (user_cfg.ollama_url if user_cfg else None) or settings.OLLAMA_BASE_URL,
+        # Cloud AI
+        "groq_api_key": own_groq_key,
+        "trial_queries_used": trial_used,
+        "trial_remaining": trial_remaining,
+        "trial_limit": TRIAL_QUERY_LIMIT,
+        # Vector DB (user-configurable if they want their own Qdrant)
+        "qdrant_url": (user_cfg.qdrant_url if user_cfg else None) or "",
+        "qdrant_api_key": (user_cfg.qdrant_api_key if user_cfg else None) or "",
     }
 
 
@@ -57,11 +71,11 @@ async def update_settings(
     payload: SettingsUpdate,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
-    vs: Optional[VectorService] = Depends(get_vector_service),
 ):
     """
     Persist user settings to the database (NOT the .env file).
-    Also apply changes in-memory immediately so they take effect without restart.
+    Only cloud-relevant settings are accepted (Groq key, Qdrant config).
+    Ollama / local model settings are intentionally excluded.
     """
     stmt = select(UserSettings).where(UserSettings.user_id == current_user.id)
     result = await session.execute(stmt)
@@ -72,44 +86,13 @@ async def update_settings(
         session.add(user_cfg)
 
     # Persist to DB
-    if payload.selected_local_model is not None:
-        user_cfg.local_model_name = payload.selected_local_model
     if payload.groq_api_key is not None:
-        user_cfg.groq_api_key = payload.groq_api_key
+        user_cfg.groq_api_key = payload.groq_api_key or None  # store None if empty string
     if payload.qdrant_url is not None:
-        user_cfg.qdrant_url = payload.qdrant_url
+        user_cfg.qdrant_url = payload.qdrant_url or None
     if payload.qdrant_api_key is not None:
-        user_cfg.qdrant_api_key = payload.qdrant_api_key
-    if payload.ollama_url is not None:
-        user_cfg.ollama_url = payload.ollama_url
+        user_cfg.qdrant_api_key = payload.qdrant_api_key or None
 
     await session.commit()
 
-    # Apply in-memory immediately so changes take effect without a server restart
-    if payload.selected_local_model is not None:
-        object.__setattr__(settings, "LOCAL_MODEL_NAME", payload.selected_local_model)
-    if payload.groq_api_key is not None:
-        object.__setattr__(settings, "GROQ_API_KEY", payload.groq_api_key)
-        from services.llm_service import llm_service
-        if payload.groq_api_key:
-            from groq import AsyncGroq
-            llm_service.groq_client = AsyncGroq(api_key=payload.groq_api_key)
-        else:
-            llm_service.groq_client = None
-    if payload.qdrant_url is not None:
-        object.__setattr__(settings, "QDRANT_URL", payload.qdrant_url)
-    if payload.qdrant_api_key is not None:
-        object.__setattr__(settings, "QDRANT_API_KEY", payload.qdrant_api_key)
-    if payload.qdrant_url is not None or payload.qdrant_api_key is not None:
-        if vs and settings.QDRANT_URL and settings.QDRANT_API_KEY:
-            from qdrant_client import QdrantClient
-            vs.cloud_client = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
-    if payload.ollama_url is not None:
-        object.__setattr__(settings, "OLLAMA_BASE_URL", payload.ollama_url)
-        if vs:
-            from ollama import Client
-            vs.ollama_client = Client(host=settings.OLLAMA_BASE_URL)
-        from services.llm_service import llm_service
-        llm_service._ollama_host = settings.OLLAMA_BASE_URL
-
-    return {"status": "success", "message": "Settings saved to database."}
+    return {"status": "success", "message": "Settings saved."}

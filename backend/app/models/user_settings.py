@@ -18,3 +18,7 @@ class UserSettings(SQLModel, table=True):
     qdrant_url: Optional[str] = Field(default=None)
     qdrant_api_key: Optional[str] = Field(default=None)
     ollama_url: Optional[str] = Field(default=None)
+    # Trial: tracks how many "free" server-key queries this user has used.
+    # Once this reaches TRIAL_QUERY_LIMIT, they must supply their own Groq key.
+    trial_queries_used: int = Field(default=0)
+

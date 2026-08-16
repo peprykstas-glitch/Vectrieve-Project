@@ -7,7 +7,7 @@ import { useGlobalSettings } from "@/components/global-settings";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio } from "lucide-react";
+import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio, Zap, ExternalLink, Settings2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import AudioBrief from "./AudioBrief";
 
@@ -60,7 +60,7 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
 
 export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
   const { computeMode, aiPersona } = useGlobalSettings();
-  const { messages, isLoading, isProcessingFiles, submitQuery, sessionId } = useChat(computeMode, aiPersona, initialSessionId, initialSpaceId);
+  const { messages, isLoading, isProcessingFiles, submitQuery, sessionId, trialRemaining, trialExpired, setTrialExpired } = useChat(computeMode, aiPersona, initialSessionId, initialSpaceId);
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
@@ -228,7 +228,78 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
   return (
     <div className="flex flex-col h-full w-full bg-zinc-950 relative overflow-hidden">
-      {/* Premium Ambient Background Glows */}
+
+      {/* Trial Expired Modal */}
+      <AnimatePresence>
+        {trialExpired && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-8 shadow-2xl space-y-6"
+            >
+              <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto">
+                <Zap className="w-6 h-6 text-amber-400" />
+              </div>
+              <div className="text-center space-y-2">
+                <h2 className="text-lg font-bold text-white">Free Trial Complete 🎉</h2>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  You&apos;ve used all 20 free queries. To keep using Vectrieve, add your own
+                  <span className="text-indigo-400 font-semibold"> Groq API key</span> — it&apos;s free and takes 30 seconds.
+                </p>
+              </div>
+
+              <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4 space-y-2">
+                <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">How to get your key</p>
+                {[
+                  { step: "1", text: "Open console.groq.com" },
+                  { step: "2", text: "Sign up for free (no card needed)" },
+                  { step: "3", text: "Go to API Keys → Create API Key" },
+                  { step: "4", text: 'Paste it in Settings → Save' },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-center gap-3 text-xs text-zinc-300">
+                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">{item.step}</span>
+                    {item.text}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <a
+                  href="https://console.groq.com/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all"
+                >
+                  Open Groq Console
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  onClick={() => { setTrialExpired(false); router.push("/settings"); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold rounded-xl border border-zinc-700 transition-all cursor-pointer"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  Go to Settings
+                </button>
+              </div>
+
+              <button
+                onClick={() => setTrialExpired(false)}
+                className="w-full text-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
+              >
+                Dismiss (you won&apos;t be able to send messages)
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] rounded-full bg-purple-500/5 blur-[100px] pointer-events-none" />
 
@@ -253,6 +324,20 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
             <ShieldCheck className="w-2.5 h-2.5" />
             {computeMode === "local" ? "GDPR Air-Gap" : "Encrypted Cloud"}
           </div>
+
+          {/* Trial remaining badge (only when user is on trial) */}
+          {trialRemaining !== null && (
+            <div className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium tracking-wide border ${
+              trialRemaining <= 3
+                ? "bg-red-500/10 text-red-400 border-red-500/20"
+                : trialRemaining <= 8
+                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                : "bg-zinc-700/40 text-zinc-500 border-zinc-700/30"
+            }`}>
+              <Zap className="w-2.5 h-2.5" />
+              {trialRemaining} trial left
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-1.5">

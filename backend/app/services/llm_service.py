@@ -77,7 +77,8 @@ class LLMService:
             print("⚠️ Ollama package not installed. Local mode disabled.")
 
     async def generate_response(
-        self, request: QueryRequest, context_str: str, history_messages: list = None
+        self, request: QueryRequest, context_str: str, history_messages: list = None,
+        groq_api_key: Optional[str] = None
     ) -> tuple[str, str]:
         mode_key = (
             request.thinking_mode.lower() if request.thinking_mode else "mentor"
@@ -113,28 +114,28 @@ class LLMService:
             for m in request.messages:
                 messages.append({"role": m.role, "content": m.content})
 
-        if request.mode == "local" and not self.groq_client:
-            return await self._run_local(
+        # Determine which Groq client to use:
+        # 1. If a per-request key is supplied (user's own key) — use it.
+        # 2. Otherwise fall back to the server's global client (trial key).
+        effective_client = None
+        if groq_api_key:
+            from groq import AsyncGroq
+            effective_client = AsyncGroq(api_key=groq_api_key)
+        elif self.groq_client:
+            effective_client = self.groq_client
+        else:
+            raise ValueError("No Groq API key available. Please add your key in Settings.")
+        try:
+            return await self._run_cloud(
                 messages,
                 temperature,
                 model_name=request.model,
                 max_tokens=request.max_tokens,
-                top_p=request.top_p
+                top_p=request.top_p,
+                groq_client=effective_client
             )
-        else:
-            if not self.groq_client:
-                raise ValueError("Cloud mode selected, but GROQ_API_KEY is missing in .env")
-            try:
-                return await self._run_cloud(
-                    messages,
-                    temperature,
-                    model_name=request.model,
-                    max_tokens=request.max_tokens,
-                    top_p=request.top_p
-                )
-            except Exception as e:
-                # Do not silently fall back to local to save RAM
-                raise ValueError(f"Cloud LLM failed: {e}")
+        except Exception as e:
+            raise ValueError(f"Cloud LLM failed: {e}")
 
     async def generate_title(self, user_query: str, ai_response: str) -> str:
         prompt = f"Summarize this topic in 3-5 words: User: {user_query} AI: {ai_response}"
@@ -227,8 +228,12 @@ Examples:
         temperature: float,
         model_name: Optional[str] = None,
         max_tokens: Optional[int] = None,
-        top_p: Optional[float] = None
+        top_p: Optional[float] = None,
+        groq_client=None
     ) -> tuple[str, str]:
+        client = groq_client or self.groq_client
+        if not client:
+            raise ValueError("No Groq client available.")
         model_to_use = model_name if model_name else settings.MODEL_NAME
         max_tokens_to_use = max_tokens if max_tokens is not None else 1024
         
@@ -241,11 +246,12 @@ Examples:
         if top_p is not None:
             kwargs["top_p"] = top_p
             
-        completion = await self.groq_client.chat.completions.create(**kwargs)
+        completion = await client.chat.completions.create(**kwargs)
         return completion.choices[0].message.content, model_to_use
 
     async def generate_response_stream(
-        self, request, context_str: str, history_messages: list = None
+        self, request, context_str: str, history_messages: list = None,
+        groq_api_key: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """Yield response text as chunks for SSE streaming."""
         mode_key = (
@@ -279,42 +285,36 @@ Examples:
             for m in request.messages:
                 messages.append({"role": m.role, "content": m.content})
 
-        if request.mode == "local" and not self.groq_client:
-            # Local mode only if Groq is not configured
-            text, used_model = await self._run_local(
-                messages,
-                temperature,
-                model_name=request.model,
-                max_tokens=request.max_tokens,
-                top_p=request.top_p
-            )
-            for chunk in text.split(" "):
-                yield chunk + " "
-                await asyncio.sleep(0.01)
+        # Determine effective client: user's own key or server trial key
+        effective_client = None
+        if groq_api_key:
+            from groq import AsyncGroq
+            effective_client = AsyncGroq(api_key=groq_api_key)
+        elif self.groq_client:
+            effective_client = self.groq_client
         else:
-            if not self.groq_client:
-                raise ValueError("Cloud mode selected, but GROQ_API_KEY is missing in .env")
-            try:
-                model_to_use = request.model if request.model else settings.MODEL_NAME
-                max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 1024
+            raise ValueError("No Groq API key available. Please add your key in Settings.")
+        try:
+            model_to_use = request.model if request.model else settings.MODEL_NAME
+            max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 1024
+            
+            kwargs = {
+                "model": model_to_use,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens_to_use,
+                "stream": True,
+            }
+            if request.top_p is not None:
+                kwargs["top_p"] = request.top_p
                 
-                kwargs = {
-                    "model": model_to_use,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens_to_use,
-                    "stream": True,
-                }
-                if request.top_p is not None:
-                    kwargs["top_p"] = request.top_p
-                    
-                stream = await self.groq_client.chat.completions.create(**kwargs)
-                async for chunk in stream:
-                    delta = chunk.choices[0].delta.content
-                    if delta:
-                        yield delta
-            except Exception as e:
-                raise ValueError(f"Cloud LLM streaming failed: {e}")
+            stream = await effective_client.chat.completions.create(**kwargs)
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        except Exception as e:
+            raise ValueError(f"Cloud LLM streaming failed: {e}")
 
     async def _run_local(
         self,

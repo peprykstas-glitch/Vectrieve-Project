@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from models.schemas import QueryRequest, QueryResponse, FeedbackRequest
 from models.sql_models import ChatHistory, ChatSession, FeedbackLog
 from models.user import User
+from models.user_settings import UserSettings
 from core.database import get_session, engine
 from api.deps import get_current_user
 from services.llm_service import llm_service
@@ -19,6 +20,7 @@ from services.vector_service import get_vector_service, VectorService, SearchRes
 from core.telemetry import rag_telemetry
 from core.rate_limiter import limiter
 from services.llm_config_resolver import resolve_llm_config
+from api.endpoints.settings_endpoint import TRIAL_QUERY_LIMIT
 
 router = APIRouter()
 
@@ -266,7 +268,44 @@ async def _prepare_rag_context(
     if space and space.system_prompt:
         history_messages.insert(0, {"role": "system", "content": space.system_prompt})
 
-    return session_id, is_new_session, user_query, full_context, sources_data, history_messages
+    # ── Groq key resolution (trial mode) ──────────────────────────────────────
+    # 1. Load user's settings row.
+    user_cfg_stmt = select(UserSettings).where(UserSettings.user_id == current_user.id)
+    user_cfg_result = await session.execute(user_cfg_stmt)
+    user_cfg = user_cfg_result.scalar_one_or_none()
+
+    own_groq_key = (user_cfg.groq_api_key if user_cfg else None) or ""
+    trial_used = user_cfg.trial_queries_used if user_cfg else 0
+
+    if own_groq_key:
+        # User supplied their own key — use it, no trial tracking needed.
+        resolved_groq_key = own_groq_key
+        trial_remaining = None  # N/A
+    elif trial_used < TRIAL_QUERY_LIMIT:
+        # Still within free trial — use server key and increment counter.
+        resolved_groq_key = None  # llm_service will use its global client (server key)
+        trial_remaining = TRIAL_QUERY_LIMIT - trial_used - 1  # after this query
+        # Increment in DB
+        if user_cfg is None:
+            user_cfg = UserSettings(user_id=current_user.id, trial_queries_used=1)
+            session.add(user_cfg)
+        else:
+            user_cfg.trial_queries_used = trial_used + 1
+        await session.commit()
+    else:
+        # Trial exhausted and no own key — block with 402
+        raise HTTPException(
+            status_code=402,
+            detail=json.dumps({
+                "trial_expired": True,
+                "message": (
+                    "Your free trial of 20 queries has been used. "
+                    "Please add your own Groq API key in Settings to continue."
+                )
+            })
+        )
+
+    return session_id, is_new_session, user_query, full_context, sources_data, history_messages, resolved_groq_key, trial_remaining
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +324,7 @@ async def handle_query(
     start_time = time.time()
     query_id = str(int(time.time() * 1000))
 
-    session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
+    session_id, is_new_session, user_query, full_context, sources_data, history_messages, resolved_groq_key, trial_remaining = (
         await _prepare_rag_context(body, current_user, session, vector_service)
     )
 
@@ -293,7 +332,7 @@ async def handle_query(
     llm_start = time.time()
     try:
         response_text, used_model = await llm_service.generate_response(
-            body, full_context, history_messages
+            body, full_context, history_messages, groq_api_key=resolved_groq_key
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
@@ -385,7 +424,7 @@ async def handle_query_stream(
 ):
     start_time = time.time()
     query_id = str(int(time.time() * 1000))
-    session_id, is_new_session, user_query, full_context, sources_data, history_messages = (
+    session_id, is_new_session, user_query, full_context, sources_data, history_messages, resolved_groq_key, trial_remaining = (
         await _prepare_rag_context(body, current_user, session, vector_service)
     )
 
@@ -393,18 +432,21 @@ async def handle_query_stream(
         full_response = []
         llm_latency = 0.0
         try:
-            # --- Event 1: Send session info + sources before first token ---
-            meta_event = json.dumps({
+            # --- Event 1: Send session info + sources + trial info before first token ---
+            meta_payload = {
                 "type": "session",
                 "session_id": session_id,
                 "sources": sources_data,
-            })
+            }
+            if trial_remaining is not None:
+                meta_payload["trial_remaining"] = trial_remaining
+            meta_event = json.dumps(meta_payload)
             yield f"data: {meta_event}\n\n"
 
             # --- Events 2+: Stream tokens ---
             llm_start = time.time()
             async for token in llm_service.generate_response_stream(
-                body, full_context, history_messages
+                body, full_context, history_messages, groq_api_key=resolved_groq_key
             ):
                 full_response.append(token)
                 token_event = json.dumps({"type": "token", "text": token})

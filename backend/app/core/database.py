@@ -28,13 +28,19 @@ async def init_db():
     """
     Create all tables on startup if they don't exist yet (safe for new installs).
 
-    Schema changes (new columns, indexes, etc.) are managed by Alembic migrations.
-    Run `alembic upgrade head` to apply pending migrations before starting the server.
-    Do NOT add raw ALTER TABLE statements here — that is not how production databases
-    are versioned.
+    Column additions are done via safe ALTER TABLE ... ADD COLUMN IF NOT EXISTS
+    which is idempotent on PostgreSQL. This handles incremental schema changes
+    without requiring Alembic for simple column additions.
     """
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+        # --- Incremental column migrations (safe, idempotent) ---
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                "ALTER TABLE user_settings "
+                "ADD COLUMN IF NOT EXISTS trial_queries_used INTEGER NOT NULL DEFAULT 0"
+            )
+        )
 
 
 def get_session_factory():

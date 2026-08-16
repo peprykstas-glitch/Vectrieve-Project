@@ -42,6 +42,8 @@ export function useChat(
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(
     initialSpaceId ?? null
   );
+  const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
+  const [trialExpired, setTrialExpired] = useState(false);
   const isQueryingRef = useRef(false);
 
   // --- Load chat history if we're restoring an existing session ---
@@ -248,7 +250,12 @@ export function useChat(
       });
 
       if (!response.ok) {
-        throw new Error(`Server error ${response.status}`);
+        // 402 = trial expired — parse body and throw with status so the catch block can detect it
+        const body = await response.json().catch(() => ({}));
+        const err: any = new Error(body?.detail || `Server error ${response.status}`);
+        err.status = response.status;
+        err.body = body;
+        throw err;
       }
 
       const reader = response.body?.getReader();
@@ -286,6 +293,10 @@ export function useChat(
                   // Notify sidebar to refresh session list
                   window.dispatchEvent(new CustomEvent("session-created", { detail: { sessionId: event.session_id } }));
                 }
+              }
+              // Track trial remaining if present
+              if (typeof event.trial_remaining === "number") {
+                setTrialRemaining(event.trial_remaining);
               }
               // Attach sources to the placeholder message
               if (event.sources?.length > 0) {
@@ -341,19 +352,25 @@ export function useChat(
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat stream error:", error);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantMsgId
-            ? {
-                ...m,
-                content: "❌ Oops... There was an error connecting to the AI engine.",
-                isStreaming: false,
-              }
-            : m
-        )
-      );
+      // 402 = trial expired
+      if (error?.status === 402 || (typeof error?.message === "string" && error.message.includes("trial_expired"))) {
+        setTrialExpired(true);
+        setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId));
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? {
+                  ...m,
+                  content: "❌ Oops... There was an error connecting to the AI engine.",
+                  isStreaming: false,
+                }
+              : m
+          )
+        );
+      }
     } finally {
       setIsLoading(false);
       setIsProcessingFiles(false);
@@ -369,5 +386,8 @@ export function useChat(
     sessionId,
     activeSpaceId,
     setActiveSpaceId,
+    trialRemaining,
+    trialExpired,
+    setTrialExpired,
   };
 }
