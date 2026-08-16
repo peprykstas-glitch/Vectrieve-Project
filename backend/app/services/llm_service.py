@@ -1,6 +1,7 @@
 import sys
 import asyncio
 import json
+import re
 from typing import Optional, AsyncGenerator, List
 
 # Ensure stdout uses UTF-8 so emoji in print() don't crash on Windows (cp1251)
@@ -137,22 +138,50 @@ class LLMService:
         except Exception as e:
             raise ValueError(f"Cloud LLM failed: {e}")
 
-    async def generate_title(self, user_query: str, ai_response: str) -> str:
-        prompt = f"Summarize this topic in 3-5 words: User: {user_query} AI: {ai_response}"
-        try:
-            if self.groq_client:
-                completion = await self.groq_client.chat.completions.create(
+    async def generate_title(
+        self, user_query: str, ai_response: str, groq_api_key: Optional[str] = None
+    ) -> str:
+        prompt = f"""You are a precise, concise chat title generator for Vectrieve Core.
+Generate a very short, clean title (2 to 4 words maximum, under 30 characters) that captures the core subject of this chat.
+CRITICAL RULES:
+1. Detect the user's language (Ukrainian, Polish, English, Spanish, etc.) and write the title in the EXACT SAME language.
+2. Make it punchy, professional, and descriptive (e.g. "Аналіз резюме", "Пароль від сейфу", "Spanish Student Visa", "Звіт про доходи").
+3. Do NOT include quotation marks, markdown formatting, bullet points, colons, or prefixes (like "Title:", "Тема:", "Summary:").
+4. Do NOT add a period or punctuation at the end.
+5. Respond ONLY with the raw title text.
+
+User Query: "{user_query[:300]}"
+AI Summary: "{ai_response[:300]}"
+"""
+        client = None
+        if groq_api_key:
+            from groq import AsyncGroq
+            client = AsyncGroq(api_key=groq_api_key)
+        elif self.groq_client:
+            client = self.groq_client
+
+        if client:
+            try:
+                completion = await client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model=settings.MODEL_NAME,
-                    temperature=0.3,
-                    max_tokens=20,
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.2,
+                    max_tokens=25,
                 )
-                return (
-                    completion.choices[0].message.content.strip().replace('"', "")
-                )
+                raw_title = completion.choices[0].message.content.strip()
+                cleaned = re.sub(r'^(title|тема|subject|topic):\s*', '', raw_title, flags=re.IGNORECASE)
+                cleaned = cleaned.replace('"', '').replace("'", "").replace("`", "").strip()
+                cleaned = re.sub(r'[\.\!\?]+$', '', cleaned).strip()
+                if cleaned and len(cleaned) <= 45:
+                    return cleaned
+            except Exception as e:
+                print(f"⚠️ Title generation LLM error: {e}")
+
+        # Intelligent fallback
+        words = [w.strip() for w in user_query.strip().split() if w.strip()]
+        if not words:
             return "New Chat"
-        except Exception:
-            return "New Chat"
+        return " ".join(words[:4])
 
     async def generate_suggestions(
         self, user_query: str, ai_response: str, request_mode: str = "cloud", model_name: str = None

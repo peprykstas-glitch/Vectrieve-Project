@@ -28,16 +28,15 @@ router = APIRouter()
 
 
 # --- BACKGROUND TASK: Auto-generate session title after first message ---
-async def generate_chat_title_background(session_id: str, user_query: str, ai_response: str):
-    """Generates a short title for a new chat session using the LLM."""
+async def generate_chat_title_background(
+    session_id: str, user_query: str, ai_response: str, groq_api_key: Optional[str] = None
+):
+    """Generates a short, context-driven title for a chat session using the LLM."""
     try:
-        title = await llm_service.generate_title(user_query, ai_response)
+        title = await llm_service.generate_title(user_query, ai_response, groq_api_key=groq_api_key)
         if not title or title == "New Chat":
-            # Fallback: use first 5 words of user query
-            words = user_query.strip().split()
-            title = " ".join(words[:5])
-            if len(words) > 5:
-                title += "…"
+            words = [w.strip() for w in user_query.strip().split() if w.strip()]
+            title = " ".join(words[:4])
         from core.database import get_session_factory
         session_factory = get_session_factory()
         async with session_factory() as session:
@@ -48,13 +47,12 @@ async def generate_chat_title_background(session_id: str, user_query: str, ai_re
                 chat_session.title = title
                 session.add(chat_session)
                 await session.commit()
-                print(f"✅ Auto-title for session {session_id[:8]}...: '{title}'")
+                print(f"✅ AI Auto-title for session {session_id[:8]}...: '{title}'")
     except Exception as e:
         print(f"❌ Error generating title for session {session_id[:8]}...: {e}")
-        # Fallback: set title to first words of the query
         try:
-            words = user_query.strip().split()
-            fallback_title = " ".join(words[:5]) + ("…" if len(words) > 5 else "")
+            words = [w.strip() for w in user_query.strip().split() if w.strip()]
+            fallback_title = " ".join(words[:4])
             from core.database import get_session_factory
             session_factory = get_session_factory()
             async with session_factory() as db:
@@ -361,7 +359,7 @@ async def handle_query(
 
     if is_new_session:
         background_tasks.add_task(
-            generate_chat_title_background, session_id, user_query, response_text
+            generate_chat_title_background, session_id, user_query, response_text, resolved_groq_key
         )
 
     # Log Telemetry in a best-effort, non-blocking way
@@ -530,7 +528,7 @@ async def handle_query_stream(
         # is unreliable — FastAPI may not execute them after the generator ends.
         if is_new_session and response_text:
             asyncio.create_task(
-                generate_chat_title_background(session_id, user_query, response_text)
+                generate_chat_title_background(session_id, user_query, response_text, resolved_groq_key)
             )
 
     return StreamingResponse(
