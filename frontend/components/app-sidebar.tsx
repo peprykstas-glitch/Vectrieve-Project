@@ -498,23 +498,20 @@ export function AppSidebar() {
           onClick={toggleSidebar}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          className="flex items-center w-full gap-3 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
+          className="flex items-center w-full gap-2.5 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
         >
-          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 transition-all duration-200 hover:scale-105 active:scale-95">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95">
             {hovered ? (
-              <PanelLeft className="h-4 w-4 text-white drop-shadow-md animate-in fade-in duration-200" />
+              <PanelLeft className="h-5 w-5 text-indigo-400 drop-shadow-md animate-in fade-in duration-200" />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src="/logo-icon.png" alt="Vectrieve" className="h-5 w-5 object-contain drop-shadow-[0_0_8px_rgba(0,212,255,0.4)]" />
+              <img src="/logo-icon.png" alt="Vectrieve" className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
             )}
           </div>
           {/* Brand text beside icon — hidden when sidebar is collapsed */}
-          <div className="flex items-center gap-1.5 font-bold tracking-tight group-data-[collapsible=icon]:hidden transition-opacity duration-200">
-            <span className="text-[15px] font-bold tracking-tight text-white font-sans">
+          <div className="flex items-center group-data-[collapsible=icon]:hidden transition-opacity duration-200">
+            <span className="text-[16px] font-bold tracking-tight bg-gradient-to-r from-white via-zinc-100 to-indigo-300 bg-clip-text text-transparent font-sans">
               Vectrieve
-            </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              AI
             </span>
           </div>
         </button>
