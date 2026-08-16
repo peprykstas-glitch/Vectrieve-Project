@@ -32,8 +32,7 @@ RUN groupadd -g 10001 appgroup && \
 
 USER appuser
 
-# Change working directory to app-backend so uvicorn can resolve main:app and internal modules cleanly
-WORKDIR /app/app-backend
+WORKDIR /app/app
 
 EXPOSE 8000
 

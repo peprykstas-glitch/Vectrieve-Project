@@ -1,0 +1,52 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: vectrieve-qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+
+  db:
+    image: postgres:15-alpine
+    container_name: vectrieve-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: vectrieve
+      POSTGRES_PASSWORD: vectrieve_password
+      POSTGRES_DB: vectrievedb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vectrieve-backend
+    restart: always
+    depends_on:
+      - qdrant
+      - db
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://vectrieve:vectrieve_password@db:5432/vectrievedb
+      - QDRANT_URL=http://qdrant:6333
+      - CORS_ORIGINS=*
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vectrieve-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://159.89.110.69:8000
+    ports:
+      - "3000:3000"
+      - "80:3000"
