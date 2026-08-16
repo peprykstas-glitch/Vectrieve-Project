@@ -83,13 +83,13 @@ class VectorService:
     def _embed_text(self, text: str) -> List[float]:
         """Helper to generate a single embedding using FastEmbed."""
         embedder = self._get_embedding_model()
-        vectors = list(embedder.embed([text]))
+        vectors = list(embedder.embed([text], batch_size=1))
         return [float(x) for x in vectors[0].tolist()]
 
     def _embed_batch(self, texts: List[str]) -> List[List[float]]:
-        """Generate batch embeddings in parallel using FastEmbed."""
+        """Generate batch embeddings in parallel with safe batch size using FastEmbed."""
         embedder = self._get_embedding_model()
-        vectors = list(embedder.embed(texts))
+        vectors = list(embedder.embed(texts, batch_size=16))
         return [[float(x) for x in v.tolist()] for v in vectors]
 
     def _ensure_collection_exists(self, client):
