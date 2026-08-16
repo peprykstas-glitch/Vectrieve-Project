@@ -229,16 +229,16 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
     }
 
     setHeaderRightAction(
-      <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+      <div className="flex items-center gap-2 animate-in fade-in duration-200">
         {trialRemaining !== null && (
-          <div className={`hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium tracking-wide border ${
+          <div className={`hidden sm:flex items-center gap-1.5 h-7.5 px-3 rounded-full text-[11px] font-medium tracking-wide backdrop-blur-xl border shadow-sm transition-all ${
             trialRemaining <= 3
-              ? "bg-red-500/10 text-red-400 border-red-500/20"
+              ? "bg-red-500/10 text-red-400 border-red-500/25 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
               : trialRemaining <= 8
-              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-              : "bg-zinc-700/40 text-zinc-400 border-zinc-700/30"
+              ? "bg-amber-500/10 text-amber-400 border-amber-500/25 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+              : "bg-zinc-900/40 text-zinc-400 border-white/10"
           }`}>
-            <Zap className="w-3 h-3" />
+            <Zap className="w-3 h-3 text-amber-400" />
             <span>{trialRemaining} trial left</span>
           </div>
         )}
@@ -246,28 +246,28 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
         {sessionId && messages.length > 1 && (
           <button 
             onClick={() => setShowAudioBrief(true)}
-            className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 hover:text-white hover:bg-emerald-600 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+            className="h-7.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 backdrop-blur-xl border border-emerald-500/25 text-emerald-400 hover:text-emerald-300 text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_12px_rgba(16,185,129,0.15)] active:scale-95"
           >
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
+            <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
             <span>Audio Briefing</span>
           </button>
         )}
 
         <button 
           onClick={exportAsMarkdown}
-          className="px-2.5 py-1 text-[11px] font-medium bg-zinc-900/80 border border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+          className="h-7.5 px-3 bg-zinc-900/40 hover:bg-zinc-800/60 backdrop-blur-xl border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
           title="Export as Markdown"
         >
-          <Download className="w-3 h-3" />
+          <Download className="w-3 h-3 text-zinc-400" />
           <span>MD</span>
         </button>
 
         <button 
           onClick={exportAsPDF}
-          className="px-2.5 py-1 text-[11px] font-medium bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-lg transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+          className="h-7.5 px-3 bg-indigo-500/10 hover:bg-indigo-500/20 backdrop-blur-xl border border-indigo-500/25 text-indigo-400 hover:text-indigo-300 text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_12px_rgba(99,102,241,0.15)] active:scale-95"
           title="Export / Print PDF"
         >
-          <Printer className="w-3 h-3" />
+          <Printer className="w-3 h-3 text-indigo-400" />
           <span>PDF</span>
         </button>
       </div>

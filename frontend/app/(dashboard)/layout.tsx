@@ -27,7 +27,7 @@ function DashboardHeader() {
   }, [])
   
   return (
-    <header className="flex shrink-0 items-center justify-between px-5 py-2 h-11 border-b border-white/5 bg-zinc-950/70 backdrop-blur-md z-30 transition-all duration-300">
+    <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between px-5 h-12 bg-zinc-950/40 backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.3)] transition-all duration-300">
       {/* Left side: Mobile trigger + Cloud Enterprise + Persona selector */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
         <div className="flex items-center gap-3 md:hidden">
@@ -36,29 +36,32 @@ function DashboardHeader() {
 
         {mounted && (
           <>
-            <div className="flex items-center gap-1.5 h-8 px-3.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium rounded-full shrink-0 select-none">
+            <div className="flex items-center gap-1.5 h-7.5 px-3 bg-blue-500/10 hover:bg-blue-500/15 backdrop-blur-xl border border-blue-500/25 text-blue-400 text-[11px] font-medium rounded-full shrink-0 select-none shadow-[0_0_12px_rgba(59,130,246,0.15)] transition-all">
               <Cloud className="w-3.5 h-3.5 text-blue-400" />
               <span>Cloud Enterprise</span>
             </div>
 
             <Select value={aiPersona} onValueChange={setAiPersona}>
-              <SelectTrigger aria-label="Select Persona" className="h-8 w-auto min-w-[120px] sm:min-w-[145px] px-3 sm:px-4 bg-zinc-900/40 hover:bg-zinc-900/80 active:scale-[0.96] border-white/5 hover:border-zinc-800 text-xs focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 transition-all duration-200">
+              <SelectTrigger 
+                aria-label="Select Persona" 
+                className="h-7.5 w-auto min-w-[120px] sm:min-w-[135px] px-3 bg-zinc-900/40 hover:bg-zinc-800/60 backdrop-blur-xl border-white/10 hover:border-white/20 active:scale-[0.97] text-zinc-300 hover:text-white text-[11px] font-medium focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 shadow-sm transition-all duration-200"
+              >
                 <SelectValue placeholder="Persona" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-white/10 rounded-xl shadow-2xl">
-                <SelectItem value="mentor" className="text-xs text-zinc-300 focus:bg-zinc-800">
+              <SelectContent className="bg-zinc-900/95 backdrop-blur-2xl border-white/10 rounded-2xl shadow-2xl p-1">
+                <SelectItem value="mentor" className="text-xs text-zinc-300 hover:text-white focus:bg-white/10 rounded-xl cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="w-3 h-3 text-purple-400" /> Mentor Mode
+                    <GraduationCap className="w-3.5 h-3.5 text-purple-400" /> Mentor Mode
                   </div>
                 </SelectItem>
-                <SelectItem value="auditor" className="text-xs text-zinc-300 focus:bg-zinc-800">
+                <SelectItem value="auditor" className="text-xs text-zinc-300 hover:text-white focus:bg-white/10 rounded-xl cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-3 h-3 text-amber-400" /> Auditor Mode
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Auditor Mode
                   </div>
                 </SelectItem>
-                <SelectItem value="architect" className="text-xs text-zinc-300 focus:bg-zinc-800">
+                <SelectItem value="architect" className="text-xs text-zinc-300 hover:text-white focus:bg-white/10 rounded-xl cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-3 h-3 text-fuchsia-400" /> Architect Mode
+                    <ShieldCheck className="w-3.5 h-3.5 text-fuchsia-400" /> Architect Mode
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -67,7 +70,7 @@ function DashboardHeader() {
         )}
       </div>
 
-      {/* Right side: Dynamic Action Buttons (Audio Briefing, MD, PDF) */}
+      {/* Right side: Dynamic Frosted Glass Action Pills (Audio Briefing, MD, PDF) */}
       <div className="flex items-center gap-2">
         {mounted && headerRightAction}
       </div>
