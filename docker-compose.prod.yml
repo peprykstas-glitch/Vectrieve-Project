@@ -32,8 +32,16 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql+asyncpg://vectrieve:vectrieve_password@db:5432/vectrievedb
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
       - QDRANT_URL=http://qdrant:6333
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - CORS_ORIGINS=*
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./backend_data:/app/data
+      - ./backend_logs:/app/logs
     ports:
       - "8000:8000"
 
