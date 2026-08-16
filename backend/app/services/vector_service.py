@@ -25,7 +25,6 @@ class SearchResult(BaseModel):
 class VectorService:
     def __init__(self):
         from qdrant_client import QdrantClient
-        from ollama import Client
 
         logger.info("🔌 Connecting to Qdrant...")
         
@@ -40,12 +39,10 @@ class VectorService:
             logger.warning("⚠️ Cloud Qdrant not configured in .env")
         
         self.collection_name = settings.COLLECTION_NAME + "_nomic"
-        self.embed_model = "nomic-embed-text"
+        self.embed_model_name = "nomic-ai/nomic-embed-text-v1.5"
         self.vector_size = 768
+        self._embedding_model = None
 
-        logger.info("🚀 Compiling Ollama Embedding Client...")
-        self.ollama_client = Client(host=settings.OLLAMA_BASE_URL)
-        
         self._ensure_collection_exists(self.local_client)
         if self.cloud_client:
             try:
@@ -55,6 +52,21 @@ class VectorService:
                 self.cloud_client = None
 
         self.reranker = None
+
+    def _get_embedding_model(self):
+        """Lazy-load FastEmbed TextEmbedding model (ONNX runtime, 100% self-contained)."""
+        if self._embedding_model is None:
+            try:
+                logger.info(f"🚀 Loading FastEmbed embedding model: '{self.embed_model_name}'...")
+                from fastembed import TextEmbedding
+                self._embedding_model = TextEmbedding(model_name=self.embed_model_name)
+                logger.info("✅ FastEmbed embedding model loaded successfully.")
+            except Exception as e:
+                logger.error(f"⚠️ Failed to initialize FastEmbed model '{self.embed_model_name}': {e}")
+                from fastembed import TextEmbedding
+                self._embedding_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                self.vector_size = 384
+        return self._embedding_model
 
     def _get_reranker(self):
         """Lazy-load ONNX TextCrossEncoder for high-performance reranking."""
@@ -69,9 +81,16 @@ class VectorService:
         return self.reranker
 
     def _embed_text(self, text: str) -> List[float]:
-        """Helper to generate a single embedding using Ollama."""
-        response = self.ollama_client.embeddings(model=self.embed_model, prompt=text)
-        return response['embedding']
+        """Helper to generate a single embedding using FastEmbed."""
+        embedder = self._get_embedding_model()
+        vectors = list(embedder.embed([text]))
+        return [float(x) for x in vectors[0].tolist()]
+
+    def _embed_batch(self, texts: List[str]) -> List[List[float]]:
+        """Generate batch embeddings in parallel using FastEmbed."""
+        embedder = self._get_embedding_model()
+        vectors = list(embedder.embed(texts))
+        return [[float(x) for x in v.tolist()] for v in vectors]
 
     def _ensure_collection_exists(self, client):
         from qdrant_client.http import models
@@ -90,39 +109,15 @@ class VectorService:
 
     async def upsert_batch(self, texts: List[str], filename: str, user_id: int, space_id: Optional[str] = None):
         """
-        Batch upsert with parallel embedding generation.
-
-        Bug 2 fix: instead of generating embeddings one-by-one (200 serial Ollama
-        calls for a 200-chunk document), we split texts into batches of EMBED_BATCH_SIZE
-        and scatter them as concurrent asyncio.to_thread tasks. This reduces total
-        embedding time from O(n) sequential to O(n/batch) parallel.
-
-        Architectural Note / Future-Proofing:
-        If migrating to a cloud embedding provider (like OpenAI or Cohere) or a dedicated
-        local service (like TEI - Text Embeddings Inference), those APIs natively support
-        batch text arrays in a single HTTP request (e.g. client.embed([text1, text2, ...])).
-        Using native API batches is significantly faster than parallel asynchronous requests
-        because it saves network request overhead and benefits from hardware batching.
+        Batch upsert with FastEmbed embedding generation.
         """
         from qdrant_client.http import models
         if not texts:
             return
 
-        logger.info(f"📄 Embedding {len(texts)} chunks from '{filename}' in parallel batches...")
+        logger.info(f"📄 FastEmbed embedding {len(texts)} chunks from '{filename}'...")
 
-        EMBED_BATCH_SIZE = 8  # tune based on Ollama server capacity
-
-        def _embed_batch(batch: List[str]) -> List[List[float]]:
-            """Embed a slice of texts synchronously — runs in a thread."""
-            return [self._embed_text(t) for t in batch]
-
-        # Split texts into batches, scatter as concurrent thread tasks
-        batches = [texts[i:i + EMBED_BATCH_SIZE] for i in range(0, len(texts), EMBED_BATCH_SIZE)]
-        batch_results = await asyncio.gather(
-            *[asyncio.to_thread(_embed_batch, batch) for batch in batches]
-        )
-        # Flatten results back to a flat list in original order
-        all_embeddings: List[List[float]] = [vec for batch in batch_results for vec in batch]
+        all_embeddings = await asyncio.to_thread(self._embed_batch, texts)
 
         points = []
         for text, vector in zip(texts, all_embeddings):

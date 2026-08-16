@@ -744,12 +744,22 @@ Document Sample:
                     messages=[ChatMessage(role="user", content=summary_prompt)],
                     thinking_mode="auditor",
                 )
-                if not _llm_svc.groq_client:
-                    fake_req.mode = "local"
-
                 resolve_llm_config(fake_req, space)
 
-                summary_text, _ = await _llm_svc.generate_response(fake_req, "")
+                # Fetch user's custom groq key if available
+                user_groq_key = None
+                try:
+                    from models.user_settings import UserSettings
+                    st_res = await session.execute(
+                        select(UserSettings).where(UserSettings.user_id == user_id)
+                    )
+                    u_set = st_res.scalar_one_or_none()
+                    if u_set and u_set.groq_api_key:
+                        user_groq_key = u_set.groq_api_key
+                except Exception:
+                    pass
+
+                summary_text, _ = await _llm_svc.generate_response(fake_req, "", groq_api_key=user_groq_key)
                 if summary_text:
                     doc.summary = summary_text.strip()
                     session.add(doc)

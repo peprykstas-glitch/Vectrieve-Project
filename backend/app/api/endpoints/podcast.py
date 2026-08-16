@@ -166,27 +166,32 @@ def _fallback_transcript(language: str) -> List[dict]:
 # LLM call + robust parsing
 # ---------------------------------------------------------------------------
 
-async def _call_llm(prompt: str) -> str:
-    """Calls the configured LLM with a couple of retries for transient failures."""
+async def _call_llm(prompt: str, groq_api_key: Optional[str] = None) -> str:
+    """Calls Groq LLM with retries for generating structured audio briefing scripts."""
     messages = [{"role": "user", "content": prompt}]
+
+    client = None
+    if groq_api_key:
+        from groq import AsyncGroq
+        client = AsyncGroq(api_key=groq_api_key)
+    elif llm_service.groq_client:
+        client = llm_service.groq_client
+    else:
+        raise ValueError("No Groq API client or key available for Audio Brief generation.")
 
     last_error: Optional[Exception] = None
     for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
         try:
-            if llm_service.groq_client:
-                completion = await llm_service.groq_client.chat.completions.create(
-                    messages=messages,
-                    model="llama-3.3-70b-versatile",
-                    temperature=0.8,
-                    max_tokens=2048,
-                    # Guarantees syntactically valid JSON back from Groq, so we no
-                    # longer have to guess at markdown fences / stray commentary.
-                    response_format={"type": "json_object"},
-                )
-                return completion.choices[0].message.content.strip()
-            else:
-                response_text, _ = await llm_service._run_local(messages, temperature=0.8)
-                return response_text.strip()
+            completion = await client.chat.completions.create(
+                messages=messages,
+                model="llama-3.3-70b-versatile",
+                temperature=0.8,
+                max_tokens=2048,
+                # Guarantees syntactically valid JSON back from Groq, so we no
+                # longer have to guess at markdown fences / stray commentary.
+                response_format={"type": "json_object"},
+            )
+            return completion.choices[0].message.content.strip()
         except Exception as e:
             last_error = e
             logger.warning("LLM call attempt %s/%s failed: %s", attempt, LLM_MAX_ATTEMPTS, e)
@@ -357,10 +362,23 @@ async def generate_podcast(
 
     _last_generation_at[current_user.id] = now
 
+    # Retrieve user's custom groq key if configured
+    user_groq_key = None
+    try:
+        from models.user_settings import UserSettings
+        st_res = await session.execute(
+            select(UserSettings).where(UserSettings.user_id == current_user.id)
+        )
+        u_set = st_res.scalar_one_or_none()
+        if u_set and u_set.groq_api_key:
+            user_groq_key = u_set.groq_api_key
+    except Exception:
+        pass
+
     # ---- Step 2: LLM generation + parsing. Only genuine generation failures
     # (bad JSON, LLM outage, empty output) degrade to the spoken fallback. ----
     try:
-        raw_response = await _call_llm(prompt)
+        raw_response = await _call_llm(prompt, groq_api_key=user_groq_key)
         raw_turns = _extract_transcript_list(raw_response)
         validated_transcript = _validate_turns(raw_turns)
 

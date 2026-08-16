@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, Search, UploadCloud, Trash2, Loader2, Copy, Check, Sparkles } from "lucide-react";
+import { Database, Search, UploadCloud, Trash2, Loader2, Copy, Check, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFiles, Document } from "@/hooks/useFiles";
 import { FileTable } from "@/components/files/FileTable";
@@ -31,6 +31,29 @@ export default function KnowledgeBasePage() {
   const [chunkSearchQuery, setChunkSearchQuery] = useState("");
   const [copiedChunkIdx, setCopiedChunkIdx] = useState<number | null>(null);
   const [docSummary, setDocSummary] = useState<string | null>(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
+  const handleGenerateSummary = async () => {
+    if (!viewDetailsDoc) return;
+    setIsGeneratingSummary(true);
+    try {
+      const res = await fetch(`/api/proxy/documents/${viewDetailsDoc.id}/summary`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDocSummary(data.summary);
+      } else {
+        const err = await res.json().catch(() => ({ detail: "Failed to generate briefing" }));
+        alert(err.detail || "Failed to generate AI briefing");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Network error while generating briefing");
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
 
   useEffect(() => {
     if (viewDetailsDoc) {
@@ -262,11 +285,30 @@ export default function KnowledgeBasePage() {
               </div>
 
               {/* AI Executive Briefing Report Card */}
-              {docSummary && (
+              {docSummary ? (
                 <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 shadow-[0_0_12px_rgba(99,102,241,0.05)]">
-                  <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
-                    <Sparkles className="w-4 h-4 animate-pulse" />
-                    <span>AI Executive Briefing</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
+                      <Sparkles className="w-4 h-4 animate-pulse" />
+                      <span>AI Executive Briefing</span>
+                    </div>
+                    <button
+                      onClick={handleGenerateSummary}
+                      disabled={isGeneratingSummary}
+                      className="text-[11px] text-zinc-400 hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isGeneratingSummary ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Regenerate</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                   <div className="prose prose-invert prose-zinc text-zinc-300 text-xs leading-relaxed max-w-none prose-p:leading-relaxed prose-p:mb-2 last:prose-p:mb-0 prose-ul:list-disc prose-ul:pl-4 prose-li:my-1">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -274,7 +316,31 @@ export default function KnowledgeBasePage() {
                     </ReactMarkdown>
                   </div>
                 </div>
-              )}
+              ) : viewDetailsDoc.status === "COMPLETED" ? (
+                <div className="p-3.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-zinc-400 text-xs">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                    <span>No AI Executive Briefing yet</span>
+                  </div>
+                  <button
+                    onClick={handleGenerateSummary}
+                    disabled={isGeneratingSummary}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-indigo-200 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isGeneratingSummary ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Analyzing document...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Generate Briefing</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : null}
 
               {/* AI Audio Podcast Briefing */}
               {viewDetailsDoc.status === "COMPLETED" && (

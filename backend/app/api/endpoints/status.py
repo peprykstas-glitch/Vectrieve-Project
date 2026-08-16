@@ -90,12 +90,26 @@ async def get_document_chunks(
     current_user: User = Depends(get_current_user),
 ):
     """Retrieve all extracted text segments for a specific document."""
-    # Verify owner
-    doc_stmt = select(Document).where(Document.id == document_id, Document.user_id == current_user.id)
+    # Verify owner or space membership
+    doc_stmt = select(Document).where(Document.id == document_id)
     doc_res = await session.execute(doc_stmt)
     doc = doc_res.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    is_authorized = (doc.user_id == current_user.id)
+    if not is_authorized and doc.space_id:
+        from models.sql_models import SpaceMember
+        m_stmt = select(SpaceMember).where(
+            SpaceMember.space_id == doc.space_id,
+            SpaceMember.user_id == current_user.id
+        )
+        m_res = await session.execute(m_stmt)
+        if m_res.scalar_one_or_none():
+            is_authorized = True
+
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to access this document")
 
     stmt = select(DocumentChunk).where(DocumentChunk.document_id == document_id).order_by(DocumentChunk.chunk_index.asc())
     result = await session.execute(stmt)
@@ -116,3 +130,91 @@ async def get_document_chunks(
         "summary": summary,
         "chunks": segments
     }
+
+
+@router.post("/documents/{document_id}/summary")
+async def generate_document_summary(
+    document_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate or re-generate an AI Executive Briefing for an existing document."""
+    doc_stmt = select(Document).where(Document.id == document_id)
+    doc_res = await session.execute(doc_stmt)
+    doc = doc_res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    is_authorized = (doc.user_id == current_user.id)
+    if not is_authorized and doc.space_id:
+        from models.sql_models import SpaceMember
+        m_stmt = select(SpaceMember).where(
+            SpaceMember.space_id == doc.space_id,
+            SpaceMember.user_id == current_user.id
+        )
+        m_res = await session.execute(m_stmt)
+        if m_res.scalar_one_or_none():
+            is_authorized = True
+
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to access this document")
+
+    stmt = select(DocumentChunk).where(
+        DocumentChunk.document_id == document_id,
+        DocumentChunk.chunk_index >= 0
+    ).order_by(DocumentChunk.chunk_index.asc())
+    result = await session.execute(stmt)
+    chunks = result.scalars().all()
+    if not chunks:
+        raise HTTPException(status_code=400, detail="Document has no text chunks to summarize.")
+
+    from services.pdf_parser import _sample_chunks
+    from services.llm_service import llm_service
+    from models.schemas import QueryRequest, ChatMessage
+    from models.user_settings import UserSettings
+
+    chunk_texts = [c.content for c in chunks]
+    sampled = _sample_chunks(chunk_texts, n=8, max_chars=6000)
+    summary_input = "\n\n".join(sampled)
+    summary_prompt = f"""
+You are Vectrieve Core, a premium business document intelligence analyzer.
+Provide a highly structured, polished, and extremely concise Executive Briefing for this document in English.
+Outline:
+1. Document Category (e.g. Resume/CV, SLA, NDA, Corporate Guideline, FAQ, Research)
+2. High-level Summary (1-2 sentences)
+3. Key Takeaways or Highlighted Skills (bullet points)
+4. Key Risks, Warnings, or Compliance Issues (bullet points or "None")
+
+Format headings clearly as bold text like **Document Category:** or **Key Takeaways:**. Use standard bullet points. Keep it professional.
+
+Document Sample:
+"{summary_input}"
+"""
+    req = QueryRequest(
+        messages=[ChatMessage(role="user", content=summary_prompt)],
+        thinking_mode="auditor",
+    )
+
+    user_groq_key = None
+    try:
+        st_res = await session.execute(
+            select(UserSettings).where(UserSettings.user_id == current_user.id)
+        )
+        u_set = st_res.scalar_one_or_none()
+        if u_set and u_set.groq_api_key:
+            user_groq_key = u_set.groq_api_key
+    except Exception:
+        pass
+
+    try:
+        summary_text, _ = await llm_service.generate_response(req, "", groq_api_key=user_groq_key)
+        if summary_text:
+            doc.summary = summary_text.strip()
+            session.add(doc)
+            await session.commit()
+            await session.refresh(doc)
+            return {"summary": doc.summary, "status": "success"}
+        else:
+            raise HTTPException(status_code=500, detail="Model returned empty summary.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate summary: {e}")
