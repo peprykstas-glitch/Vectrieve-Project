@@ -19,7 +19,7 @@ import { Cpu, Cloud, GraduationCap, ShieldCheck, Lock } from "lucide-react"
 
 // Extracted header to use context
 function DashboardHeader() {
-  const { computeMode, setComputeMode, aiPersona, setAiPersona, isComputeModeLocked } = useGlobalSettings()
+  const { computeMode, setComputeMode, aiPersona, setAiPersona, isComputeModeLocked, headerRightAction } = useGlobalSettings()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -28,12 +28,12 @@ function DashboardHeader() {
   
   return (
     <header className="flex shrink-0 items-center justify-between px-5 py-2 h-11 border-b border-white/5 bg-zinc-950/70 backdrop-blur-md z-30 transition-all duration-300">
-      <div className="flex items-center gap-3 md:hidden">
-        <SidebarTrigger className="text-zinc-400 hover:text-white cursor-pointer" />
-      </div>
-
-      {/* Relocated Global Controls: Cloud/Local and Mentor/Auditor */}
+      {/* Left side: Mobile trigger + Cloud Enterprise + Persona selector */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-visible py-1">
+        <div className="flex items-center gap-3 md:hidden">
+          <SidebarTrigger className="text-zinc-400 hover:text-white cursor-pointer" />
+        </div>
+
         {mounted && (
           <>
             <div className="flex items-center gap-1.5 h-8 px-3.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium rounded-full shrink-0 select-none">
@@ -65,6 +65,11 @@ function DashboardHeader() {
             </Select>
           </>
         )}
+      </div>
+
+      {/* Right side: Dynamic Action Buttons (Audio Briefing, MD, PDF) */}
+      <div className="flex items-center gap-2">
+        {mounted && headerRightAction}
       </div>
     </header>
   )

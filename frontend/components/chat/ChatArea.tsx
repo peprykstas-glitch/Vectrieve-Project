@@ -59,7 +59,7 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
 }
 
 export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
-  const { computeMode, aiPersona } = useGlobalSettings();
+  const { computeMode, aiPersona, setHeaderRightAction } = useGlobalSettings();
   const { messages, isLoading, isProcessingFiles, submitQuery, sessionId, trialRemaining, trialExpired, setTrialExpired } = useChat(computeMode, aiPersona, initialSessionId, initialSpaceId);
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -83,72 +83,73 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       prompt: "Show me a status report of my uploaded files.",
       icon: Database,
       color: "text-blue-400 group-hover:text-blue-300",
-      border: "hover:border-blue-500/30 hover:bg-blue-500/5",
+      border: "hover:border-blue-500/30",
     },
     {
-      title: "Audit System Activity",
-      desc: "Query total counts and RAG performance stats",
-      prompt: "Show system analytics summary and recent usage statistics.",
-      icon: Activity,
-      color: "text-pink-400 group-hover:text-pink-300",
-      border: "hover:border-pink-500/30 hover:bg-pink-500/5",
+      title: "Executive Audit",
+      desc: "Detect compliance risks or contractual anomalies",
+      prompt: "Perform a deep risk audit across all knowledge base files.",
+      icon: ShieldCheck,
+      color: "text-amber-400 group-hover:text-amber-300",
+      border: "hover:border-amber-500/30",
     },
     {
-      title: "Search Knowledge Base",
-      desc: "Retrieve semantically relevant chunks",
-      prompt: "Perform semantic query for 'enterprise terms' and explain sources.",
+      title: "Semantic Synthesis",
+      desc: "Uncover hidden insights across connected files",
+      prompt: "Synthesize key strategic takeaways from all uploaded documents.",
       icon: Sparkles,
       color: "text-purple-400 group-hover:text-purple-300",
-      border: "hover:border-purple-500/30 hover:bg-purple-500/5",
+      border: "hover:border-purple-500/30",
     },
     {
-      title: "Security & Filtering",
-      desc: "Check strict content filter and guard status",
-      prompt: "Is strict content filtering active? Explain safety policies.",
-      icon: ShieldCheck,
+      title: "Audio Briefing",
+      desc: "Generate conversational overview podcast with hosts",
+      prompt: "Create an executive audio briefing summary.",
+      icon: Radio,
       color: "text-emerald-400 group-hover:text-emerald-300",
-      border: "hover:border-emerald-500/30 hover:bg-emerald-500/5",
+      border: "hover:border-emerald-500/30",
     },
   ];
 
-  const exportAsMarkdown = () => {
-    let md = `# Vectrieve Chat Session Report\n`;
-    md += `*Generated on: ${new Date().toLocaleString()}*\n`;
-    md += `*Persona Mode: ${aiPersona.toUpperCase()}*\n`;
-    md += `*Compute Mode: ${computeMode.toUpperCase()}*\n\n`;
-    md += `---\n\n`;
+  // Helper to safely export the session transcript as a Markdown file
+  const exportAsMarkdown = useCallback(() => {
+    if (!messages.length) return;
+    let md = `# Vectrieve Chat Session: ${sessionId || "Export"}\n`;
+    md += `*Exported on: ${new Date().toLocaleString()}*\n\n---\n\n`;
     
     messages.forEach((msg) => {
-      if (msg.id === "welcome") return;
-      const roleName = msg.role === "user" ? "USER" : "VECTRIEVE CORE AI";
-      md += `### 👤 ${roleName}\n`;
-      md += `${msg.content}\n\n`;
+      const roleName = msg.role === "user" ? "### 👤 User" : "### 🤖 Vectrieve Core";
+      md += `${roleName}\n\n${msg.content}\n\n`;
       if (msg.sources && msg.sources.length > 0) {
         md += `**Sources Cited:**\n`;
         msg.sources.forEach((src) => {
-          md += `- *[Score: ${src.score.toFixed(2)}] ${src.filename}*: "${src.content.trim()}"\n`;
+          md += `- **${src.filename}** (Score: ${src.score.toFixed(2)}): "${src.content.trim()}"\n`;
         });
         md += `\n`;
       }
       md += `---\n\n`;
     });
-    
-    const blob = new Blob([md], { type: "text/markdown;charset=utf-8;" });
+
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `Vectrieve_Report_${new Date().getTime()}.md`);
-    document.body.appendChild(link);
+    link.download = `vectrieve-chat-${sessionId ? sessionId.slice(0, 8) : "export"}.md`;
     link.click();
-    document.body.removeChild(link);
-  };
+    URL.revokeObjectURL(url);
+  }, [messages, sessionId]);
 
-  const exportAsPDF = () => {
+  // Helper to export as a formatted printable PDF
+  const exportAsPDF = useCallback(() => {
+    if (!messages.length) return;
     const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    
-    const escapeHtml = (str: string) => {
-      return str
+    if (!printWindow) {
+      alert("Please allow popups to export the PDF.");
+      return;
+    }
+
+    const escapeHtml = (text: string) => {
+      return text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -157,42 +158,36 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
     };
 
     let html = `
+      <!DOCTYPE html>
       <html>
         <head>
           <title>Vectrieve Intelligence Report</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2937; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-            h1 { font-size: 28px; color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 5px; }
-            .meta { font-size: 12px; color: #6b7280; margin-bottom: 30px; }
-            .message { margin-bottom: 25px; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
-            .user { background-color: #f3f4f6; border-left: 4px solid #4f46e5; }
-            .assistant { background-color: #ffffff; border-left: 4px solid #10b981; }
-            .role { font-weight: bold; font-size: 12px; text-transform: uppercase; color: #4b5563; margin-bottom: 10px; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111; padding: 40px; line-height: 1.6; }
+            h1 { font-size: 24px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-bottom: 4px; }
+            .meta { color: #666; font-size: 12px; margin-bottom: 24px; }
+            .msg { margin-bottom: 24px; padding: 16px; border-radius: 8px; }
+            .user { background: #f3f4f6; border-left: 4px solid #6b7280; }
+            .assistant { background: #eff6ff; border-left: 4px solid #3b82f6; }
+            .role { font-weight: bold; font-size: 13px; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+            .user .role { color: #4b5563; }
+            .assistant .role { color: #1d4ed8; }
             .content { font-size: 14px; white-space: pre-wrap; }
-            .citations { margin-top: 15px; border-top: 1px dashed #d1d5db; padding-top: 10px; }
-            .citation-title { font-weight: bold; font-size: 11px; color: #4f46e5; margin-bottom: 5px; }
-            .citation-item { font-size: 11px; color: #4b5563; margin-bottom: 8px; background: #f9fafb; padding: 8px; border-radius: 6px; }
-            @media print {
-              body { padding: 0; }
-              .message { page-break-inside: avoid; }
-            }
+            .citations { margin-top: 12px; padding-top: 12px; border-top: 1px solid #dbeafe; font-size: 11px; color: #475569; }
+            .citation-title { font-weight: 600; margin-bottom: 4px; }
+            .citation-item { margin-bottom: 4px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
           </style>
         </head>
         <body>
           <h1>Vectrieve Intelligence Report</h1>
-          <div class="meta">
-            Generated: ${new Date().toLocaleString()} | Persona: ${aiPersona.toUpperCase()} | Compute: ${computeMode.toUpperCase()}
-          </div>
+          <div class="meta">Session ID: ${escapeHtml(sessionId || "Ad-hoc")} &bull; Generated: ${new Date().toLocaleString()}</div>
     `;
     
     messages.forEach((msg) => {
-      if (msg.id === "welcome") return;
-      const roleName = msg.role === "user" ? "User Query" : "Vectrieve Intelligence Response";
-      const roleClass = msg.role === "user" ? "user" : "assistant";
-      
+      const isUser = msg.role === "user";
       html += `
-        <div class="message ${roleClass}">
-          <div class="role">${roleName}</div>
+        <div class="msg ${isUser ? 'user' : 'assistant'}">
+          <div class="role">${isUser ? 'User Query' : 'Vectrieve Core Analysis'}</div>
           <div class="content">${escapeHtml(msg.content)}</div>
       `;
       
@@ -224,7 +219,62 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       printWindow.print();
       printWindow.close();
     }, 500);
-  };
+  }, [messages, sessionId]);
+
+  // Sync action buttons with the top unified header
+  useEffect(() => {
+    if (showWelcomeHero) {
+      setHeaderRightAction(null);
+      return;
+    }
+
+    setHeaderRightAction(
+      <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+        {trialRemaining !== null && (
+          <div className={`hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium tracking-wide border ${
+            trialRemaining <= 3
+              ? "bg-red-500/10 text-red-400 border-red-500/20"
+              : trialRemaining <= 8
+              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+              : "bg-zinc-700/40 text-zinc-400 border-zinc-700/30"
+          }`}>
+            <Zap className="w-3 h-3" />
+            <span>{trialRemaining} trial left</span>
+          </div>
+        )}
+
+        {sessionId && messages.length > 1 && (
+          <button 
+            onClick={() => setShowAudioBrief(true)}
+            className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 hover:text-white hover:bg-emerald-600 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+          >
+            <Radio className="w-3.5 h-3.5 animate-pulse" />
+            <span>Audio Briefing</span>
+          </button>
+        )}
+
+        <button 
+          onClick={exportAsMarkdown}
+          className="px-2.5 py-1 text-[11px] font-medium bg-zinc-900/80 border border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+          title="Export as Markdown"
+        >
+          <Download className="w-3 h-3" />
+          <span>MD</span>
+        </button>
+
+        <button 
+          onClick={exportAsPDF}
+          className="px-2.5 py-1 text-[11px] font-medium bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-lg transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+          title="Export / Print PDF"
+        >
+          <Printer className="w-3 h-3" />
+          <span>PDF</span>
+        </button>
+      </div>
+    );
+
+    return () => setHeaderRightAction(null);
+  }, [showWelcomeHero, sessionId, messages.length, trialRemaining, exportAsMarkdown, exportAsPDF, setHeaderRightAction]);
 
   return (
     <div className="flex flex-col h-full w-full bg-zinc-950 relative overflow-hidden">
@@ -302,75 +352,6 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] rounded-full bg-purple-500/5 blur-[100px] pointer-events-none" />
-
-      {/* Slim Floating Accessory Header */}
-      <div className="shrink-0 h-10 border-b border-white/5 bg-zinc-950/40 backdrop-blur-sm flex items-center justify-between px-5 relative z-20">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-[11px] font-semibold text-zinc-400 tracking-wider">
-              Vectrieve Core
-            </span>
-          </div>
-
-          <div className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium tracking-wide border ${
-            computeMode === "local" 
-              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-              : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-          }`}>
-            <ShieldCheck className="w-2.5 h-2.5" />
-            {computeMode === "local" ? "GDPR Air-Gap" : "Encrypted Cloud"}
-          </div>
-
-          {/* Trial remaining badge (only when user is on trial) */}
-          {trialRemaining !== null && (
-            <div className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium tracking-wide border ${
-              trialRemaining <= 3
-                ? "bg-red-500/10 text-red-400 border-red-500/20"
-                : trialRemaining <= 8
-                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                : "bg-zinc-700/40 text-zinc-500 border-zinc-700/30"
-            }`}>
-              <Zap className="w-2.5 h-2.5" />
-              {trialRemaining} trial left
-            </div>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-1.5">
-          {sessionId && messages.length > 1 && (
-            <button 
-              onClick={() => setShowAudioBrief(true)}
-              className="px-2.5 py-1 text-[10px] font-semibold bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 hover:text-white hover:bg-emerald-600 rounded-md transition-all flex items-center gap-1 cursor-pointer"
-            >
-              <Radio className="w-3 h-3 animate-pulse" />
-              Audio Briefing
-            </button>
-          )}
-
-          {!showWelcomeHero && (
-            <>
-              <button 
-                onClick={exportAsMarkdown}
-                className="px-2.5 py-1 text-[10px] font-medium bg-zinc-900/80 border border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <Download className="w-3 h-3" />
-                MD
-              </button>
-              <button 
-                onClick={exportAsPDF}
-                className="px-2.5 py-1 text-[10px] font-medium bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-md transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <Printer className="w-3 h-3" />
-                PDF
-              </button>
-            </>
-          )}
-        </div>
-      </div>
 
       {/* CENTRALIZED MESSAGE FEED */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-5 pb-36 scroll-smooth custom-scrollbar relative z-10">

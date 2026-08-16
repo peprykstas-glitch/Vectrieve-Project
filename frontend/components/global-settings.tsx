@@ -22,6 +22,8 @@ type SettingsContextType = {
   spaces: Space[];
   setSpaces: (spaces: Space[]) => void;
   fetchSpaces: () => Promise<void>;
+  headerRightAction: React.ReactNode;
+  setHeaderRightAction: (node: React.ReactNode) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType>({
@@ -32,12 +34,15 @@ const SettingsContext = createContext<SettingsContextType>({
   spaces: [],
   setSpaces: () => {},
   fetchSpaces: async () => {},
+  headerRightAction: null,
+  setHeaderRightAction: () => {},
 });
 
 export function GlobalSettingsProvider({ children }: { children: React.ReactNode }) {
   const [userComputeMode, setUserComputeMode] = useState("cloud");
   const [aiPersona, setAiPersona] = useState("mentor");
   const [spaces, setSpaces] = useState<Space[]>([]);
+  const [headerRightAction, setHeaderRightAction] = useState<React.ReactNode>(null);
 
   const fetchSpaces = useCallback(async () => {
     try {
@@ -60,7 +65,9 @@ export function GlobalSettingsProvider({ children }: { children: React.ReactNode
     spaces,
     setSpaces,
     fetchSpaces,
-  }), [userComputeMode, aiPersona, spaces, fetchSpaces]);
+    headerRightAction,
+    setHeaderRightAction,
+  }), [userComputeMode, aiPersona, spaces, fetchSpaces, headerRightAction]);
 
   return (
     <SettingsContext.Provider value={value}>
