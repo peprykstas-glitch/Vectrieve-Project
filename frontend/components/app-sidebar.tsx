@@ -176,15 +176,46 @@ function ChatHistoryList() {
   )
 }
 
+import { AvatarModal } from "@/components/user/AvatarModal"
+import { Camera } from "lucide-react"
+
 function UserCard() {
   const [email, setEmail] = React.useState<string | null>(null)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = React.useState(false)
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
 
   React.useEffect(() => {
+    // Load local stored avatar
+    const saved = localStorage.getItem("vectrieve_user_avatar")
+    if (saved) {
+      setAvatarUrl(saved)
+    }
+
     apiClient<{ email: string }>('/auth/me')
-      .then(data => { if (data?.email) setEmail(data.email) })
+      .then(data => { 
+        if (data?.email) {
+          setEmail(data.email)
+          if (!saved) {
+            // Auto fallback unavatar
+            setAvatarUrl(`https://unavatar.io/${encodeURIComponent(data.email)}?fallback=https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.email)}`)
+          }
+        } 
+      })
       .catch(() => {})
   }, [])
+
+  const handleSaveAvatar = (newAvatar: string | null) => {
+    setAvatarUrl(newAvatar)
+    if (newAvatar) {
+      localStorage.setItem("vectrieve_user_avatar", newAvatar)
+    } else {
+      localStorage.removeItem("vectrieve_user_avatar")
+      if (email) {
+        setAvatarUrl(`https://unavatar.io/${encodeURIComponent(email)}?fallback=https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(email)}`)
+      }
+    }
+  }
 
   const handleSignOut = async () => {
     setIsLoggingOut(true)
@@ -196,30 +227,66 @@ function UserCard() {
     window.location.href = '/login'
   }
 
-  const initials = email ? email[0].toUpperCase() : '?'
+  const initials = email ? email[0].toUpperCase() : 'U'
 
   return (
-    <div className="group flex items-center gap-3 px-2 py-2 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:w-full">
-      {/* Avatar */}
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-bold shadow-md">
-        {initials}
+    <>
+      <div className="group flex items-center gap-3 px-2 py-2 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:w-full">
+        {/* Avatar with click to customize */}
+        <button
+          type="button"
+          onClick={() => setIsAvatarModalOpen(true)}
+          title="Change profile avatar"
+          className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-bold shadow-md cursor-pointer border-0 p-0 group/avatar"
+        >
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img 
+              src={avatarUrl} 
+              alt="Avatar" 
+              className="w-full h-full object-cover"
+              onError={() => {
+                // If remote image fails to load, fallback to initials
+                setAvatarUrl(null)
+              }}
+            />
+          ) : (
+            <span>{initials}</span>
+          )}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white">
+            <Camera className="w-3.5 h-3.5" />
+          </div>
+        </button>
+
+        {/* Email + Sign Out */}
+        <div 
+          onClick={() => setIsAvatarModalOpen(true)}
+          className="flex flex-1 min-w-0 flex-col cursor-pointer group-data-[collapsible=icon]:hidden"
+        >
+          <span className="text-[11px] text-zinc-500 font-medium">Signed in as</span>
+          <span className="text-[12px] text-zinc-300 font-semibold truncate hover:text-indigo-400 transition-colors">
+            {email ?? '...'}
+          </span>
+        </div>
+
+        <button
+          onClick={handleSignOut}
+          disabled={isLoggingOut}
+          title="Sign out"
+          className="group-data-[collapsible=icon]:hidden shrink-0 p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 disabled:opacity-50 border-0 bg-transparent cursor-pointer"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
       </div>
 
-      {/* Email + Sign Out */}
-      <div className="flex flex-1 min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-        <span className="text-[11px] text-zinc-500 font-medium">Signed in as</span>
-        <span className="text-[12px] text-zinc-300 font-semibold truncate">{email ?? '...'}</span>
-      </div>
-
-      <button
-        onClick={handleSignOut}
-        disabled={isLoggingOut}
-        title="Sign out"
-        className="group-data-[collapsible=icon]:hidden shrink-0 p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 disabled:opacity-50"
-      >
-        <LogOut className="w-3.5 h-3.5" />
-      </button>
-    </div>
+      <AvatarModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatar={avatarUrl}
+        userEmail={email}
+        onSaveAvatar={handleSaveAvatar}
+      />
+    </>
   )
 }
 
