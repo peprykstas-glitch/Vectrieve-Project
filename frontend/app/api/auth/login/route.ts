@@ -38,9 +38,7 @@ export async function POST(request: Request) {
     cookieStore.set({
       name: 'vectrieve_session',
       value: data.access_token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.COOKIE_SECURE === 'true', // Allow HTTP access over IP
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });

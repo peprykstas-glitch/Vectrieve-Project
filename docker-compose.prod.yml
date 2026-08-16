@@ -47,6 +47,7 @@ services:
       - backend
     environment:
       - NEXT_PUBLIC_API_URL=http://159.89.110.69:8000
+      - INTERNAL_BACKEND_URL=http://backend:8000
     ports:
       - "3000:3000"
       - "80:3000"
