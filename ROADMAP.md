@@ -86,12 +86,56 @@ npx tsc --noEmit
 
 ## 🧹 Technical Debt & Refactoring Backlog (Post-Testing Sprint)
 
-* [ ] **Frontend Component Decomposition (`ChatArea.tsx`)**:
-  * Extract `WelcomeHero` into `components/chat/WelcomeHero.tsx`.
-  * Extract `TrialExpiredModal` into `components/chat/TrialExpiredModal.tsx`.
-  * Extract PDF & Markdown helpers into `lib/export-utils.ts`.
-* [ ] **Backend Service Layer Extraction (`chat.py`)**:
-  * Move `_prepare_rag_context` and pre-flight file validation into dedicated `services/rag_service.py`.
-  * Clean up legacy CPU fallback loops in `services/llm_service.py`.
-* [ ] **Automated Database Backups (Disaster Recovery)**:
-  * Implement automated daily `pg_dump` cron backup script for `vectrievedb` with retention policies.
+### 🔴 High Criticality (Monolithic UI Components > 450 Lines)
+
+* [ ] **`frontend/components/chat/AudioBrief.tsx` (930 lines)**:
+  * **Current issue**: Mixes WebAudio API audio context, canvas waveform rendering, EdgeTTS stream playback, subtitle synchronization, speaker switcher, and modal layout in a single file.
+  * **Target Decomposition**:
+    * `frontend/hooks/useAudioPlayer.ts` — Audio context lifecycle, playback state, and WebAudio analyser node.
+    * `frontend/components/chat/AudioWaveform.tsx` — Canvas frequency spectrum & waveform animation.
+    * `frontend/components/chat/AudioTranscript.tsx` — Timed subtitle cards and speaker active turn highlight.
+    * `frontend/components/chat/AudioBrief.tsx` — Clean high-level container orchestration (~120 lines).
+
+* [ ] **`frontend/components/chat/ChatArea.tsx` (452 lines)**:
+  * **Current issue**: Manages Welcome Hero, Quick Action cards, Trial Limit modal state, Markdown & PDF file sanitization/download, and central message stream.
+  * **Target Decomposition**:
+    * `frontend/components/chat/WelcomeHero.tsx` — Hero branding, title, and quick action cards grid.
+    * `frontend/components/chat/TrialExpiredModal.tsx` — 20-query trial limit warning & Groq key onboarding steps.
+    * `frontend/lib/export-utils.ts` — HTML escaping, Markdown serialization, and Blob download helpers.
+    * `frontend/components/chat/ChatArea.tsx` — Core message list & streaming container (~150 lines).
+
+---
+
+### 🟡 Medium Criticality (API Endpoints & Core Service Layer)
+
+* [ ] **`backend/app/api/endpoints/chat.py` (508 lines)**:
+  * **Current issue**: Route handler contains inline RAG context assembly, pre-flight file readiness verification, and database title update tasks.
+  * **Target Decomposition**:
+    * `backend/app/services/rag_service.py` — Extract `_prepare_rag_context` and preflight attachment status checks.
+    * `backend/app/services/title_service.py` — Extract `generate_chat_title_background` task.
+    * `backend/app/api/endpoints/chat.py` — Pure FastAPI routing layer with minimal controller logic (~140 lines).
+
+* [ ] **`backend/app/services/llm_service.py` (464 lines)**:
+  * **Current issue**: Contains hardcoded prompt templates, suggestion generation, title generation, Groq Cloud runner, and legacy CPU Ollama branches.
+  * **Target Decomposition**:
+    * `backend/app/prompts/personas.py` — Dedicated prompt templates for Mentor, Auditor, Architect.
+    * `backend/app/prompts/suggestions.py` — Dynamic follow-up prompt builder.
+    * Remove deprecated/unused CPU Ollama loops to reduce file complexity.
+
+* [ ] **`frontend/components/app-sidebar.tsx` (568 lines)**:
+  * **Current issue**: Houses user avatar menu trigger, workspace switcher, chat session list (with inline renaming and delete confirmation modals), and search filtering.
+  * **Target Decomposition**:
+    * `frontend/components/sidebar/SessionList.tsx` — Session history items, renaming input, delete dialog.
+    * `frontend/components/sidebar/SpaceSelector.tsx` — Workspace switching dropdown and member trigger.
+    * `frontend/components/sidebar/UserProfileMenu.tsx` — User info, avatar modal trigger, logout action.
+
+---
+
+### 🟢 Low / Maintenance Criticality (Feature Pages & Parser Modularity)
+
+* [ ] **`frontend/app/(dashboard)/files/page.tsx` (407 lines)**:
+  * **Target Decomposition**: Extract `components/files/ChunkExplorerModal.tsx` and `components/files/DocumentSummaryModal.tsx`.
+* [ ] **`backend/app/services/pdf_parser.py` (695 lines)**:
+  * **Target Decomposition**: Split into `services/parsers/ocr_engine.py` (Tesseract/pypdfium2) and `services/parsers/pdf_table_extractor.py` (pdfplumber table heuristics).
+* [ ] **Automated Disaster Recovery (Daily Database Backup)**:
+  * Implement automated daily `pg_dump` cron backup script for `vectrievedb` with rotation policies.
