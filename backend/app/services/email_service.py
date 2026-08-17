@@ -120,6 +120,7 @@ This link expires in 1 hour. If you didn't request this, ignore this email.
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
             start_tls=True,
+            timeout=5.0,
         )
         print(f"✅ Password reset email sent to {to_email}")
         return True

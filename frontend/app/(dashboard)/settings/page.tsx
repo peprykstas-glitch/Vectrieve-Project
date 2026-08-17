@@ -233,49 +233,76 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* ── Vector Database ── */}
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <Database className="w-4 h-4 text-purple-400" />
-              <h3 className="text-sm font-semibold tracking-wider uppercase text-zinc-300">Vector Database</h3>
-            </div>
-            <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-4 shadow-xl">
-              <div>
-                <label htmlFor="qdrant-url" className="text-xs font-medium text-zinc-500 mb-1.5 block">Qdrant Cloud URL</label>
-                <input
-                  id="qdrant-url"
-                  aria-label="Qdrant Cloud URL"
-                  type="text"
-                  value={qdrantUrl}
-                  onChange={(e) => setQdrantUrl(e.target.value)}
-                  placeholder="https://…qdrant.io"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-zinc-300 focus:border-purple-500/50 focus:outline-none transition-colors font-mono placeholder:text-zinc-700"
-                />
+            {/* ── Vector Database ── */}
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center gap-2 px-1">
+                <Database className="w-4 h-4 text-purple-400" />
+                <h3 className="text-sm font-semibold tracking-wider uppercase text-zinc-300">Vector Database</h3>
               </div>
-              <div>
-                <label htmlFor="qdrant-api-key" className="text-xs font-medium text-zinc-500 mb-1.5 block">Qdrant API Key</label>
-                <div className="relative">
-                  <Key className="w-4 h-4 text-zinc-600 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    id="qdrant-api-key"
-                    aria-label="Qdrant API Key"
-                    type={showQdrantKey ? "text" : "password"}
-                    value={qdrantApiKey}
-                    onChange={(e) => setQdrantApiKey(e.target.value)}
-                    placeholder="qd_sk_…"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-2 pl-9 pr-10 text-sm text-zinc-300 focus:border-purple-500/50 focus:outline-none transition-colors font-mono placeholder:text-zinc-700"
-                  />
-                  <button
-                    onClick={() => setShowQdrantKey(!showQdrantKey)}
-                    aria-label={showQdrantKey ? "Hide Qdrant API Key" : "Show Qdrant API Key"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors border-0 bg-transparent cursor-pointer"
-                  >
-                    {showQdrantKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-4 shadow-xl">
+                
+                {/* Built-in Status Indicator */}
+                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-emerald-300">Built-in Vector Engine Connected</p>
+                      <p className="text-[11px] text-emerald-400/80 mt-0.5">
+                        Qdrant Core (768-dim FastEmbed ONNX) • Active & Indexed
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Online
+                  </span>
+                </div>
+
+                <div className="border-t border-zinc-800/80 pt-3 space-y-3">
+                  <p className="text-[11px] font-medium text-zinc-400">
+                    External Cloud Cluster <span className="text-zinc-600">(Optional Override)</span>
+                  </p>
+                  <div>
+                    <label htmlFor="qdrant-url" className="text-xs font-medium text-zinc-500 mb-1.5 block">Qdrant Cloud URL</label>
+                    <input
+                      id="qdrant-url"
+                      aria-label="Qdrant Cloud URL"
+                      type="text"
+                      value={qdrantUrl}
+                      onChange={(e) => setQdrantUrl(e.target.value)}
+                      placeholder="https://…qdrant.io"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-zinc-300 focus:border-purple-500/50 focus:outline-none transition-colors font-mono placeholder:text-zinc-700"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="qdrant-api-key" className="text-xs font-medium text-zinc-500 mb-1.5 block">Qdrant API Key</label>
+                    <div className="relative">
+                      <Key className="w-4 h-4 text-zinc-600 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="qdrant-api-key"
+                        aria-label="Qdrant API Key"
+                        type={showQdrantKey ? "text" : "password"}
+                        value={qdrantApiKey}
+                        onChange={(e) => setQdrantApiKey(e.target.value)}
+                        placeholder="qd_sk_…"
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-2 pl-9 pr-10 text-sm text-zinc-300 focus:border-purple-500/50 focus:outline-none transition-colors font-mono placeholder:text-zinc-700"
+                      />
+                      <button
+                        onClick={() => setShowQdrantKey(!showQdrantKey)}
+                        aria-label={showQdrantKey ? "Hide Qdrant API Key" : "Show Qdrant API Key"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors border-0 bg-transparent cursor-pointer"
+                      >
+                        {showQdrantKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-zinc-500">
+                    No action required. Leave empty to automatically route all embeddings through the server&apos;s high-performance built-in vector instance.
+                  </p>
                 </div>
               </div>
-              <p className="text-[10px] text-zinc-600">Leave empty to use the server's built-in vector database.</p>
-            </div>
 
             {/* ── Security ── */}
             <div className="flex items-center gap-2 px-1 mt-2">

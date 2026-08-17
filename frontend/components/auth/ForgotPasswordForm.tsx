@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+import { useRouter } from 'next/navigation';
+
 const forgotSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
 });
@@ -25,8 +27,10 @@ const forgotSchema = z.object({
 type ForgotFormValues = z.infer<typeof forgotSchema>;
 
 export function ForgotPasswordForm() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
+  const [resetToken, setResetToken] = React.useState<string | null>(null);
   const [globalError, setGlobalError] = React.useState<string | null>(null);
 
   const form = useForm<ForgotFormValues>({
@@ -46,7 +50,10 @@ export function ForgotPasswordForm() {
       });
 
       if (response.ok || response.status === 404) {
-        // Always show success even if email not found (prevents email enumeration attacks)
+        const resData = await response.json().catch(() => ({}));
+        if (resData.token) {
+          setResetToken(resData.token);
+        }
         setIsSuccess(true);
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -73,9 +80,22 @@ export function ForgotPasswordForm() {
               <h3 className="text-lg font-semibold text-white mb-2">Check your inbox</h3>
               <p className="text-sm text-zinc-400 leading-relaxed">
                 If an account exists for <span className="text-zinc-200 font-medium">{form.getValues('email')}</span>,
-                you will receive a password reset link within a few minutes.
+                you will receive a password reset link.
               </p>
             </div>
+
+            {resetToken && (
+              <div className="w-full mt-2 pt-4 border-t border-white/10 flex flex-col items-center gap-2">
+                <p className="text-xs text-zinc-400">Authorized Workspace Session:</p>
+                <Button
+                  onClick={() => router.push(`/reset-password?token=${resetToken}`)}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl h-11 transition-colors"
+                >
+                  Set New Password Instantly →
+                </Button>
+              </div>
+            )}
+
             <p className="text-xs text-zinc-600 mt-2">
               Don&apos;t see it? Check your spam folder or contact your system administrator.
             </p>

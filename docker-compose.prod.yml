@@ -30,6 +30,8 @@ services:
     depends_on:
       - qdrant
       - db
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://vectrieve:vectrieve_password@db:5432/vectrievedb
       - QDRANT_HOST=qdrant

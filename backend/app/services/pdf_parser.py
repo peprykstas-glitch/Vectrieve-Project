@@ -415,6 +415,8 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "V
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
+        # Sanitize NULL bytes: PostgreSQL VARCHAR/TEXT rejects \x00 bytes
+        text = text.replace("\x00", "").replace("\u0000", "")
         if text.strip():
             return text
         # Scanned / image-only PDF: no extractable text found.
@@ -700,6 +702,15 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
                     separators=["\n\n", "\n", " ", ""]
                 )
                 chunks = splitter.split_text(text_or_chunks)
+
+            # Sanitize all chunks (strip null bytes to ensure Postgres compatibility)
+            sanitized_chunks: List[str] = []
+            for c in chunks:
+                if isinstance(c, str):
+                    c_clean = c.replace("\x00", "").replace("\u0000", "").strip()
+                    if c_clean:
+                        sanitized_chunks.append(c_clean)
+            chunks = sanitized_chunks
 
             if not chunks:
                 raise ValueError("No extractable text found in file. Make sure it contains digital text (not a scanned image).")
