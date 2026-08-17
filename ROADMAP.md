@@ -76,5 +76,22 @@ npx tsc --noEmit
     * **Layer 2 (Workspace Context)**: Space-level domain definition (e.g. *Animafest Experience Internship Program*).
     * **Layer 3 (Custom Persona Behavioral Preset)**: Role-specific instructions (e.g. *"First output bullet points for internal staff, then provide a polished message draft for the candidate"*).
     * **Layer 4 (Retrieved Evidence Chunks)**: Vector context from Qdrant/PostgreSQL.
+* [ ] **Phase 8: Enterprise On-Premises & GPU Runtime (Ollama / vLLM / TGI)**:
+  * **Air-Gapped Local Inference**: Re-enable pluggable local LLM backends for enterprise clients with dedicated NVIDIA GPUs (e.g. A10G / L4 / RTX 4090) who require 100% on-premises data isolation.
+  * **Provider Abstraction**: Switch dynamically between `cloud` (Groq API) and `on-prem` (Ollama/vLLM) per workspace without changing application code.
 * [ ] **Cross-Workspace Global Search**: Federated multi-space queries for users managing separate departmental spaces (e.g. HR, Sales, Legal).
 * [ ] **Interactive Visual Graph Explorer**: Entity and citation relationship graph visualizing cross-document connections in 2D/3D.
+
+---
+
+## 🧹 Technical Debt & Refactoring Backlog (Post-Testing Sprint)
+
+* [ ] **Frontend Component Decomposition (`ChatArea.tsx`)**:
+  * Extract `WelcomeHero` into `components/chat/WelcomeHero.tsx`.
+  * Extract `TrialExpiredModal` into `components/chat/TrialExpiredModal.tsx`.
+  * Extract PDF & Markdown helpers into `lib/export-utils.ts`.
+* [ ] **Backend Service Layer Extraction (`chat.py`)**:
+  * Move `_prepare_rag_context` and pre-flight file validation into dedicated `services/rag_service.py`.
+  * Clean up legacy CPU fallback loops in `services/llm_service.py`.
+* [ ] **Automated Database Backups (Disaster Recovery)**:
+  * Implement automated daily `pg_dump` cron backup script for `vectrievedb` with retention policies.
