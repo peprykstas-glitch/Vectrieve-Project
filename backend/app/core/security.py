@@ -8,7 +8,8 @@ from core.config import settings
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# Persistent Session: 60 days instead of 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 60
 
 ph = PasswordHasher()
 

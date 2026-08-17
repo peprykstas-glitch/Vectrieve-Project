@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       value: data.access_token,
       secure: process.env.COOKIE_SECURE === 'true', // Allow HTTP access over IP
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 60, // 60 days persistent session
     });
 
     return NextResponse.json({ success: true });
