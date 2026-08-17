@@ -139,3 +139,15 @@ npx tsc --noEmit
   * **Target Decomposition**: Split into `services/parsers/ocr_engine.py` (Tesseract/pypdfium2) and `services/parsers/pdf_table_extractor.py` (pdfplumber table heuristics).
 * [ ] **Automated Disaster Recovery (Daily Database Backup)**:
   * Implement automated daily `pg_dump` cron backup script for `vectrievedb` with rotation policies.
+
+---
+
+## 🔍 Operational Blindspots & Hidden Edge Cases (Non-Visual Invariants)
+
+| Area / Feature | What It Looks Like in UI | Real Runtime Behavior Under the Hood | Risk / Backlog Action Item |
+| :--- | :--- | :--- | :--- |
+| **Password Reset** (`email_service.py`) | Green toast: *"Reset link sent to your email"*. | If SMTP credentials (`SMTP_HOST`, `SMTP_USER`) are omitted in `.env`, the token URL is logged to stdout/server logs instead of sending real email. | **Backlog**: Configure production SMTP provider (Resend / SendGrid) before public user onboarding. |
+| **CORS Middleware** (`main.py:56`) | Frontend talks to backend seamlessly via Next.js `/api/proxy/[...path]` route. | Direct browser-to-backend CORS is restricted to hardcoded `localhost:3000` and `192.168.1.26:3000` rather than reading dynamic `CORS_ORIGINS` env. | **Backlog**: Update `main.py` to parse `os.getenv("CORS_ORIGINS", "*")`. |
+| **Token Budget Truncation** (`llm_service.py`) | Chat UI seamlessly scrolls through 30+ message exchanges. | `_trim_history()` automatically truncates older messages to maintain a strict 4,096-token ceiling before sending payload to Groq. | **Design Invariant**: Working as intended to prevent Groq context-window overflows. |
+| **Document Pre-flight Indexing** (`chat.py:143`) | User attaches a file and submits query immediately. | `_prepare_rag_context` verifies document `status == "COMPLETED"`. If still indexing, gracefully returns HTTP 422 warning. | **Design Invariant**: Prevents querying partially indexed vectors. |
+| **SSE Background Tasks** (`chat.py:31`) | AI title updates in the sidebar after first message. | Standard FastAPI `BackgroundTasks` do not fire reliably inside SSE generators; detached via `asyncio.create_task` with isolated DB sessions. | **Design Invariant**: Verified working without blocking streaming tokens. |
