@@ -316,18 +316,35 @@ async def generate_podcast(
     else:
         doc = None
         if request.document_id:
-            stmt = (
-                select(Document)
-                .where(Document.id == request.document_id)
-                .where(Document.user_id == current_user.id)
-            )
+            stmt = select(Document).where(Document.id == request.document_id)
             result = await session.execute(stmt)
-            doc = result.scalar_one_or_none()
+            candidate = result.scalar_one_or_none()
+            if candidate:
+                is_auth = (candidate.user_id == current_user.id)
+                if not is_auth and candidate.space_id:
+                    from models.sql_models import SpaceMember
+                    m_stmt = select(SpaceMember).where(
+                        SpaceMember.space_id == candidate.space_id,
+                        SpaceMember.user_id == current_user.id
+                    )
+                    m_res = await session.execute(m_stmt)
+                    if m_res.scalar_one_or_none():
+                        is_auth = True
+                if is_auth:
+                    doc = candidate
 
         if not doc:
+            # Query user's own docs or docs from spaces where user is a member
+            from models.sql_models import SpaceMember
+            m_stmt = select(SpaceMember.space_id).where(SpaceMember.user_id == current_user.id)
+            m_res = await session.execute(m_stmt)
+            space_ids = [r[0] for r in m_res.all()]
+            
             stmt = (
                 select(Document)
-                .where(Document.user_id == current_user.id)
+                .where(
+                    (Document.user_id == current_user.id) | (Document.space_id.in_(space_ids))
+                )
                 .where(Document.status == "COMPLETED")
                 .order_by(Document.upload_timestamp.desc())
                 .limit(1)
@@ -349,14 +366,42 @@ async def generate_podcast(
         )
         result_chunks = await session.execute(stmt_chunks)
         chunks = result_chunks.scalars().all()
+        chunk_texts = [c.content for c in chunks if c.content]
 
-        if not chunks:
+        if not chunk_texts:
+            # Fallback: retrieve chunk text from Qdrant
+            try:
+                from services.vector_service import vector_service
+                from qdrant_client.models import Filter, FieldCondition, MatchValue
+                client = await vector_service._get_client()
+                must_filters = []
+                if doc.space_id:
+                    must_filters.append(FieldCondition(key="space_id", match=MatchValue(value=str(doc.space_id))))
+                if doc.filename:
+                    must_filters.append(FieldCondition(key="filename", match=MatchValue(value=doc.filename)))
+                if must_filters:
+                    res, _ = await client.scroll(
+                        collection_name=vector_service.collection_name,
+                        scroll_filter=Filter(must=must_filters),
+                        limit=15,
+                        with_payload=True
+                    )
+                    if res:
+                        chunk_texts = [p.payload.get("text", "") for p in res if p.payload.get("text")]
+                        for idx, txt in enumerate(chunk_texts):
+                            db_c = DocumentChunk(document_id=doc.id, user_id=doc.user_id, content=txt.replace("\x00", ""), chunk_index=idx)
+                            session.add(db_c)
+                        await session.commit()
+            except Exception as q_err:
+                logger.warning("Qdrant fallback in podcast failed: %s", q_err)
+
+        if not chunk_texts:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Selected document contains no text chunks.",
             )
 
-        context_str = "\n\n".join(f"[Segment {c.chunk_index}]: {c.content}" for c in chunks)
+        context_str = "\n\n".join(f"[Segment {i}]: {txt}" for i, txt in enumerate(chunk_texts[:15]))
         title = f"Audio Overview: {doc.filename}"
         prompt = _build_document_prompt(context_str, lang_name)
 

@@ -165,7 +165,36 @@ async def generate_document_summary(
     ).order_by(DocumentChunk.chunk_index.asc())
     result = await session.execute(stmt)
     chunks = result.scalars().all()
-    if not chunks:
+    chunk_texts = [c.content for c in chunks if c.content]
+
+    if not chunk_texts:
+        # Fallback: retrieve chunk text from Qdrant vector collection
+        try:
+            from services.vector_service import vector_service
+            from qdrant_client.models import Filter, FieldCondition, MatchValue
+            client = await vector_service._get_client()
+            must_filters = []
+            if doc.space_id:
+                must_filters.append(FieldCondition(key="space_id", match=MatchValue(value=str(doc.space_id))))
+            if doc.filename:
+                must_filters.append(FieldCondition(key="filename", match=MatchValue(value=doc.filename)))
+            if must_filters:
+                res, _ = await client.scroll(
+                    collection_name=vector_service.collection_name,
+                    scroll_filter=Filter(must=must_filters),
+                    limit=100,
+                    with_payload=True
+                )
+                if res:
+                    chunk_texts = [p.payload.get("text", "") for p in res if p.payload.get("text")]
+                    for idx, txt in enumerate(chunk_texts):
+                        db_c = DocumentChunk(document_id=doc.id, user_id=doc.user_id, content=txt.replace("\x00", ""), chunk_index=idx)
+                        session.add(db_c)
+                    await session.commit()
+        except Exception as q_err:
+            pass
+
+    if not chunk_texts:
         raise HTTPException(status_code=400, detail="Document has no text chunks to summarize.")
 
     from services.pdf_parser import _sample_chunks
@@ -173,7 +202,6 @@ async def generate_document_summary(
     from models.schemas import QueryRequest, ChatMessage
     from models.user_settings import UserSettings
 
-    chunk_texts = [c.content for c in chunks]
     sampled = _sample_chunks(chunk_texts, n=8, max_chars=6000)
     summary_input = "\n\n".join(sampled)
     summary_prompt = f"""
