@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGlobalSettings } from "@/components/global-settings";
@@ -64,7 +64,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
-  const [showAudioBrief, setShowAudioBrief] = React.useState(false);
+  const [showAudioBrief, setShowAudioBrief] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -389,7 +389,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl px-2">
                   {quickActions.map((action, idx) => (
                     <motion.button
-                      key={idx}
+                      key={action.title}
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.08 + 0.2, type: "spring", stiffness: 200 }}
