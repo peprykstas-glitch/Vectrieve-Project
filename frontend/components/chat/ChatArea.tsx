@@ -118,7 +118,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
     md += `*Exported on: ${new Date().toLocaleString()}*\n\n---\n\n`;
     
     messages.forEach((msg) => {
-      const roleName = msg.role === "user" ? "### 👤 User" : "### 🤖 Vectrieve Core";
+      const roleName = msg.role === "user" ? "### User" : "### Vectrieve Core";
       md += `${roleName}\n\n${msg.content}\n\n`;
       if (msg.sources && msg.sources.length > 0) {
         md += `**Sources Cited:**\n`;
@@ -298,7 +298,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 <Zap className="w-6 h-6 text-amber-400" />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-lg font-bold text-white">Free Trial Complete 🎉</h2>
+                <h2 className="text-lg font-bold text-white">Free Trial Complete</h2>
                 <p className="text-sm text-zinc-400 leading-relaxed">
                   You&apos;ve used all 20 free queries. To keep using Vectrieve, add your own
                   <span className="text-indigo-400 font-semibold"> Groq API key</span> — it&apos;s free and takes 30 seconds.

@@ -276,3 +276,89 @@ async def delete_user(
     await session.delete(user)
     await session.commit()
     return {"message": f"User {user.username} deleted successfully."}
+
+
+# ── USER FEEDBACK & FEATURE REQUESTS ─────────────────────────────────
+from pydantic import BaseModel
+from models.sql_models import Feedback, FeedbackType, FeedbackStatus
+
+class FeedbackCreate(BaseModel):
+    type: FeedbackType = FeedbackType.IDEA
+    message: str
+
+class FeedbackStatusUpdate(BaseModel):
+    status: FeedbackStatus
+
+
+@router.post("/feedback")
+async def submit_user_feedback(
+    payload: FeedbackCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Submit user feature idea or bug report."""
+    if not payload.message.strip():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Feedback message cannot be empty")
+
+    feedback = Feedback(
+        user_id=current_user.id,
+        user_email=current_user.username,
+        type=payload.type,
+        message=payload.message.strip(),
+        status=FeedbackStatus.NEW,
+    )
+    session.add(feedback)
+    await session.commit()
+    await session.refresh(feedback)
+    return {"status": "success", "id": feedback.id, "message": "Feedback recorded. Thank you!"}
+
+
+@router.get("/feedback")
+async def get_all_user_feedback(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Admin view: List all submitted feedback and bug reports."""
+    stmt = select(Feedback).order_by(Feedback.id.desc())
+    result = await session.execute(stmt)
+    feedback_items = result.scalars().all()
+    return {"feedback": feedback_items}
+
+
+@router.patch("/feedback/{feedback_id}")
+async def update_feedback_status(
+    feedback_id: int,
+    payload: FeedbackStatusUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Admin action: update feedback status (NEW, IN_PROGRESS, RESOLVED)."""
+    stmt = select(Feedback).where(Feedback.id == feedback_id)
+    item = (await session.execute(stmt)).scalar_one_or_none()
+    if not item:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    item.status = payload.status
+    session.add(item)
+    await session.commit()
+    return {"status": "success", "feedback": item}
+
+
+@router.delete("/feedback/{feedback_id}")
+async def delete_feedback_entry(
+    feedback_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Admin action: delete feedback entry."""
+    stmt = select(Feedback).where(Feedback.id == feedback_id)
+    item = (await session.execute(stmt)).scalar_one_or_none()
+    if not item:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    await session.delete(item)
+    await session.commit()
+    return {"status": "success", "message": "Feedback deleted successfully."}

@@ -31,6 +31,9 @@ import {
   useSidebar
 } from "@/components/ui/sidebar"
 import { apiClient } from "@/lib/api/client"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { FeedbackModal } from "@/components/feedback/FeedbackModal"
+import { Sparkles } from "lucide-react"
 
 const navItems = [
   { title: "RAG Workspace", url: "/", icon: MessageSquare },
@@ -489,113 +492,143 @@ export function AppSidebar() {
   const searchParams = useSearchParams()
   const spaceId = searchParams.get('space')
   const { toggleSidebar } = useSidebar()
+  const { t } = useLanguage()
   const [hovered, setHovered] = React.useState(false)
+  const [isFeedbackOpen, setIsFeedbackOpen] = React.useState(false)
+
+  const localizedNavItems = [
+    { title: t.nav.chat, url: "/", icon: MessageSquare },
+    { title: t.nav.knowledgeBase, url: "/files", icon: Database },
+    { title: t.nav.analytics, url: "/analytics", icon: BarChart3 },
+    { title: t.nav.settings, url: "/settings", icon: Settings },
+  ]
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/5 bg-zinc-950 z-40">
-      <SidebarHeader className="h-16 flex items-center justify-center p-2 border-b border-white/5 group-data-[collapsible=icon]:p-0">
-        <button 
-          onClick={toggleSidebar}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          className="flex items-center w-full gap-2.5 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
-        >
-          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95">
-            {hovered ? (
-              <PanelLeft className="h-5 w-5 text-indigo-400 drop-shadow-md animate-in fade-in duration-200" />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src="/logo-icon.png" alt="Vectrieve" className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-            )}
-          </div>
-          {/* Brand text beside icon — hidden when sidebar is collapsed */}
-          <div className="flex items-center group-data-[collapsible=icon]:hidden transition-opacity duration-200">
-            <span className="text-[16px] font-bold tracking-tight bg-gradient-to-r from-white via-zinc-100 to-indigo-300 bg-clip-text text-transparent font-sans">
-              Vectrieve
-            </span>
-          </div>
-        </button>
-      </SidebarHeader>
+    <>
+      <Sidebar collapsible="icon" className="border-r border-white/5 bg-zinc-950 z-40">
+        <SidebarHeader className="h-16 flex items-center justify-center p-2 border-b border-white/5 group-data-[collapsible=icon]:p-0">
+          <button 
+            onClick={toggleSidebar}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            className="flex items-center w-full gap-2.5 px-2 overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full cursor-pointer select-none border-0 bg-transparent text-left focus:outline-none"
+          >
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95">
+              {hovered ? (
+                <PanelLeft className="h-5 w-5 text-indigo-400 drop-shadow-md animate-in fade-in duration-200" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/logo-icon.png" alt="Vectrieve" className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+              )}
+            </div>
+            {/* Brand text beside icon — hidden when sidebar is collapsed */}
+            <div className="flex items-center group-data-[collapsible=icon]:hidden transition-opacity duration-200">
+              <span className="text-[16px] font-bold tracking-tight bg-gradient-to-r from-white via-zinc-100 to-indigo-300 bg-clip-text text-transparent font-sans">
+                Vectrieve
+              </span>
+            </div>
+          </button>
+        </SidebarHeader>
 
-      <SidebarContent className="p-2 pt-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pt-2">
-        <SpaceSwitcher />
-        <SidebarGroup className="group-data-[collapsible=icon]:px-0">
-          <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 group-data-[collapsible=icon]:hidden">
-            Platform Operations
-          </SidebarGroupLabel>
-          <SidebarMenu>
-            {navItems.map((item) => {
-              const isActive = pathname === item.url
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive}
-                    tooltip={item.title}
-                    className={`transition-all duration-200 rounded-md ${
-                      isActive 
-                       ? "bg-zinc-800/80 text-white shadow-sm" 
-                        : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
-                    }`}
-                  >
-                    <Link href={spaceId ? `${item.url}?space=${spaceId}` : item.url}>
-                      <item.icon 
-                        strokeWidth={isActive ? 2 : 1.5} 
-                        className={`shrink-0 ${isActive ? "text-indigo-400" : ""}`} 
-                      />
-                      <span className="font-medium group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
+        <SidebarContent className="p-2 pt-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pt-2">
+          <SpaceSwitcher />
+          <SidebarGroup className="group-data-[collapsible=icon]:px-0">
+            <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 group-data-[collapsible=icon]:hidden">
+              Platform Operations
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              {localizedNavItems.map((item) => {
+                const isActive = pathname === item.url
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive}
+                      tooltip={item.title}
+                      className={`transition-all duration-200 rounded-md ${
+                        isActive 
+                         ? "bg-zinc-800/80 text-white shadow-sm" 
+                          : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                      }`}
+                    >
+                      <Link href={spaceId ? `${item.url}?space=${spaceId}` : item.url}>
+                        <item.icon 
+                          strokeWidth={isActive ? 2 : 1.5} 
+                          className={`shrink-0 ${isActive ? "text-indigo-400" : ""}`} 
+                        />
+                        <span className="font-medium group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
 
-        <SidebarGroup className="mt-4 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:px-0">
-          <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
-            Recent Chats
-          </SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip="New Chat"
-                className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200 mb-1"
-              >
-                <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
-                  <MessageSquare strokeWidth={1.5} className="shrink-0" />
-                  <span className="font-medium">+ New Chat</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <ChatHistoryList />
-          </SidebarMenu>
-        </SidebarGroup>
+              {/* Feedback & Bug Reporting Trigger Button */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setIsFeedbackOpen(true)}
+                  tooltip={t.nav.feedback}
+                  className="text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200 cursor-pointer"
+                >
+                  <Sparkles strokeWidth={1.5} className="shrink-0 text-amber-400/80" />
+                  <span className="font-medium group-data-[collapsible=icon]:hidden">
+                    {t.nav.feedback}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
 
-        {/* Collapsed mode: only show New Chat icon */}
-        <SidebarGroup className="mt-4 hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:px-0">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip="New Chat"
-                className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200"
-              >
-                <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
-                  <Plus strokeWidth={2} className="shrink-0" />
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
+          <SidebarGroup className="mt-4 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:px-0">
+            <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+              Recent Chats
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="New Chat"
+                  className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200 mb-1"
+                >
+                  <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
+                    <MessageSquare strokeWidth={1.5} className="shrink-0" />
+                    <span className="font-medium">+ New Chat</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <ChatHistoryList />
+            </SidebarMenu>
+          </SidebarGroup>
 
-      <SidebarFooter className="border-t border-white/5 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-        <UserCard />
-      </SidebarFooter>
-    </Sidebar>
+          {/* Collapsed mode: only show New Chat icon */}
+          <SidebarGroup className="mt-4 hidden group-data-[collapsible=icon]:block group-data-[collapsible=icon]:px-0">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="New Chat"
+                  className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200"
+                >
+                  <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
+                    <Plus strokeWidth={2} className="shrink-0" />
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+
+        <SidebarFooter className="border-t border-white/5 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+          <UserCard />
+        </SidebarFooter>
+      </Sidebar>
+
+      <FeedbackModal 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+      />
+    </>
   )
 }

@@ -58,6 +58,28 @@ class FeedbackLog(SQLModel, table=True):
     user_query: str
     ai_response: str
     rating: int
+
+
+class FeedbackType(str, Enum):
+    IDEA = "IDEA"
+    BUG = "BUG"
+
+
+class FeedbackStatus(str, Enum):
+    NEW = "NEW"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
+
+
+class Feedback(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    user_email: Optional[str] = Field(default=None)
+    type: FeedbackType = Field(default=FeedbackType.IDEA)
+    message: str
+    status: FeedbackStatus = Field(default=FeedbackStatus.NEW)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
     comment: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 

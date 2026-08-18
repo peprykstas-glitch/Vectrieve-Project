@@ -162,7 +162,7 @@ export function SpaceSettingsModal({
                 className="w-full bg-zinc-900/70 border border-white/10 rounded-xl p-3.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 leading-relaxed custom-scrollbar resize-none font-mono"
               />
               <p className="text-[11px] text-zinc-500 leading-normal">
-                💡 Tip: You can instruct the AI to provide a 2-tier briefing (Coordinator summary in English + Ready-to-copy student reply in WhatsApp format).
+                Tip: You can instruct the AI to provide a 2-tier briefing (Coordinator summary in English + Ready-to-copy reply in WhatsApp format).
               </p>
             </div>
 

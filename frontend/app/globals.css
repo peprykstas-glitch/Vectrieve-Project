@@ -347,3 +347,16 @@
 [data-collapsible="icon"] [data-sidebar="menu-button"] > svg {
   margin: 0 auto !important;
 }
+
+/* ── Typography Scale & Text Density Modifiers ── */
+html.text-compact {
+  font-size: 13.5px;
+}
+
+html.text-default {
+  font-size: 14.5px;
+}
+
+html.text-large {
+  font-size: 16px;
+}

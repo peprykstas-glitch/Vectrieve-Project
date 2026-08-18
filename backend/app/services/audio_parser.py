@@ -82,13 +82,13 @@ async def transcribe_media_async(file_path: Path, filename: str) -> str:
     groq_api_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY", "")
 
     if not groq_api_key:
-        return f"# 🎙️ Media Transcript: {filename}\n\n[Warning: GROQ_API_KEY is not configured. Transcription unavailable.]"
+        return f"# Media Transcript: {filename}\n\n[Warning: GROQ_API_KEY is not configured. Transcription unavailable.]"
 
     try:
         # Groq Whisper API accepts up to 25MB audio files
         file_size = audio_path.stat().st_size
         if file_size == 0:
-            return f"# 🎙️ Media Transcript: {filename}\n\n[Empty media file]"
+            return f"# Media Transcript: {filename}\n\n[Empty media file]"
 
         with open(audio_path, "rb") as f:
             audio_bytes = f.read()
@@ -110,19 +110,19 @@ async def transcribe_media_async(file_path: Path, filename: str) -> str:
             )
 
             if response.status_code != 200:
-                print(f"⚠️ Groq Whisper transcription failed ({response.status_code}): {response.text}")
-                return f"# 🎙️ Media Transcript: {filename}\n\n[Transcription failed: HTTP {response.status_code}]"
+                print(f"[Whisper] Transcription failed ({response.status_code}): {response.text}")
+                return f"# Media Transcript: {filename}\n\n[Transcription failed: HTTP {response.status_code}]"
 
             res_json = response.json()
             full_text = res_json.get("text", "").strip()
             segments = res_json.get("segments", [])
 
             if not segments:
-                return f"# 🎙️ Media Transcript: {filename}\n\n{full_text}"
+                return f"# Media Transcript: {filename}\n\n{full_text}"
 
             # Format formatted transcript with timestamps
             transcript_lines = [
-                f"# 🎙️ Media Transcript: {filename}",
+                f"# Media Transcript: {filename}",
                 f"**Type:** {'Video Recording' if is_video_file(filename) else 'Audio Recording'}",
                 f"**Language:** {res_json.get('language', 'auto').upper()} | **Duration:** {res_json.get('duration', 0):.1f}s",
                 "---",
@@ -141,8 +141,8 @@ async def transcribe_media_async(file_path: Path, filename: str) -> str:
             return "\n\n".join(transcript_lines)
 
     except Exception as ex:
-        print(f"⚠️ Media transcription exception for {filename}: {ex}")
-        return f"# 🎙️ Media Transcript: {filename}\n\n[Error processing audio track: {str(ex)}]"
+        print(f"[Whisper] Error processing {filename}: {ex}")
+        return f"# Media Transcript: {filename}\n\n[Error processing audio track: {str(ex)}]"
     finally:
         # Clean up temporary extracted audio file if different from original
         if audio_path != file_path and audio_path.exists():

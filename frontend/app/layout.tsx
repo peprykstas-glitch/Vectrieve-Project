@@ -14,17 +14,21 @@ export const metadata: Metadata = {
   },
 };
 
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark text-default" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground antialiased`} suppressHydrationWarning>
-        <AuthGuard>
-          {children}
-        </AuthGuard>
+        <LanguageProvider>
+          <AuthGuard>
+            {children}
+          </AuthGuard>
+        </LanguageProvider>
       </body>
     </html>
   );
