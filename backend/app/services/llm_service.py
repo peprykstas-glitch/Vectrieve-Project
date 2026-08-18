@@ -264,7 +264,7 @@ Examples:
         if not client:
             raise ValueError("No Groq client available.")
         model_to_use = model_name if model_name else settings.MODEL_NAME
-        max_tokens_to_use = max_tokens if max_tokens is not None else 1024
+        max_tokens_to_use = max_tokens if max_tokens is not None else 4096
         
         kwargs = {
             "model": model_to_use,
@@ -325,7 +325,7 @@ Examples:
             raise ValueError("No Groq API key available. Please add your key in Settings.")
         try:
             model_to_use = request.model if request.model else settings.MODEL_NAME
-            max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 1024
+            max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 4096
             
             kwargs = {
                 "model": model_to_use,
