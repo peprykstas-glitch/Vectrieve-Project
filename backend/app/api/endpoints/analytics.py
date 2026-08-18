@@ -6,7 +6,7 @@ from models.sql_models import ChatHistory, ChatSession, FeedbackLog
 from models.document import Document
 from models.user import User
 from models.telemetry_log import TelemetryLog
-from api.deps import require_admin
+from api.deps import require_admin, get_current_user
 from collections import defaultdict
 import calendar
 import datetime
