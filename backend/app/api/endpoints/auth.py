@@ -5,6 +5,7 @@ from sqlmodel import select
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
 import uuid
+import httpx
 
 # Внутрішні модулі нашого проєкту
 from core.database import get_session
@@ -29,6 +30,10 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+class GoogleAuthRequest(BaseModel):
+    code: str
+    redirect_uri: str
 
 # --- ЕНДПОІНТ РЕЄСТРАЦІЇ ---
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -129,6 +134,129 @@ async def login_for_access_token(
     # Видаємо JWT токен
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# --- ЕНДПОІНТ GOOGLE OAUTH2 (Smart Account Unification) ---
+@router.post("/google")
+async def google_auth(
+    body: GoogleAuthRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Exchanges Google OAuth2 authorization code for user profile,
+    performs smart account unification without duplicating users,
+    and returns a valid JWT access token.
+    """
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google OAuth2 is not configured on the server."
+        )
+
+    # 1. Exchange code for Google access token
+    token_url = "https://oauth2.googleapis.com/token"
+    token_data = {
+        "code": body.code,
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": body.redirect_uri,
+        "grant_type": "authorization_code",
+    }
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        token_res = await client.post(token_url, data=token_data)
+        if token_res.status_code != 200:
+            print(f"🛑 Google Token Error: {token_res.text}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to authenticate with Google. Invalid or expired code.",
+            )
+        tokens = token_res.json()
+        google_access_token = tokens.get("access_token")
+
+        # 2. Fetch Google User Profile
+        userinfo_res = await client.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {google_access_token}"},
+        )
+        if userinfo_res.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to retrieve Google user profile.",
+            )
+        userinfo = userinfo_res.json()
+
+    google_id = userinfo.get("sub")
+    email = userinfo.get("email")
+
+    if not google_id or not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account did not return a valid email or ID.",
+        )
+
+    email = email.strip().lower()
+
+    # 3. Smart Account Unification Logic
+    # Strategy A: Check if a user with this google_id already exists
+    stmt_gid = select(User).where(User.google_id == google_id)
+    res_gid = await session.execute(stmt_gid)
+    user = res_gid.scalar_one_or_none()
+
+    # Strategy B: If not found by google_id, check if user exists by email (link existing password account)
+    if not user:
+        stmt_email = select(User).where(User.username == email)
+        res_email = await session.execute(stmt_email)
+        user = res_email.scalar_one_or_none()
+
+        if user:
+            # Link Google ID to existing user account seamlessly
+            user.google_id = google_id
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+
+    # Strategy C: First-time signup with Google -> Auto-create user
+    if not user:
+        admin_list = {u.strip().lower() for u in settings.ADMIN_EMAILS.split(",") if u.strip()}
+        is_admin = email in admin_list
+
+        dummy_hash = await get_password_hash(uuid.uuid4().hex + "VectrieveGoogleOAuth!")
+        user = User(
+            username=email,
+            hashed_password=dummy_hash,
+            is_admin=is_admin,
+            is_approved=True,  # Google verified email is pre-approved
+            is_active=True,
+            google_id=google_id,
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+
+    # 4. Check account status
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been deactivated. Please contact your workspace administrator.",
+        )
+    if not user.is_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is pending administrator approval.",
+        )
+
+    # 5. Issue JWT access token
+    access_token = create_access_token(data={"sub": user.username})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "email": user.username,
+            "is_admin": user.is_admin,
+        }
+    }
 
 
 # --- ЕНДПОІНТ ПОТОЧНОГО ЮЗЕРА ---

@@ -8,6 +8,7 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     is_admin: bool = Field(default=False)
     is_approved: bool = Field(default=False)
+    google_id: str | None = Field(default=None, index=True, nullable=True)
 
 class UserCreate(SQLModel):
     username: str
@@ -19,6 +20,7 @@ class UserRead(SQLModel):
     is_active: bool
     is_admin: bool
     is_approved: bool
+    google_id: str | None = None
 
 class Token(BaseModel):
     access_token: str

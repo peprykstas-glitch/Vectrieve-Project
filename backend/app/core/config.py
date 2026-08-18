@@ -48,7 +48,9 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
-    FRONTEND_URL: str = "http://localhost:3000"
+    # --- Google OAuth2 ---
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
 
     # --- Logic ---
     THINKING_MODES: Dict[str, Dict[str, float | str]] = {
