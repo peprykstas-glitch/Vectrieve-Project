@@ -150,3 +150,67 @@ async def transcribe_media_async(file_path: Path, filename: str) -> str:
                 audio_path.unlink()
             except Exception:
                 pass
+
+
+async def extract_meeting_action_items_async(
+    transcript_text: str,
+    filename: str,
+    custom_api_key: Optional[str] = None
+) -> str:
+    """
+    Analyzes meeting transcript using Groq LLaMA 3.3 70B to extract:
+    1. Executive Summary & Objective
+    2. Key Decisions Agreed Upon
+    3. Action Items & Assignees
+    4. Open Questions / Next Steps
+    """
+    groq_api_key = custom_api_key if custom_api_key is not None else (settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY", ""))
+    if not groq_api_key:
+        return "Executive briefing unavailable (GROQ_API_KEY not configured)."
+
+    prompt = f"""You are an elite enterprise meeting intelligence analyst.
+Analyze the following meeting transcript from "{filename}" and produce a structured executive report.
+
+Requirements:
+- Preserve the natural language of the meeting (if meeting was in Ukrainian, write report in Ukrainian; if Polish, in Polish; if Spanish, in Spanish; otherwise in English).
+- Do NOT use emojis.
+- Structure clearly with the following markdown headings:
+
+### Executive Summary
+A concise 2-3 sentence overview of the meeting's primary objective and outcome.
+
+### Key Decisions
+Bullet points of all agreed decisions and finalized conclusions.
+
+### Action Items & Ownership
+Bullet list of concrete tasks assigned during the meeting with assignees and context (e.g., "- [ ] Task description — Owner").
+
+### Open Questions & Next Steps
+Any unresolved questions or scheduled follow-ups.
+
+Meeting Transcript:
+{transcript_text[:12000]}
+"""
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            res = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_api_key}"},
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": "You are a professional enterprise meeting intelligence assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.2,
+                    "max_tokens": 1200
+                }
+            )
+            if res.status_code == 200:
+                data = res.json()
+                return data["choices"][0]["message"]["content"].strip()
+            return f"Failed to generate meeting intelligence: HTTP {res.status_code}"
+    except Exception as e:
+        return f"Error extracting meeting action items: {str(e)}"
+

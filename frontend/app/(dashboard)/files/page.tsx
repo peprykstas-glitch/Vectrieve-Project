@@ -306,63 +306,78 @@ export default function KnowledgeBasePage() {
                 </div>
               </div>
 
-              {/* AI Executive Briefing Report Card */}
-              {docSummary ? (
-                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 shadow-[0_0_12px_rgba(99,102,241,0.05)]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
-                      <Sparkles className="w-4 h-4 animate-pulse" />
-                      <span>AI Executive Briefing</span>
+              {/* AI Executive Briefing / Meeting Intelligence Report Card */}
+              {(() => {
+                const isMedia = /\.(mp3|wav|m4a|ogg|flac|aac|wma|mp4|mov|mkv|webm|avi)$/i.test(viewDetailsDoc.filename);
+                const title = isMedia ? "Meeting Intelligence & Action Items" : "AI Executive Briefing";
+                const generateLabel = isMedia ? "Extract Action Items" : "Generate Briefing";
+                const analyzingLabel = isMedia ? "Analyzing recording & action items..." : "Analyzing document...";
+
+                if (docSummary) {
+                  return (
+                    <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 shadow-[0_0_12px_rgba(99,102,241,0.05)]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
+                          <Sparkles className="w-4 h-4 animate-pulse" />
+                          <span>{title}</span>
+                        </div>
+                        <button
+                          onClick={handleGenerateSummary}
+                          disabled={isGeneratingSummary}
+                          className="text-[11px] text-zinc-400 hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        >
+                          {isGeneratingSummary ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              <span>Generating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-3 h-3" />
+                              <span>Regenerate</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="prose prose-invert prose-zinc text-zinc-300 text-xs leading-relaxed max-w-none prose-p:leading-relaxed prose-p:mb-2 last:prose-p:mb-0 prose-ul:list-disc prose-ul:pl-4 prose-li:my-1">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {docSummary}
+                        </ReactMarkdown>
+                      </div>
                     </div>
-                    <button
-                      onClick={handleGenerateSummary}
-                      disabled={isGeneratingSummary}
-                      className="text-[11px] text-zinc-400 hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                    >
-                      {isGeneratingSummary ? (
-                        <>
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                          <span>Generating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-3 h-3" />
-                          <span>Regenerate</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="prose prose-invert prose-zinc text-zinc-300 text-xs leading-relaxed max-w-none prose-p:leading-relaxed prose-p:mb-2 last:prose-p:mb-0 prose-ul:list-disc prose-ul:pl-4 prose-li:my-1">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {docSummary}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              ) : viewDetailsDoc.status === "COMPLETED" ? (
-                <div className="p-3.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-zinc-400 text-xs">
-                    <Sparkles className="w-4 h-4 text-indigo-400" />
-                    <span>No AI Executive Briefing yet</span>
-                  </div>
-                  <button
-                    onClick={handleGenerateSummary}
-                    disabled={isGeneratingSummary}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-indigo-200 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  >
-                    {isGeneratingSummary ? (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Analyzing document...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Generate Briefing</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : null}
+                  );
+                }
+
+                if (viewDetailsDoc.status === "COMPLETED") {
+                  return (
+                    <div className="p-3.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-zinc-400 text-xs">
+                        <Sparkles className="w-4 h-4 text-indigo-400" />
+                        <span>No {title.toLowerCase()} generated yet</span>
+                      </div>
+                      <button
+                        onClick={handleGenerateSummary}
+                        disabled={isGeneratingSummary}
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-indigo-200 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        {isGeneratingSummary ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>{analyzingLabel}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{generateLabel}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                }
+
+                return null;
+              })()}
 
               {/* AI Audio Podcast Briefing */}
               {viewDetailsDoc.status === "COMPLETED" && (

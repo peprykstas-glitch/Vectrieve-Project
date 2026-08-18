@@ -199,29 +199,9 @@ async def generate_document_summary(
 
     from services.pdf_parser import _sample_chunks
     from services.llm_service import llm_service
+    from services.audio_parser import is_media_file, extract_meeting_action_items_async
     from models.schemas import QueryRequest, ChatMessage
     from models.user_settings import UserSettings
-
-    sampled = _sample_chunks(chunk_texts, n=8, max_chars=6000)
-    summary_input = "\n\n".join(sampled)
-    summary_prompt = f"""
-You are Vectrieve Core, a premium business document intelligence analyzer.
-Provide a highly structured, polished, and extremely concise Executive Briefing for this document in English.
-Outline:
-1. Document Category (e.g. Resume/CV, SLA, NDA, Corporate Guideline, FAQ, Research)
-2. High-level Summary (1-2 sentences)
-3. Key Takeaways or Highlighted Skills (bullet points)
-4. Key Risks, Warnings, or Compliance Issues (bullet points or "None")
-
-Format headings clearly as bold text like **Document Category:** or **Key Takeaways:**. Use standard bullet points. Keep it professional.
-
-Document Sample:
-"{summary_input}"
-"""
-    req = QueryRequest(
-        messages=[ChatMessage(role="user", content=summary_prompt)],
-        thinking_mode="auditor",
-    )
 
     user_groq_key = None
     try:
@@ -235,7 +215,38 @@ Document Sample:
         pass
 
     try:
-        summary_text, _ = await llm_service.generate_response(req, "", groq_api_key=user_groq_key)
+        if is_media_file(doc.filename):
+            # Meeting Recording Intelligence & Action Items extraction
+            combined_transcript = "\n\n".join(chunk_texts)
+            summary_text = await extract_meeting_action_items_async(
+                combined_transcript,
+                doc.filename,
+                custom_api_key=user_groq_key
+            )
+        else:
+            # Standard Document Executive Briefing
+            sampled = _sample_chunks(chunk_texts, n=8, max_chars=6000)
+            summary_input = "\n\n".join(sampled)
+            summary_prompt = f"""
+You are Vectrieve Core, a premium business document intelligence analyzer.
+Provide a highly structured, polished, and extremely concise Executive Briefing for this document in English.
+Outline:
+1. Document Category (e.g. Resume/CV, SLA, NDA, Corporate Guideline, FAQ, Research)
+2. High-level Summary (1-2 sentences)
+3. Key Takeaways or Highlighted Skills (bullet points)
+4. Key Risks, Warnings, or Compliance Issues (bullet points or "None")
+
+Format headings clearly as bold text like **Document Category:** or **Key Takeaways:**. Use standard bullet points. Keep it professional.
+
+Document Sample:
+"{summary_input}"
+"""
+            req = QueryRequest(
+                messages=[ChatMessage(role="user", content=summary_prompt)],
+                thinking_mode="auditor",
+            )
+            summary_text, _ = await llm_service.generate_response(req, "", groq_api_key=user_groq_key)
+
         if summary_text:
             doc.summary = summary_text.strip()
             session.add(doc)
