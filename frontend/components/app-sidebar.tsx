@@ -297,6 +297,7 @@ import { SpaceSettingsModal } from "@/components/spaces/SpaceSettingsModal"
 
 function SpaceSwitcher() {
   const { spaces, fetchSpaces, activeSpace: currentSpace } = useGlobalSettings()
+  const { t } = useLanguage()
   const [isOpen, setIsOpen] = React.useState(false)
   const [newSpaceName, setNewSpaceName] = React.useState("")
   const [newSpacePrompt, setNewSpacePrompt] = React.useState("")
@@ -381,7 +382,7 @@ function SpaceSwitcher() {
                 !currentSpaceId ? "bg-zinc-800 text-white font-bold" : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
               }`}
             >
-              Global Workspace
+              {t.nav.allSpaces}
             </button>
             {spaces.map(s => (
               <div
@@ -407,7 +408,7 @@ function SpaceSwitcher() {
                       setIsOpen(false);
                     }}
                     className="p-1 text-zinc-500 hover:text-indigo-300 hover:bg-zinc-700/50 rounded transition-colors cursor-pointer bg-transparent border-0"
-                    title="Edit Space Instructions & Name"
+                    title={t.nav.spaceSettings}
                   >
                     <Settings className="w-3.5 h-3.5" />
                   </button>
@@ -428,7 +429,7 @@ function SpaceSwitcher() {
                       }
                     }}
                     className="p-1 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors cursor-pointer bg-transparent border-0"
-                    title="Delete Space"
+                    title={t.common.delete}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -442,7 +443,7 @@ function SpaceSwitcher() {
               <form onSubmit={handleCreateSpace} className="flex flex-col gap-1.5 animate-in zoom-in-95 duration-150">
                 <input
                   type="text"
-                  placeholder="Space name..."
+                  placeholder={t.spaces.namePlaceholder}
                   value={newSpaceName}
                   onChange={e => setNewSpaceName(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500"
@@ -450,7 +451,7 @@ function SpaceSwitcher() {
                   autoFocus
                 />
                 <textarea
-                  placeholder="System instruction (optional)..."
+                  placeholder={t.spaces.promptPlaceholder}
                   value={newSpacePrompt}
                   onChange={e => setNewSpacePrompt(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none h-12"
@@ -461,13 +462,13 @@ function SpaceSwitcher() {
                     onClick={() => setIsCreating(false)}
                     className="px-2 py-1 text-[10px] text-zinc-400 hover:bg-zinc-800 rounded cursor-pointer border-0 bg-transparent"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                   <button
                     type="submit"
                     className="px-2 py-1 text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white rounded cursor-pointer border-0"
                   >
-                    Create
+                    {t.common.save}
                   </button>
                 </div>
               </form>
@@ -477,7 +478,7 @@ function SpaceSwitcher() {
                 className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded transition-all cursor-pointer border-0 bg-transparent"
               >
                 <Plus className="w-3 h-3" />
-                Create New Space
+                {t.nav.createSpace}
               </button>
             )}
           </div>
@@ -534,7 +535,7 @@ export function AppSidebar() {
           <SpaceSwitcher />
           <SidebarGroup className="group-data-[collapsible=icon]:px-0">
             <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 group-data-[collapsible=icon]:hidden">
-              Platform Operations
+              {t.nav.platformOps}
             </SidebarGroupLabel>
             <SidebarMenu>
               {localizedNavItems.map((item) => {
@@ -583,18 +584,18 @@ export function AppSidebar() {
 
           <SidebarGroup className="mt-4 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:px-0">
             <SidebarGroupLabel className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
-              Recent Chats
+              {t.nav.recentChats}
             </SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="New Chat"
+                  tooltip={t.nav.newChat}
                   className="text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 rounded-md transition-all duration-200 mb-1"
                 >
                   <Link href={spaceId ? `/?space=${spaceId}` : "/"}>
                     <MessageSquare strokeWidth={1.5} className="shrink-0" />
-                    <span className="font-medium">+ New Chat</span>
+                    <span className="font-medium">+ {t.nav.newChat}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

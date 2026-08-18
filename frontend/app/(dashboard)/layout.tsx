@@ -17,9 +17,12 @@ import {
 } from "@/components/ui/select"
 import { Cpu, Cloud, GraduationCap, ShieldCheck, Lock } from "lucide-react"
 
+import { useLanguage } from "@/lib/i18n/LanguageContext"
+
 // Extracted header to use context
 function DashboardHeader() {
   const { computeMode, setComputeMode, aiPersona, setAiPersona, isComputeModeLocked, headerRightAction } = useGlobalSettings()
+  const { t } = useLanguage()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -38,7 +41,7 @@ function DashboardHeader() {
           <>
             <div className="flex items-center gap-1.5 h-8 px-3.5 bg-blue-500/10 hover:bg-blue-500/15 backdrop-blur-2xl border border-blue-500/25 text-blue-400 text-xs font-medium rounded-full shrink-0 select-none shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all">
               <Cloud className="w-3.5 h-3.5 text-blue-400" />
-              <span>Cloud Enterprise</span>
+              <span>{t.header.cloudEnterprise}</span>
             </div>
 
             <Select value={aiPersona} onValueChange={setAiPersona}>
@@ -46,22 +49,22 @@ function DashboardHeader() {
                 aria-label="Select Persona" 
                 className="h-8 w-auto min-w-[120px] sm:min-w-[135px] px-3.5 bg-zinc-900/60 hover:bg-zinc-800/80 backdrop-blur-2xl border-white/10 hover:border-white/20 active:scale-[0.97] text-zinc-300 hover:text-white text-xs font-medium focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none rounded-full shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-200"
               >
-                <SelectValue placeholder="Persona" />
+                <SelectValue placeholder={t.header.personaSelect} />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900/95 backdrop-blur-2xl border-white/10 rounded-2xl shadow-2xl p-1">
                 <SelectItem value="mentor" className="text-xs text-zinc-300 hover:text-white focus:bg-white/10 rounded-xl cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="w-3.5 h-3.5 text-purple-400" /> Mentor Mode
+                    <GraduationCap className="w-3.5 h-3.5 text-purple-400" /> {t.header.personaMentor}
                   </div>
                 </SelectItem>
                 <SelectItem value="auditor" className="text-xs text-zinc-300 hover:text-white focus:bg-white/10 rounded-xl cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Auditor Mode
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> {t.header.personaAuditor}
                   </div>
                 </SelectItem>
                 <SelectItem value="architect" className="text-xs text-zinc-300 hover:text-white focus:bg-white/10 rounded-xl cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-fuchsia-400" /> Architect Mode
+                    <ShieldCheck className="w-3.5 h-3.5 text-fuchsia-400" /> {t.header.personaArchitect}
                   </div>
                 </SelectItem>
               </SelectContent>

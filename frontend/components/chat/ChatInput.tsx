@@ -1,6 +1,7 @@
 import React, { useRef, useState, KeyboardEvent } from "react";
 import { Plus, ArrowUp, FileText, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface ChatInputProps {
   isLoading: boolean;
@@ -9,6 +10,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: ChatInputProps) {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState("");
   const [files, setFiles] = useState<File[]>([]);
 
@@ -80,7 +82,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
               <span className="truncate max-w-[140px] font-medium text-[11px]">{file.name}</span>
               {isProcessingFiles ? (
                 <span className="text-[9px] text-amber-400 font-semibold uppercase tracking-wide">
-                  Indexing...
+                  {t.files.statusProcessing}
                 </span>
               ) : (
                 <button
@@ -114,8 +116,8 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
         <button 
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center justify-center h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-all flex-shrink-0 border-0 bg-transparent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Attach file"
-          title="Attach document or media"
+          aria-label={t.chat.attachFile}
+          title={t.chat.attachFile}
           disabled={isDisabled}
         >
           <Plus size={18} />
@@ -127,7 +129,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
           value={inputValue}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder={isProcessingFiles ? "Indexing attached files..." : "Ask Vectrieve anything..."}
+          placeholder={isProcessingFiles ? t.files.statusProcessing : t.chat.inputPlaceholder}
           className="w-full max-h-[180px] min-h-[36px] bg-transparent border-0 resize-none py-2 px-2.5 text-sm sm:text-[14.5px] text-zinc-100 placeholder:text-zinc-500 focus:ring-0 focus:outline-none overflow-y-auto custom-scrollbar leading-relaxed"
           rows={1}
           disabled={isDisabled}

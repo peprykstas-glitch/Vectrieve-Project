@@ -10,6 +10,7 @@ import { ChatInput } from "./ChatInput";
 import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio, Zap, ExternalLink, Settings2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import AudioBrief from "./AudioBrief";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface ChatAreaProps {
   initialSessionId?: string | null;
@@ -59,6 +60,7 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
 }
 
 export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
+  const { t } = useLanguage();
   const { computeMode, aiPersona, setHeaderRightAction } = useGlobalSettings();
   const { messages, isLoading, isProcessingFiles, submitQuery, sessionId, trialRemaining, trialExpired, setTrialExpired } = useChat(computeMode, aiPersona, initialSessionId, initialSpaceId);
   const router = useRouter();
@@ -298,15 +300,14 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 <Zap className="w-6 h-6 text-amber-400" />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-lg font-bold text-white">Free Trial Complete</h2>
+                <h2 className="text-lg font-bold text-white">{t.chat.trialExhaustedTitle}</h2>
                 <p className="text-sm text-zinc-400 leading-relaxed">
-                  You&apos;ve used all 20 free queries. To keep using Vectrieve, add your own
-                  <span className="text-indigo-400 font-semibold"> Groq API key</span> — it&apos;s free and takes 30 seconds.
+                  {t.chat.trialExhaustedDesc}
                 </p>
               </div>
 
               <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4 space-y-2">
-                <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">How to get your key</p>
+                <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">{t.chat.setupApiKeyTitle}</p>
                 {[
                   { step: "1", text: "Open console.groq.com" },
                   { step: "2", text: "Sign up for free (no card needed)" },
@@ -325,17 +326,17 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                   href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-900/30 transition-all cursor-pointer"
                 >
-                  Open Groq Console
                   <ExternalLink className="w-3.5 h-3.5" />
+                  Get API Key
                 </a>
                 <button
-                  onClick={() => { setTrialExpired(false); router.push("/settings"); }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-semibold rounded-xl border border-zinc-700 transition-all cursor-pointer"
+                  onClick={() => router.push("/settings")}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-white/10 transition-all cursor-pointer"
                 >
                   <Settings2 className="w-3.5 h-3.5" />
-                  Go to Settings
+                  {t.chat.goToSettings}
                 </button>
               </div>
 
@@ -343,7 +344,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 onClick={() => setTrialExpired(false)}
                 className="w-full text-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
               >
-                Dismiss (you won&apos;t be able to send messages)
+                {t.common.close}
               </button>
             </motion.div>
           </motion.div>
@@ -379,10 +380,10 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
-                  Unlock your enterprise intelligence.
+                  {t.chat.emptyTitle}
                 </h2>
                 <p className="text-zinc-500 text-sm max-w-md mb-10 leading-relaxed">
-                  Welcome to Vectrieve Core. Ask questions, search vector segments, or audit files with high precision.
+                  {t.chat.emptySubtitle}
                 </p>
 
                 {/* Quick Action Grid */}

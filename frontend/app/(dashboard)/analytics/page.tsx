@@ -369,19 +369,19 @@ export default function AnalyticsPage() {
                   sub: "Dense + Sparse Embeddings",
                 },
                 {
-                  label: "Total Latency",
+                  label: t.analytics.totalLatency,
                   value: `${data.telemetry.total_avg_sec.toFixed(2)}s`,
                   icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10",
                   sub: `LLM: ${data.telemetry.llm_avg_sec.toFixed(2)}s avg`,
                 },
                 {
-                  label: "Token Speed",
+                  label: t.analytics.tokenSpeed,
                   value: `${data.telemetry.tokens_per_second_avg.toFixed(1)} t/s`,
                   icon: Zap, color: "text-yellow-400", bg: "bg-yellow-500/10",
                   sub: `${data.telemetry.tokens_generated_total.toLocaleString()} total tokens`,
                 },
                 {
-                  label: "DB Pool",
+                  label: t.analytics.dbPool,
                   value: `${data.telemetry.pool.checked_out} / ${data.telemetry.pool.size}`,
                   icon: Server, color: "text-emerald-400", bg: "bg-emerald-500/10",
                   sub: `${data.telemetry.pool.checked_in} idle connections`,
@@ -412,16 +412,16 @@ export default function AnalyticsPage() {
                 <div>
                   <h2 className="text-[14px] font-semibold text-white flex items-center gap-2">
                     <Activity className="w-4 h-4 text-indigo-400" />
-                    Daily Usage Trend
+                    {t.analytics.dailyUsageTrend}
                   </h2>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">Queries and indexed documents per day</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">{t.analytics.dailyUsageDesc}</p>
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-medium">
                   <span className="flex items-center gap-1.5 text-zinc-400">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />Queries
+                    <span className="w-2 h-2 rounded-full bg-indigo-500" />{t.analytics.queriesLegend}
                   </span>
                   <span className="flex items-center gap-1.5 text-zinc-400">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />Docs
+                    <span className="w-2 h-2 rounded-full bg-purple-500" />{t.analytics.docsLegend}
                   </span>
                 </div>
               </div>
@@ -457,14 +457,14 @@ export default function AnalyticsPage() {
               <div className="lg:col-span-2 bg-zinc-900/30 border border-white/5 rounded-3xl p-6">
                 <h3 className="text-[14px] font-semibold text-white flex items-center gap-2 mb-4">
                   <Clock className="w-4 h-4 text-orange-400" />
-                  RAG Pipeline Latency Breakdown
+                  {t.analytics.ragLatencyBreakdown}
                 </h3>
                 <div className="space-y-4">
                   {[
-                    { label: "Dense Embedding (FastEmbed BGE)", val: data.telemetry.dense_avg_sec, color: "from-blue-500 to-indigo-500", ms: true },
-                    { label: "Sparse Vector (BM25 / SPLADE)", val: data.telemetry.sparse_avg_sec, color: "from-sky-500 to-cyan-500", ms: true },
-                    { label: "Cross-Encoder Reranker", val: data.telemetry.rerank_avg_sec, color: "from-purple-500 to-pink-500", ms: true },
-                    { label: "Groq Cloud LLM Inference", val: data.telemetry.llm_avg_sec, color: "from-orange-500 to-amber-500", ms: false },
+                    { label: t.analytics.denseSearch, val: data.telemetry.dense_avg_sec, color: "from-blue-500 to-indigo-500", ms: true },
+                    { label: t.analytics.sparseSearch, val: data.telemetry.sparse_avg_sec, color: "from-sky-500 to-cyan-500", ms: true },
+                    { label: t.analytics.reranker, val: data.telemetry.rerank_avg_sec, color: "from-purple-500 to-pink-500", ms: true },
+                    { label: t.analytics.llmInference, val: data.telemetry.llm_avg_sec, color: "from-orange-500 to-amber-500", ms: false },
                   ].map((item, idx) => {
                     const total = data.telemetry.total_avg_sec || 1;
                     const pct = Math.min((item.val / total) * 100, 100);
@@ -493,14 +493,14 @@ export default function AnalyticsPage() {
                 <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-5 flex-1">
                   <h3 className="text-[13px] font-semibold text-white flex items-center gap-2 mb-4">
                     <Server className="w-3.5 h-3.5 text-emerald-400" />
-                    Database Connection Pool
+                    {t.analytics.dbPoolTitle}
                   </h3>
                   <div className="space-y-2.5 text-xs">
                     {[
-                      { label: "Active connections", val: data.telemetry.pool.checked_out },
-                      { label: "Idle connections", val: data.telemetry.pool.checked_in },
-                      { label: "Pool size limit", val: data.telemetry.pool.size },
-                      { label: "Overflow", val: Math.max(0, data.telemetry.pool.overflow ?? 0) },
+                      { label: t.analytics.activeConnections, val: data.telemetry.pool.checked_out },
+                      { label: t.analytics.idleConnections, val: data.telemetry.pool.checked_in },
+                      { label: t.analytics.poolSizeLimit, val: data.telemetry.pool.size },
+                      { label: t.analytics.poolOverflow, val: Math.max(0, data.telemetry.pool.overflow ?? 0) },
                     ].map((r, i) => (
                       <div key={i} className="flex justify-between">
                         <span className="text-zinc-400">{r.label}</span>
@@ -519,18 +519,18 @@ export default function AnalyticsPage() {
                 <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-5 flex-1">
                   <h3 className="text-[13px] font-semibold text-white flex items-center gap-2 mb-4">
                     <Zap className="w-3.5 h-3.5 text-yellow-400" />
-                    LLM Throughput
+                    {t.analytics.llmThroughput}
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5">Avg Generation Speed</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5">{t.analytics.avgGenSpeed}</p>
                       <p className="text-2xl font-bold text-white">
                         {data.telemetry.tokens_per_second_avg.toFixed(1)}
                         <span className="text-sm font-medium text-zinc-400 ml-1">t/s</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5">Total Tokens Generated</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5">{t.analytics.totalTokensGen}</p>
                       <p className="text-lg font-bold text-white">{data.telemetry.tokens_generated_total.toLocaleString()}</p>
                     </div>
                   </div>
@@ -547,16 +547,16 @@ export default function AnalyticsPage() {
                     {t.analytics.userManagement}
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
-                    Review and approve registered accounts before they gain workspace access.
+                    {t.analytics.userManagementDesc}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 font-medium">
-                    Total Registered: {users.length}
+                    {t.analytics.totalRegistered}: {users.length}
                   </span>
                   {users.filter(u => !u.is_approved).length > 0 && (
                     <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-medium animate-pulse">
-                      {users.filter(u => !u.is_approved).length} Pending Approval
+                      {users.filter(u => !u.is_approved).length} {t.analytics.pendingApproval}
                     </span>
                   )}
                 </div>
@@ -569,12 +569,12 @@ export default function AnalyticsPage() {
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-white/5 text-zinc-500 font-medium uppercase tracking-wider text-[10px]">
-                        <th className="pb-3 pl-2">User Email</th>
-                        <th className="pb-3">Role</th>
-                        <th className="pb-3">Approval Status</th>
-                        <th className="pb-3">Account State</th>
-                        <th className="pb-3 text-center">Indexed Docs</th>
-                        <th className="pb-3 text-right pr-2">Actions</th>
+                        <th className="pb-3 pl-2">{t.analytics.colEmail}</th>
+                        <th className="pb-3">{t.analytics.colRole}</th>
+                        <th className="pb-3">{t.analytics.colApproval}</th>
+                        <th className="pb-3">{t.analytics.colState}</th>
+                        <th className="pb-3 text-center">{t.analytics.colIndexedDocs}</th>
+                        <th className="pb-3 text-right pr-2">{t.analytics.colActions}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -586,11 +586,11 @@ export default function AnalyticsPage() {
                           <td className="py-3.5">
                             {u.is_admin ? (
                               <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-semibold text-[10px]">
-                                Admin
+                                {t.analytics.roleAdmin}
                               </span>
                             ) : (
                               <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px]">
-                                User
+                                {t.analytics.roleUser}
                               </span>
                             )}
                           </td>
@@ -603,15 +603,15 @@ export default function AnalyticsPage() {
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
                                 <AlertCircle className="w-3 h-3" />
-                                Pending Approval
+                                {t.analytics.pending}
                               </span>
                             )}
                           </td>
                           <td className="py-3.5">
                             {u.is_active ? (
-                              <span className="text-zinc-300">Active</span>
+                              <span className="text-zinc-300">{t.analytics.active}</span>
                             ) : (
-                              <span className="text-red-400 font-medium">Suspended</span>
+                              <span className="text-red-400 font-medium">{t.analytics.suspended}</span>
                             )}
                           </td>
                           <td className="py-3.5 text-center text-zinc-400 font-mono">
@@ -684,12 +684,12 @@ export default function AnalyticsPage() {
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-white/5 text-zinc-500 font-medium uppercase tracking-wider text-[10px]">
-                        <th className="pb-3 pl-2">Type</th>
-                        <th className="pb-3">User</th>
+                        <th className="pb-3 pl-2">{t.common.type}</th>
+                        <th className="pb-3">{t.analytics.colEmail}</th>
                         <th className="pb-3">Message</th>
-                        <th className="pb-3">Date</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-right pr-2">Actions</th>
+                        <th className="pb-3">{t.common.date}</th>
+                        <th className="pb-3">{t.common.status}</th>
+                        <th className="pb-3 text-right pr-2">{t.analytics.colActions}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -698,11 +698,11 @@ export default function AnalyticsPage() {
                           <td className="py-3.5 pl-2">
                             {item.type === "IDEA" ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold text-[10px]">
-                                <Lightbulb className="w-3 h-3" /> Idea
+                                <Lightbulb className="w-3 h-3" /> {t.feedback.tabIdea}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 font-semibold text-[10px]">
-                                <Bug className="w-3 h-3" /> Bug
+                                <Bug className="w-3 h-3" /> {t.feedback.tabBug}
                               </span>
                             )}
                           </td>
@@ -718,15 +718,15 @@ export default function AnalyticsPage() {
                           <td className="py-3.5">
                             {item.status === "RESOLVED" ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
-                                <Check className="w-3 h-3" /> {t.analytics.markResolved}
+                                <Check className="w-3 h-3" /> {t.analytics.statusResolved}
                               </span>
                             ) : item.status === "IN_PROGRESS" ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[11px] font-medium">
-                                <Clock className="w-3 h-3" /> {t.analytics.markInProgress}
+                                <Clock className="w-3 h-3" /> {t.analytics.statusInProgress}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[11px]">
-                                New
+                                {t.analytics.statusNew}
                               </span>
                             )}
                           </td>

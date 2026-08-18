@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Settings, Save, Key, Cloud, Eye, EyeOff,
-  Database, Check, Globe, Type, ExternalLink, Zap,
+  Settings, Key, Cloud, Eye, EyeOff,
+  Database, Check, Globe, Type, ExternalLink, Zap, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api/client";
@@ -75,7 +75,7 @@ export default function SettingsPage() {
   };
 
   const trialPct = Math.min((trialUsed / trialLimit) * 100, 100);
-  const hasOwnKey = groqApiKey.length > 0;
+  const hasOwnKey = groqApiKey.trim().length > 0;
 
   const languagesList: { code: SupportedLanguage; label: string; flag: string }[] = [
     { code: "en", label: "English", flag: "EN" },
@@ -126,10 +126,9 @@ export default function SettingsPage() {
         <div className="flex items-start gap-3 px-4 py-3.5 bg-indigo-500/5 border border-indigo-500/15 rounded-2xl">
           <Zap className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
           <div>
-            <p className="text-[12px] font-semibold text-indigo-300">Cloud Enterprise Mode</p>
+            <p className="text-[12px] font-semibold text-indigo-300">{t.settings.cloudBannerTitle}</p>
             <p className="text-[11px] text-indigo-400/70 mt-0.5 leading-relaxed">
-              This server runs exclusively on high-performance cloud inference.
-              All AI responses are delivered with sub-second latency and zero server CPU load.
+              {t.settings.cloudBannerDesc}
             </p>
           </div>
         </div>
@@ -144,23 +143,38 @@ export default function SettingsPage() {
             </div>
             <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-4 shadow-xl">
 
-              {/* Shared Trial Banner */}
-              <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-indigo-300">{t.settings.trialQuota}</span>
-                  <span className="font-mono font-bold text-indigo-200">
-                    {trialRemaining} / {trialLimit} {t.settings.trialRemaining}
-                  </span>
+              {/* Personal Key Connected Banner vs Trial Quota */}
+              {hasOwnKey ? (
+                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-1.5">
+                  <div className="flex items-center gap-2 text-emerald-300 text-xs font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{t.settings.personalKeyActive}</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-400/80 leading-relaxed pl-6">
+                    {t.settings.personalKeyActiveDesc}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 pl-6 pt-0.5 border-t border-emerald-500/20 mt-2">
+                    {t.settings.groqTierInfo}
+                  </p>
                 </div>
-                <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      trialRemaining === 0 ? "bg-red-500" : trialPct > 70 ? "bg-amber-500" : "bg-indigo-500"
-                    }`}
-                    style={{ width: `${trialPct}%` }}
-                  />
+              ) : (
+                <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-indigo-300">{t.settings.trialQuota}</span>
+                    <span className="font-mono font-bold text-indigo-200">
+                      {trialRemaining} / {trialLimit} {t.settings.trialRemaining}
+                    </span>
+                  </div>
+                  <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        trialRemaining === 0 ? "bg-red-500" : trialPct > 70 ? "bg-amber-500" : "bg-indigo-500"
+                      }`}
+                      style={{ width: `${trialPct}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Personal Groq API Key Input */}
               <div>
@@ -188,7 +202,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-2.5 flex items-center justify-between">
                   <p className="text-[10px] text-zinc-600">
-                    {hasOwnKey ? "✓ Using your personal key — unlimited queries." : "Using shared trial key."}
+                    {hasOwnKey ? "✓ Direct key active — unrestricted requests." : "Using shared trial quota."}
                   </p>
                   <a
                     href="https://console.groq.com/keys"
@@ -203,12 +217,12 @@ export default function SettingsPage() {
 
               {/* Quick instructions */}
               <div className="border-t border-zinc-800/50 pt-4 space-y-1.5">
-                <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Setup Guide</p>
+                <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">{t.settings.setupGuideTitle}</p>
                 {[
-                  "1. Open console.groq.com",
-                  "2. Sign up for free (no card required)",
-                  "3. Go to API Keys → Create API Key",
-                  '4. Paste key above and click Save',
+                  t.settings.step1,
+                  t.settings.step2,
+                  t.settings.step3,
+                  t.settings.step4,
                 ].map((step, i) => (
                   <p key={i} className="text-[10px] text-zinc-600">{step}</p>
                 ))}

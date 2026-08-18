@@ -8,8 +8,10 @@ import { FileTable } from "@/components/files/FileTable";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AudioBrief from "@/components/chat/AudioBrief";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function KnowledgeBasePage() {
+  const { t } = useLanguage();
   const {
     filteredFiles,
     isLoading,
@@ -163,7 +165,10 @@ export default function KnowledgeBasePage() {
 
         {/* Dynamic Action Bar */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-medium tracking-tight">Knowledge Base</h1>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-white">{t.files.title}</h1>
+            <p className="text-xs text-zinc-500 mt-0.5">{t.files.subtitle}</p>
+          </div>
           
           <div className="flex items-center gap-3">
             {someSelected && (
@@ -172,7 +177,7 @@ export default function KnowledgeBasePage() {
                 className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-all font-medium cursor-pointer"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Delete {selectedFileIds.size} Selected
+                {t.common.delete} ({selectedFileIds.size})
               </Button>
             )}
             <Button 
@@ -181,7 +186,7 @@ export default function KnowledgeBasePage() {
               className="bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/20 transition-all border border-indigo-500/50 font-medium cursor-pointer"
             >
               {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UploadCloud className="w-4 h-4 mr-2" />}
-              {isUploading ? 'Uploading...' : 'Upload File'}
+              {isUploading ? t.common.loading : 'Upload File'}
             </Button>
           </div>
         </div>
@@ -193,8 +198,8 @@ export default function KnowledgeBasePage() {
             type="text" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search vectorized files"
-            placeholder="Search vectorized files..." 
+            aria-label={t.files.searchPlaceholder}
+            placeholder={t.files.searchPlaceholder} 
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white shadow-xl placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
           />
         </div>
@@ -220,13 +225,13 @@ export default function KnowledgeBasePage() {
             <div className="p-4 rounded-full bg-zinc-800/50 mb-5">
               <Database className="w-10 h-10 text-zinc-500" />
             </div>
-            <h2 className="text-xl font-medium text-white mb-2">No Vectorized Files</h2>
+            <h2 className="text-xl font-medium text-white mb-2">{t.files.noFilesFound}</h2>
             <p className="text-sm text-zinc-400 max-w-sm mx-auto mb-8">
-              Upload your first document to extract intelligence. We support PDFs, text files, and markdown logs natively.
+              {t.files.supportedFormats}
             </p>
             <Button onClick={() => fileInputRef.current?.click()} className="bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/20 transition-all rounded-lg border border-indigo-500/50 cursor-pointer">
               <UploadCloud className="w-4 h-4 mr-2" />
-              Upload First File
+              Upload File
             </Button>
           </div>
         )}

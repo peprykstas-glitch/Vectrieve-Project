@@ -6,6 +6,7 @@ import {
   X, Users, UserPlus, Shield, Trash2, Check, AlertCircle, Loader2, User, ChevronDown
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface SpaceMember {
   id: number;
@@ -30,6 +31,7 @@ export function SpaceMembersModal({
   onClose,
   currentUserId,
 }: SpaceMembersModalProps) {
+  const { t } = useLanguage();
   const [members, setMembers] = useState<SpaceMember[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [inviteInput, setInviteInput] = useState<string>("");
@@ -152,17 +154,15 @@ export function SpaceMembersModal({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80 bg-zinc-900/50">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                <Users size={18} />
-              </div>
               <div>
-                <h2 className="text-base font-semibold text-zinc-100 tracking-tight flex items-center gap-2">
-                  Space Members
-                </h2>
-                <p className="text-xs text-zinc-400">
-                  {spaceName} &bull; {members.length} {members.length === 1 ? "member" : "members"}
-                </p>
-              </div>
+              <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                <Users size={18} className="text-indigo-400" />
+                {t.spaces.membersTitle}
+              </h2>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {spaceName}
+              </p>
+            </div>
             </div>
             <button
               onClick={onClose}
@@ -177,7 +177,7 @@ export function SpaceMembersModal({
             {/* Invite Form */}
             <form onSubmit={handleInvite} className="space-y-3">
               <label className="block text-xs font-medium text-zinc-300">
-                Invite new member
+                {t.spaces.addMember}
               </label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -185,7 +185,7 @@ export function SpaceMembersModal({
                     type="text"
                     value={inviteInput}
                     onChange={(e) => setInviteInput(e.target.value)}
-                    placeholder="Enter email or username..."
+                    placeholder={t.spaces.emailPlaceholder}
                     className="w-full px-3.5 py-2.5 bg-zinc-950/80 border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all"
                   />
                 </div>
@@ -195,9 +195,9 @@ export function SpaceMembersModal({
                     onChange={(e) => setInviteRole(e.target.value as any)}
                     className="h-full px-3 py-2.5 bg-zinc-950/80 border border-zinc-800 rounded-xl text-xs text-zinc-300 focus:outline-none focus:border-indigo-500/50 cursor-pointer"
                   >
-                    <option value="VIEWER">Viewer</option>
-                    <option value="EDITOR">Editor</option>
-                    <option value="OWNER">Owner</option>
+                    <option value="VIEWER">{t.spaces.roleViewer}</option>
+                    <option value="EDITOR">{t.spaces.roleEditor}</option>
+                    <option value="OWNER">{t.spaces.roleOwner}</option>
                   </select>
                 </div>
                 <button
@@ -210,7 +210,7 @@ export function SpaceMembersModal({
                   ) : (
                     <>
                       <UserPlus size={14} />
-                      <span>Add</span>
+                      <span>{t.spaces.addMember}</span>
                     </>
                   )}
                 </button>

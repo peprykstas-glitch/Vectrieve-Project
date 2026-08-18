@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FileText, MoreVertical, Trash2, Eye, RefreshCw, Check, Music, Video, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document } from "@/hooks/useFiles";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface FileTableProps {
   files: Document[];
@@ -24,6 +25,7 @@ export function FileTable({
   handleReindex,
   setViewDetailsDoc 
 }: FileTableProps) {
+  const { t } = useLanguage();
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
 
   // Close custom dropdown when clicking anywhere outside
@@ -56,12 +58,12 @@ export function FileTable({
                 </div>
               </label>
             </th>
-            <th className="px-6 py-4">Filename</th>
-            <th className="px-6 py-4">Type</th>
-            <th className="px-6 py-4 w-24">Size</th>
-            <th className="px-6 py-4 w-32">Status</th>
-            <th className="px-6 py-4">Uploaded</th>
-            <th className="px-6 py-4 text-right">Actions</th>
+            <th className="px-6 py-4">{t.files.colName}</th>
+            <th className="px-6 py-4">{t.files.colType}</th>
+            <th className="px-6 py-4 w-24">{t.files.colSize}</th>
+            <th className="px-6 py-4 w-32">{t.files.colStatus}</th>
+            <th className="px-6 py-4">{t.common.date}</th>
+            <th className="px-6 py-4 text-right">{t.files.colActions}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-800/50">
@@ -119,22 +121,17 @@ export function FileTable({
                   {file.status === 'COMPLETED' ? (
                     <div className="inline-flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                      <span className="text-emerald-400 text-[11px] uppercase tracking-wider font-bold leading-none">Ready</span>
+                      <span className="text-emerald-400 text-[11px] uppercase tracking-wider font-bold leading-none">{t.files.statusReady}</span>
                     </div>
                   ) : file.status === 'FAILED' ? (
                     <div className="inline-flex items-center gap-2" title={file.error_log}>
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                      <span className="text-red-400 text-[11px] uppercase tracking-wider font-bold leading-none cursor-help">Failed</span>
-                    </div>
-                  ) : file.status === 'EMBEDDING' ? (
-                    <div className="inline-flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
-                      <span className="text-amber-400 text-[11px] uppercase tracking-wider font-bold leading-none">Embedding...</span>
+                      <span className="text-red-400 text-[11px] uppercase tracking-wider font-bold leading-none cursor-help">{t.files.statusFailed}</span>
                     </div>
                   ) : (
                     <div className="inline-flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse flex-shrink-0" />
-                      <span className="text-indigo-400 text-[11px] uppercase tracking-wider font-bold leading-none">Processing...</span>
+                      <span className="text-indigo-400 text-[11px] uppercase tracking-wider font-bold leading-none">{t.files.statusProcessing}</span>
                     </div>
                   )}
                 </td>
@@ -154,19 +151,19 @@ export function FileTable({
                   {activeDropdown === file.id && (
                     <div 
                       className={`absolute right-6 z-50 w-48 rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col p-1 ${isNearBottom ? "bottom-10" : "top-10"}`}
-                      onMouseDown={(e) => e.stopPropagation()} // Prevent closing before action executes
+                      onMouseDown={(e) => e.stopPropagation()}
                     >
                       <button 
                         onMouseDown={(e) => { e.stopPropagation(); setViewDetailsDoc(file); setActiveDropdown(null); }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
-                        <Eye className="w-4 h-4" /> View Details
+                        <Eye className="w-4 h-4" /> {t.common.view}
                       </button>
                       <button 
                         onMouseDown={(e) => { e.stopPropagation(); handleReindex(file.id); setActiveDropdown(null); }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
-                        <RefreshCw className="w-4 h-4" /> Force Re-index
+                        <RefreshCw className="w-4 h-4" /> {t.files.reindex}
                       </button>
                       <div className="h-px bg-zinc-800 my-1" />
                       <button 
@@ -177,7 +174,7 @@ export function FileTable({
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
-                        <Trash2 className="w-4 h-4" /> Delete Vector
+                        <Trash2 className="w-4 h-4" /> {t.common.delete}
                       </button>
                     </div>
                   )}
