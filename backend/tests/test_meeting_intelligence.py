@@ -34,7 +34,7 @@ def test_video_file_detection():
 
 @pytest.mark.asyncio
 async def test_extract_meeting_action_items():
-    """Verify action items & decisions extraction from a transcript using LLaMA 3.3 70B."""
+    """Verify action items & decisions extraction from a transcript using GPT-OSS 120B."""
     sample_transcript = """
 # Media Transcript: board_meeting_august.mp3
 **[00:05]** Stas: Welcome everyone. Today we decide on the Q3 server infrastructure budget.
