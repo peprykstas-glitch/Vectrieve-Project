@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-
-const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { getInternalBackendUrl } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +12,7 @@ export async function POST(request: Request) {
     formData.append('username', email);
     formData.append('password', password);
 
-    const response = await fetch(`${BACKEND_URL}/auth/token`, {
+    const response = await fetch(`${getInternalBackendUrl()}/auth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-
-const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { getInternalBackendUrl } from '@/lib/server-backend';
 
 function getOrigin(request: Request): string {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
@@ -29,7 +28,7 @@ export async function GET(request: Request) {
     // Construct the exact redirect_uri that was sent to Google
     const redirect_uri = `${origin}/api/auth/callback/google`;
 
-    const response = await fetch(`${BACKEND_URL}/auth/google`, {
+    const response = await fetch(`${getInternalBackendUrl()}/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

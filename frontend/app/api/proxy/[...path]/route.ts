@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-
-const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { getInternalBackendUrl } from '@/lib/server-backend';
 
 async function handleProxy(request: Request, pathArray: string[]) {
   const path = pathArray.join('/');
   const url = new URL(request.url);
-  const backendUrl = `${BACKEND_URL}/${path}${url.search}`;
+  const backendUrl = `${getInternalBackendUrl()}/${path}${url.search}`;
 
   console.log(`[BFF Proxy] Requesting: ${request.method} ${backendUrl}`);
 

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { getInternalBackendUrl } from '@/lib/server-backend';
 
 /**
  * POST /api/auth/reset-password
@@ -18,7 +17,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch(`${BACKEND_URL}/auth/reset-password`, {
+    const response = await fetch(`${getInternalBackendUrl()}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, new_password: password }),
