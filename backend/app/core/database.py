@@ -47,6 +47,12 @@ async def init_db():
                 "ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT TRUE"
             )
         )
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                'ALTER TABLE "user" '
+                "ADD COLUMN IF NOT EXISTS google_id VARCHAR"
+            )
+        )
 
 
 def get_session_factory():
