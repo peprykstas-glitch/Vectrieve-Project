@@ -58,6 +58,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://192.168.1.26:3000",  # LAN access — office network
+        "http://vectrieve.duckdns.org",
+        "https://vectrieve.duckdns.org",
     ],
     allow_credentials=True,
     allow_methods=["*"],
