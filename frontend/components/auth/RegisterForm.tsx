@@ -82,11 +82,7 @@ export function RegisterForm() {
           <Button
             type="button"
             onClick={() => {
-              const origin = window.location.origin;
-              const redirectUri = `${origin}/api/auth/callback/google`;
-              const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-              const scope = 'openid email profile';
-              window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=select_account`;
+              window.location.href = '/api/auth/google/url';
             }}
             variant="outline"
             className="w-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 border-zinc-700/60 hover:border-zinc-500 h-11 rounded-xl font-medium flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm"

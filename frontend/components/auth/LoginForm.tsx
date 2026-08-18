@@ -32,14 +32,8 @@ export function LoginForm() {
   const sessionExpired = searchParams.get('session_expired') === 'true';
   const oauthError = searchParams.get('error');
 
-  const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-
   const handleGoogleSignIn = () => {
-    const origin = window.location.origin;
-    const redirectUri = `${origin}/api/auth/callback/google`;
-    const scope = 'openid email profile';
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=select_account`;
-    window.location.href = googleAuthUrl;
+    window.location.href = '/api/auth/google/url';
   };
 
   // Initialize React Hook Form with Zod schema validation
