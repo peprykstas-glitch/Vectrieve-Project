@@ -198,7 +198,7 @@ Meeting Transcript:
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_api_key}"},
                 json={
-                    "model": "llama-3.3-70b-versatile",
+                    "model": "openai/gpt-oss-120b",
                     "messages": [
                         {"role": "system", "content": "You are a professional enterprise meeting intelligence assistant."},
                         {"role": "user", "content": prompt}

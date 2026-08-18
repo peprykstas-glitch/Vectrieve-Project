@@ -164,7 +164,7 @@ AI Summary: "{ai_response[:300]}"
             try:
                 completion = await client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model="llama-3.3-70b-versatile",
+                    model="openai/gpt-oss-120b",
                     temperature=0.2,
                     max_tokens=25,
                 )
@@ -434,15 +434,25 @@ Examples:
     async def _run_cloud_vision(
         self, messages: list, model_name: Optional[str] = None
     ) -> str:
-        # Default: Groq's best vision-capable model available on free tier.
-        # Supports Ukrainian/Polish text recognition without extra language packs.
-        model = model_name or "meta-llama/llama-4-scout-17b-16e-instruct"
-        completion = await self.groq_client.chat.completions.create(
-            model=model,
-            messages=messages,
-            max_tokens=1024,
-        )
-        return completion.choices[0].message.content
+        # Default: Groq's flagship 90B multimodal vision model
+        model = model_name or "llama-3.2-90b-vision-preview"
+        try:
+            completion = await self.groq_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=1024,
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            # Fallback to 11B vision model if 90B encounters temporary rate limit or outage
+            if model == "llama-3.2-90b-vision-preview":
+                completion = await self.groq_client.chat.completions.create(
+                    model="llama-3.2-11b-vision-preview",
+                    messages=messages,
+                    max_tokens=1024,
+                )
+                return completion.choices[0].message.content
+            raise e
 
     async def _run_local_vision(
         self, messages: list, model_name: Optional[str] = None
