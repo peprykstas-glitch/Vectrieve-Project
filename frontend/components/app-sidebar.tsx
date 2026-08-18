@@ -16,7 +16,8 @@ import {
   Check,
   X,
   ChevronDown,
-  Plus
+  Plus,
+  ShieldCheck
 } from "lucide-react"
 import {
   Sidebar,
@@ -500,7 +501,7 @@ export function AppSidebar() {
   const localizedNavItems = [
     { title: t.nav.chat, url: "/", icon: MessageSquare },
     { title: t.nav.knowledgeBase, url: "/files", icon: Database },
-    { title: t.nav.analytics, url: "/analytics", icon: BarChart3 },
+    { title: t.nav.analytics, url: "/analytics", icon: ShieldCheck },
     { title: t.nav.settings, url: "/settings", icon: Settings },
   ]
 

@@ -17,27 +17,31 @@ import {
 } from "@/components/ui/select"
 import { Cpu, Cloud, GraduationCap, ShieldCheck, Lock } from "lucide-react"
 
+import { usePathname } from "next/navigation"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 // Extracted header to use context
 function DashboardHeader() {
   const { computeMode, setComputeMode, aiPersona, setAiPersona, isComputeModeLocked, headerRightAction } = useGlobalSettings()
+  const pathname = usePathname()
   const { t } = useLanguage()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
+
+  const isChat = pathname === "/"
   
   return (
     <header className="absolute top-0 left-0 right-0 z-30 pointer-events-none flex shrink-0 items-center justify-between px-5 pt-3.5 pb-8 bg-gradient-to-b from-zinc-950/90 via-zinc-950/40 to-transparent transition-all duration-300">
-      {/* Left side: Mobile trigger + Cloud Enterprise + Persona selector */}
+      {/* Left side: Mobile trigger + Cloud Enterprise + Persona selector (only in chat) */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-visible pointer-events-auto">
         <div className="flex items-center gap-3 md:hidden">
           <SidebarTrigger className="text-zinc-400 hover:text-white cursor-pointer" />
         </div>
 
-        {mounted && (
+        {mounted && isChat && (
           <>
             <div className="flex items-center gap-1.5 h-8 px-3.5 bg-blue-500/10 hover:bg-blue-500/15 backdrop-blur-2xl border border-blue-500/25 text-blue-400 text-xs font-medium rounded-full shrink-0 select-none shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all">
               <Cloud className="w-3.5 h-3.5 text-blue-400" />
@@ -75,7 +79,7 @@ function DashboardHeader() {
 
       {/* Right side: Dynamic Frosted Glass Action Pills (Audio Briefing, MD, PDF) */}
       <div className="flex items-center gap-2 pointer-events-auto">
-        {mounted && headerRightAction}
+        {mounted && isChat && headerRightAction}
       </div>
     </header>
   )

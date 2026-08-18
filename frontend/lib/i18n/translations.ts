@@ -233,7 +233,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     nav: {
       chat: "Chat",
       knowledgeBase: "Knowledge Base",
-      analytics: "Analytics",
+      analytics: "Admin",
       settings: "Settings",
       logout: "Log out",
       feedback: "Feedback & Ideas",
@@ -437,7 +437,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     nav: {
       chat: "Чат",
       knowledgeBase: "База знань",
-      analytics: "Аналітика",
+      analytics: "Адмін",
       settings: "Налаштування",
       logout: "Вийти",
       feedback: "Зворотний зв'язок",
@@ -641,7 +641,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     nav: {
       chat: "Czat",
       knowledgeBase: "Baza wiedzy",
-      analytics: "Analityka",
+      analytics: "Admin",
       settings: "Ustawienia",
       logout: "Wyloguj",
       feedback: "Opinie i pomysły",
@@ -845,7 +845,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     nav: {
       chat: "Chat",
       knowledgeBase: "Base de conocimientos",
-      analytics: "Analítica",
+      analytics: "Admin",
       settings: "Configuración",
       logout: "Cerrar sesión",
       feedback: "Comentarios e ideas",

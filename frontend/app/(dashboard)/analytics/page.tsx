@@ -269,17 +269,17 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-950 text-zinc-100 pb-16 overflow-y-auto">
+    <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100 font-sans overflow-y-auto custom-scrollbar">
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
+      <header className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-4 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-900 shrink-0">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-indigo-400" />
-            {t.analytics.title}
+          <h1 className="text-xl font-semibold tracking-tight text-white flex items-center gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-indigo-400" />
+            {t.nav.analytics}
           </h1>
           {lastRefresh && (
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              Updated {lastRefresh.toLocaleTimeString()}
+            <p className="text-xs text-zinc-500 mt-0.5">
+              {t.analytics.title} &bull; {lastRefresh.toLocaleTimeString()}
             </p>
           )}
         </div>
@@ -325,7 +325,7 @@ export default function AnalyticsPage() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="p-8 pb-32 space-y-8 max-w-7xl mx-auto w-full">
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
