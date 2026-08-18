@@ -158,6 +158,7 @@ async def get_analytics_stats(
             "thumbs_down": thumbs_down,
         },
         "daily_series": daily_series,
+        "chart_data": daily_series,
         "telemetry": {
             "dense_avg_sec": dense_avg,
             "sparse_avg_sec": sparse_avg,
@@ -173,3 +174,105 @@ async def get_analytics_stats(
             "started_at": _SERVER_START_TIME.isoformat() + "Z",
         }
     }
+
+
+# ── ADMIN USER MANAGEMENT ─────────────────────────────────────────────
+@router.get("/users")
+async def get_all_users_for_admin(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """List all registered users with their approval status and usage."""
+    users_stmt = select(User).order_by(User.id.desc())
+    result = await session.execute(users_stmt)
+    users = result.scalars().all()
+
+    # Get document counts per user
+    docs_stmt = select(Document.user_id, func.count(Document.id)).group_by(Document.user_id)
+    doc_counts = dict((await session.execute(docs_stmt)).all())
+
+    user_list = []
+    for u in users:
+        user_list.append({
+            "id": u.id,
+            "username": u.username,
+            "is_admin": u.is_admin,
+            "is_active": u.is_active,
+            "is_approved": getattr(u, "is_approved", True),
+            "documents_count": doc_counts.get(u.id, 0),
+        })
+
+    return {"users": user_list}
+
+
+@router.post("/users/{user_id}/approve")
+async def approve_user(
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Approve a pending user registration and trigger confirmation email."""
+    statement = select(User).where(User.id == user_id)
+    user = (await session.execute(statement)).scalar_one_or_none()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_approved = True
+    session.add(user)
+    await session.commit()
+
+    # Dispatch approval email
+    try:
+        from services.email_service import send_user_approved_email
+        import asyncio
+        asyncio.create_task(send_user_approved_email(user.username))
+    except Exception as ex:
+        print(f"⚠️ Failed to queue approval email: {ex}")
+
+    return {"message": f"User {user.username} approved successfully.", "is_approved": True}
+
+
+@router.post("/users/{user_id}/toggle-active")
+async def toggle_user_active(
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Toggle user active/suspended state."""
+    if user_id == current_user.id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own admin account")
+
+    statement = select(User).where(User.id == user_id)
+    user = (await session.execute(statement)).scalar_one_or_none()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = not user.is_active
+    session.add(user)
+    await session.commit()
+    return {"message": f"User {user.username} is now {'active' if user.is_active else 'suspended'}.", "is_active": user.is_active}
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Delete a user account and their associated records."""
+    if user_id == current_user.id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Cannot delete your own admin account")
+
+    statement = select(User).where(User.id == user_id)
+    user = (await session.execute(statement)).scalar_one_or_none()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await session.delete(user)
+    await session.commit()
+    return {"message": f"User {user.username} deleted successfully."}

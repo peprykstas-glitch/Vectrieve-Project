@@ -405,6 +405,12 @@ def _parse_file_sync(file_path: Path, filename: str) -> Union[str, List[str], "V
     process_pdf_background in the async context where llm_service is accessible.
     """
     from services.vision_pipeline import VisionPayload, ScannedPDFPayload, PPTXPayload, PPTXSlidePayload
+    from services.audio_parser import is_media_file, MediaPayload
+
+    # Audio and Video files — return sentinel for async speech-to-text transcription
+    if is_media_file(filename):
+        return MediaPayload(file_path=file_path, filename=filename)
+
     file_bytes = file_path.read_bytes()
 
     if filename.lower().endswith('.pdf'):
@@ -694,6 +700,17 @@ async def process_pdf_background(doc_id: int, tmp_path: Path, filename: str, use
 
             elif isinstance(text_or_chunks, list):
                 chunks = text_or_chunks
+            elif hasattr(text_or_chunks, "file_path") and hasattr(text_or_chunks, "filename"):
+                # Audio and Video files — transcribe speech via Whisper
+                from services.audio_parser import transcribe_media_async
+                transcript_text = await transcribe_media_async(text_or_chunks.file_path, filename)
+                from langchain_text_splitters import RecursiveCharacterTextSplitter
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=1000,
+                    chunk_overlap=200,
+                    separators=["\n\n", "\n", " ", ""]
+                )
+                chunks = splitter.split_text(transcript_text)
             elif isinstance(text_or_chunks, str) and text_or_chunks:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
                 splitter = RecursiveCharacterTextSplitter(

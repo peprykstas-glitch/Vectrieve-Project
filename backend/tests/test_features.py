@@ -55,7 +55,7 @@ async def test_register_user(client: AsyncClient, test_session):
     }
     response = await client.post("/auth/register", json=user_data)
     assert response.status_code == 201
-    assert response.json()["message"] == "Workspace successfully provisioned"
+    assert "is_approved" in response.json()
 
     # Verify user is in DB
     result = await test_session.execute(select(User).where(User.username == "test@example.com"))
@@ -66,6 +66,13 @@ async def test_login_user(client: AsyncClient, test_session):
     # Create user first
     user_data = {"fullName": "Test User", "email": "login@example.com", "password": "SecurePassword123!"}
     await client.post("/auth/register", json=user_data)
+
+    # Approve user in DB
+    result = await test_session.execute(select(User).where(User.username == "login@example.com"))
+    user = result.scalar_one()
+    user.is_approved = True
+    test_session.add(user)
+    await test_session.commit()
 
     # Login
     form_data = {"username": "login@example.com", "password": "SecurePassword123!"}

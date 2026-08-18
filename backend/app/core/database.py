@@ -41,6 +41,12 @@ async def init_db():
                 "ADD COLUMN IF NOT EXISTS trial_queries_used INTEGER NOT NULL DEFAULT 0"
             )
         )
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                'ALTER TABLE "user" '
+                "ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT TRUE"
+            )
+        )
 
 
 def get_session_factory():

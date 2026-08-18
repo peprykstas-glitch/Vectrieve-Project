@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, MoreVertical, Trash2, Eye, RefreshCw, Check } from "lucide-react";
+import { FileText, MoreVertical, Trash2, Eye, RefreshCw, Check, Music, Video, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document } from "@/hooks/useFiles";
 
@@ -87,8 +87,24 @@ export function FileTable({
                 </td>
                 <td className="px-6 py-4 w-full max-w-[300px]">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400 border border-blue-500/20 group-hover:border-blue-500/40 transition-colors flex-shrink-0">
-                      <FileText className="w-4 h-4" />
+                    <div className={`p-2 rounded-lg border flex-shrink-0 transition-colors ${
+                      ['MP3', 'WAV', 'M4A', 'OGG', 'AAC', 'FLAC'].includes(ext)
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 group-hover:border-amber-500/40'
+                        : ['MP4', 'MOV', 'MKV', 'WEBM', 'AVI'].includes(ext)
+                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 group-hover:border-purple-500/40'
+                        : ['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext)
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:border-emerald-500/40'
+                        : 'bg-blue-500/10 text-blue-400 border-blue-500/20 group-hover:border-blue-500/40'
+                    }`}>
+                      {['MP3', 'WAV', 'M4A', 'OGG', 'AAC', 'FLAC'].includes(ext) ? (
+                        <Music className="w-4 h-4" />
+                      ) : ['MP4', 'MOV', 'MKV', 'WEBM', 'AVI'].includes(ext) ? (
+                        <Video className="w-4 h-4" />
+                      ) : ['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext) ? (
+                        <ImageIcon className="w-4 h-4" />
+                      ) : (
+                        <FileText className="w-4 h-4" />
+                      )}
                     </div>
                     <span className="font-medium text-zinc-200 truncate">{file.filename}</span>
                   </div>
@@ -97,7 +113,7 @@ export function FileTable({
                   <span className="bg-zinc-800 text-[11px] px-2 py-0.5 rounded-md border border-zinc-700">{ext}</span>
                 </td>
                 <td className="px-6 py-4 text-zinc-400 font-mono text-xs w-24">
-                  {file.file_size ? `${(file.file_size / 1024).toFixed(1)} KB` : '-'}
+                  {file.file_size ? `${(file.file_size / (1024 * 1024) >= 1) ? (file.file_size / (1024 * 1024)).toFixed(1) + ' MB' : (file.file_size / 1024).toFixed(1) + ' KB'}` : '-'}
                 </td>
                 <td className="px-6 py-4 w-32">
                   {file.status === 'COMPLETED' ? (

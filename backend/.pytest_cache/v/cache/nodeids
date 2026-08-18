@@ -1,6 +1,9 @@
 [
   "tests/test_api.py::test_health_check",
   "tests/test_api.py::test_upload_endpoint_exists",
+  "tests/test_audio_and_approval.py::test_admin_user_approval_flow",
+  "tests/test_audio_and_approval.py::test_audio_video_extension_detection",
+  "tests/test_audio_and_approval.py::test_video_detection",
   "tests/test_features.py::test_analytics_stats",
   "tests/test_features.py::test_chat_query_creates_session",
   "tests/test_features.py::test_chat_query_with_attached_filenames",

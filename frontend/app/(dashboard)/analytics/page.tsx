@@ -7,12 +7,22 @@ import {
 import {
   Activity, Database, Users, Zap, Loader2, Clock, ThumbsUp, ThumbsDown,
   ShieldAlert, BarChart2, Server, Download, RefreshCw, CheckCircle2,
+  UserCheck, UserX, Trash2, ShieldCheck, AlertCircle
 } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { apiClient } from "@/lib/api/client";
 
 /* ─── types ────────────────────────────────────────────────────────────────── */
 type Period = "7d" | "30d" | "90d" | "all";
+
+interface AdminUser {
+  id: number;
+  username: string;
+  is_admin: boolean;
+  is_active: boolean;
+  is_approved: boolean;
+  documents_count: number;
+}
 
 interface AnalyticsData {
   period: string;
@@ -108,11 +118,24 @@ const chartConfig = {
 /* ─── component ─────────────────────────────────────────────────────────────── */
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>("30d");
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await apiClient<{ users: AdminUser[] }>("/analytics/users");
+      if (res?.users) {
+        setUsers(res.users);
+      }
+    } catch (e) {
+      console.error("Failed to load users for admin:", e);
+    }
+  }, []);
 
   const fetchData = useCallback(async (p: Period) => {
     setIsLoading(true);
@@ -123,7 +146,10 @@ export default function AnalyticsPage() {
         if (!user?.is_admin) { setIsAdmin(false); setIsLoading(false); return; }
         setIsAdmin(true);
       }
-      const result = await apiClient<AnalyticsData>(`/analytics/stats?period=${p}`);
+      const [result] = await Promise.all([
+        apiClient<AnalyticsData>(`/analytics/stats?period=${p}`),
+        fetchUsers()
+      ]);
       setData(result);
       setLastRefresh(new Date());
     } catch (e: any) {
@@ -132,7 +158,44 @@ export default function AnalyticsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, fetchUsers]);
+
+  const handleApprove = async (userId: number) => {
+    setActionLoading(userId);
+    try {
+      await apiClient(`/analytics/users/${userId}/approve`, { method: "POST" });
+      await fetchUsers();
+    } catch (e: any) {
+      alert(e.message || "Failed to approve user");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleActive = async (userId: number) => {
+    setActionLoading(userId);
+    try {
+      await apiClient(`/analytics/users/${userId}/toggle-active`, { method: "POST" });
+      await fetchUsers();
+    } catch (e: any) {
+      alert(e.message || "Failed to toggle user status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number, email: string) => {
+    if (!confirm(`Are you sure you want to delete user ${email}?`)) return;
+    setActionLoading(userId);
+    try {
+      await apiClient(`/analytics/users/${userId}`, { method: "DELETE" });
+      await fetchUsers();
+    } catch (e: any) {
+      alert(e.message || "Failed to delete user");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   useEffect(() => { fetchData(period); }, [period]);
 
@@ -446,6 +509,126 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* ─── USER ONBOARDING & ACCESS CONTROL ───────────────────────────── */}
+            <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-6 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+                <div>
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                    User Access Control & Onboarding Approvals
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Review and approve registered corporate accounts before they gain workspace access.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 font-medium">
+                    Total Registered: {users.length}
+                  </span>
+                  {users.filter(u => !u.is_approved).length > 0 && (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-medium animate-pulse">
+                      {users.filter(u => !u.is_approved).length} Pending Approval
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {users.length === 0 ? (
+                <p className="text-xs text-zinc-500 py-4 text-center">No registered users found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-white/5 text-zinc-500 font-medium uppercase tracking-wider text-[10px]">
+                        <th className="pb-3 pl-2">User Email</th>
+                        <th className="pb-3">Role</th>
+                        <th className="pb-3">Approval Status</th>
+                        <th className="pb-3">Account State</th>
+                        <th className="pb-3 text-center">Indexed Docs</th>
+                        <th className="pb-3 text-right pr-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {users.map((u) => (
+                        <tr key={u.id} className="hover:bg-zinc-800/20 transition-colors">
+                          <td className="py-3.5 pl-2 font-mono text-zinc-200">
+                            {u.username}
+                          </td>
+                          <td className="py-3.5">
+                            {u.is_admin ? (
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-semibold text-[10px]">
+                                Admin
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px]">
+                                User
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5">
+                            {u.is_approved ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Approved
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
+                                <AlertCircle className="w-3 h-3" />
+                                Pending Approval
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5">
+                            {u.is_active ? (
+                              <span className="text-zinc-300">Active</span>
+                            ) : (
+                              <span className="text-red-400 font-medium">Suspended</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-center text-zinc-400 font-mono">
+                            {u.documents_count}
+                          </td>
+                          <td className="py-3.5 text-right pr-2 space-x-2">
+                            {!u.is_approved && (
+                              <button
+                                onClick={() => handleApprove(u.id)}
+                                disabled={actionLoading === u.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black font-semibold text-[11px] border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <UserCheck className="w-3 h-3" />
+                                Approve
+                              </button>
+                            )}
+                            {!u.is_admin && (
+                              <>
+                                <button
+                                  onClick={() => handleToggleActive(u.id)}
+                                  disabled={actionLoading === u.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+                                  title={u.is_active ? "Suspend account" : "Re-activate account"}
+                                >
+                                  {u.is_active ? <UserX className="w-3 h-3 text-amber-400" /> : <UserCheck className="w-3 h-3 text-emerald-400" />}
+                                  {u.is_active ? "Suspend" : "Activate"}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(u.id, u.username)}
+                                  disabled={actionLoading === u.id}
+                                  className="inline-flex items-center p-1 rounded-lg hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-50"
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </>
         ) : null}

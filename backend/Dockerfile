@@ -10,10 +10,11 @@ ENV HF_HOME=/app/data/hf_cache
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including ffmpeg for video/audio transcription)
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python requirements

@@ -16,7 +16,7 @@
 | **Phase 4a** | **Workspace Sharing: Backend RBAC** | Multi-tenant `SpaceMember` model with strict role boundaries (`Owner`, `Editor`, `Viewer`), cascaded permissions, and Alembic DB migrations. | Database / RBAC Engine | `✅ Completed` |
 | **Phase 4b** | **Workspace Sharing: Frontend UI** | Interactive workspace member management modal (`SpaceMembersModal`), email-based invites, dynamic role selector, and instant member removal. | React / Next.js / Tailwind | `✅ Completed` |
 | **Phase 5** | **Cloud Model Upgrade (120B)** | Seamless migration to `openai/gpt-oss-120b` on Groq Cloud, eliminating deprecated endpoints and maximizing reasoning accuracy. | Core LLM Service | `✅ Completed` |
-| **Phase 6** | **Audio Ingestion & Transcription** | Automatic transcription of uploaded audio files (`.mp3`, `.wav`, `.m4a`) into vector knowledge spaces via Whisper models. | Ingestion / Media Services | `📋 Backlog` |
+| **Phase 6** | **Audio & Video Speech Ingestion** | Full multimodal audio & video upload (`.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.mkv`), native ffmpeg audio track extraction, Groq Whisper transcription, and timestamped vector indexing. | Ingestion / Media Services | `✅ Completed` |
 
 ---
 

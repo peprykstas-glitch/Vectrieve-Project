@@ -65,10 +65,12 @@ async def register_user(
     admin_list = {u.strip().lower() for u in settings.ADMIN_EMAILS.split(",") if u.strip()}
     is_admin = user_in.email.strip().lower() in admin_list
 
+    # Admins are auto-approved; regular signups require admin approval
     new_user = User(
         username=user_in.email,
         hashed_password=hashed,
         is_admin=is_admin,
+        is_approved=is_admin,
     )
     
     # 3. Запис у БД (Асинхронно)
@@ -76,7 +78,18 @@ async def register_user(
     await session.commit()
     await session.refresh(new_user)
 
-    return {"message": "Workspace successfully provisioned"}
+    # Send admin notification asynchronously
+    try:
+        from services.email_service import send_admin_new_user_alert
+        import asyncio
+        asyncio.create_task(send_admin_new_user_alert(user_in.email))
+    except Exception as ex:
+        print(f"⚠️ Failed to queue admin alert: {ex}")
+
+    return {
+        "message": "Account created. Awaiting administrator approval before access is granted." if not is_admin else "Workspace successfully provisioned",
+        "is_approved": new_user.is_approved
+    }
 
 
 # --- ЕНДПОІНТ ЛОГІНУ ---
@@ -101,6 +114,16 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect password. Please try again.",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been deactivated. Please contact your workspace administrator.",
+        )
+    if not user.is_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is pending administrator approval. You will receive access once approved.",
         )
         
     # Видаємо JWT токен

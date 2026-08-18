@@ -40,7 +40,9 @@ class Settings(BaseSettings):
     # --- Logging ---
     LOG_FILE: str = "analytics_log.csv"
 
-    # --- Email & SMTP ---
+    # --- Email & Transactional API ---
+    RESEND_API_KEY: str = ""
+    RESEND_FROM: str = "Vectrieve <onboarding@resend.dev>"
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
