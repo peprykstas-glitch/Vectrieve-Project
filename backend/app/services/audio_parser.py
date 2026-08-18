@@ -158,7 +158,7 @@ async def extract_meeting_action_items_async(
     custom_api_key: Optional[str] = None
 ) -> str:
     """
-    Analyzes meeting transcript using Groq LLaMA 3.3 70B to extract:
+    Analyzes meeting transcript using Groq GPT-OSS 120B to extract:
     1. Executive Summary & Objective
     2. Key Decisions Agreed Upon
     3. Action Items & Assignees
