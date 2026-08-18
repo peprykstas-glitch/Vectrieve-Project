@@ -3,6 +3,18 @@ import { cookies } from 'next/headers';
 
 const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+function getOrigin(request: Request): string {
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  if (host.includes('vectrieve.duckdns.org')) {
+    return 'https://vectrieve.duckdns.org';
+  }
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    return 'http://localhost:3000';
+  }
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  return `${proto}://${host}`;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
@@ -14,7 +26,8 @@ export async function GET(request: Request) {
 
   try {
     // Construct the exact redirect_uri that was sent to Google
-    const redirect_uri = `${url.origin}/api/auth/callback/google`;
+    const origin = getOrigin(request);
+    const redirect_uri = `${origin}/api/auth/callback/google`;
 
     const response = await fetch(`${BACKEND_URL}/auth/google`, {
       method: 'POST',
