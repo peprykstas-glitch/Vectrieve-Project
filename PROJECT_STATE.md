@@ -96,39 +96,40 @@ All metrics in this section were directly measured on the production deployment 
   * `127.0.0.1:6333` (Qdrant vector engine).
   * `127.0.0.1:8000` (FastAPI backend service).
 
-### 3.7 Actual Tested Concurrency Scale
-* **Concurrent Users Tested:** 1 to 3 simultaneous users performing document uploads, RAG queries, and SSE streaming sessions.
-* **Tested Query Workload:** Sequential and low-concurrency interactive querying. (No synthetic high-load stress testing e.g., 100+ requests/second, has been performed).
+### 3.8 Production Deployment & VPS Infrastructure
+* **Host Server:** Ubuntu 24.04 LTS on DigitalOcean VPS `159.89.110.69`
+* **Docker Compose Stack:** 4 healthy production containers (`vectrieve-frontend`, `vectrieve-backend`, `vectrieve-postgres`, `vectrieve-qdrant`).
+* **Internationalization:** 100% full-surface i18n support across English (`en` default), Ukrainian (`uk`), Polish (`pl`), and Spanish (`es`).
+* **Active Admin User:** `pepryk.stas@gmail.com` (`user_id = 1`, `is_admin = true`, `is_approved = true`).
 
 ---
 
-## 4. Design Targets & Unverified Estimates
+## 4. Operational Context & Student Pack Application
 
-The following figures are theoretical architecture targets or cloud provider specifications that have **not** been measured via independent load-testing scripts on this deployment:
-
-* **Inference Speed:** ~180–220 tokens/sec (Based on Groq Cloud LPU published specifications for `openai/gpt-oss-120b` and `llama-3.3-70b-versatile`; exact client-side network jitter has not been benchmarked via automated harness).
-* **Time to First Token (TTFT):** < 400 ms (Target design latency over Groq Cloud API; varies depending on client WAN location).
-* **Theoretical System Concurrency Capacity:** 25–50 concurrent streaming users before connection pool exhaustion (Calculated based on SQLAlchemy pool size of 20 connections + 10 overflow, unverified by synthetic load testing).
-
----
-
-## 5. Known Issues & Technical Backlog
-
-1. **Lack of Automated Rate Limiting by IP on HTTP Port 80:** While user-level quotas exist (`trial_queries_used < 20`), unauthenticated registration and endpoint flooding are not currently throttled by a reverse proxy (e.g. Nginx or Cloudflare WAF).
-2. **Memory Growth During Bulk Document Uploads:** Uploading more than 50 large PDF documents simultaneously in a single space can cause temporary CPU spikes on 4 vCPUs during ONNX embedding inference; mitigated by `batch_size=16` but requires a persistent background queue (e.g. Celery / Redis) for enterprise-scale ingestion.
-3. **Hardcoded Persona Modes vs Custom Presets:** Predefined modes (*Mentor*, *Auditor*, *Architect*) have hardcoded prompt definitions; team-customizable behavioral presets (Google Gems style) are queued in the roadmap.
+* **GitHub Student Developer Pack ($200 DigitalOcean Credits):**
+  - Application submitted on 18 August 2026.
+  - Geolocation verification in Spain explained via active **Erasmus+ mobility internship** (`Wzór umowy między beneficjarem i uczestnikiem mobilności programu Erasmus+` attached).
+  - Awaiting approval to apply $200 DO credit balance to production droplet.
 
 ---
 
-## 6. Not Yet Implemented / Known Gaps
+## 5. Architectural Non-Negotiables & Rules Reference
 
-The following capabilities are explicitly outside the current implementation:
+All ongoing work strictly adheres to [GEMINI.md](file:///c:/Projects/Project%20X/Vectrieve/GEMINI.md) and [ROADMAP.md](file:///c:/Projects/Project%20X/Vectrieve/ROADMAP.md):
+- English (`en`) universal default language.
+- Zero emoji clutter in interface components.
+- Scoped persona controls exclusively on `/` chat workspace.
+- Mandatory Change Safety & Backup Protocol before modifying auth, schemas, or data.
 
-1. **Audio File Vector Ingestion (Whisper Pipeline):** Direct upload of `.mp3`, `.wav`, or `.m4a` files for automatic transcription and indexing into vector chunks is not implemented.
-2. **Cross-Workspace Global Search:** Queries cannot span across multiple isolated spaces simultaneously; search is strictly isolated to the active `space_id`.
-3. **Graph-Based Entity Exploration:** No visual 2D/3D knowledge graph representing relationships between extracted document entities.
-4. **HTTPS / SSL Certificate Provisioning:** The live server currently operates over HTTP on port 80; Let's Encrypt SSL / automated certbot renewal is not yet provisioned.
-5. **SSO / SAML Enterprise Identity Providers:** Authentication is limited to local email/password (Argon2 hash) with JWT session cookies; Google/Microsoft OAuth2 and SAML 2.0 are not implemented.
+---
+
+## 6. Known Technical Backlog & Priorities
+
+1. **Seamless Identity (Google / Microsoft OAuth2):** One-click login with smart email account unification.
+2. **Audio & Meeting Intelligence:** Groq Whisper audio/video transcriptions into timestamped vector chunks.
+3. **Cloud Connectors (Google Drive & Notion):** Read-only automated folder sync for team knowledge bases.
+4. **Anti-Hallucination Mode (Junior / Intern Safe):** Dual-tier output with strict citations and factual confidence indicators.
+5. **Billing Foundation:** Modular Stripe subscription architecture ready in code.
 
 ---
 
