@@ -17,7 +17,7 @@ const LANGUAGE_STORAGE_KEY = "vectrieve_preferred_language";
 const FONT_SIZE_STORAGE_KEY = "vectrieve_font_size";
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<SupportedLanguage>("uk");
+  const [language, setLanguageState] = useState<SupportedLanguage>("en");
   const [fontSize, setFontSizeState] = useState<FontSizeOption>("default");
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     applyFontSizeClass(newSize);
   };
 
-  const t = translations[language] || translations.uk;
+  const t = translations[language] || translations.en;
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, fontSize, setFontSize, t }}>

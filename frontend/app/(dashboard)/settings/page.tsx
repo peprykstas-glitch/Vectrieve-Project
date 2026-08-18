@@ -78,8 +78,8 @@ export default function SettingsPage() {
   const hasOwnKey = groqApiKey.length > 0;
 
   const languagesList: { code: SupportedLanguage; label: string; flag: string }[] = [
-    { code: "uk", label: "Українська", flag: "UA" },
     { code: "en", label: "English", flag: "EN" },
+    { code: "uk", label: "Українська", flag: "UA" },
     { code: "pl", label: "Polski", flag: "PL" },
     { code: "es", label: "Español", flag: "ES" },
   ];
