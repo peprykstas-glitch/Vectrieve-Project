@@ -12,9 +12,22 @@ async function handleProxy(request: Request, pathArray: string[]) {
   const cookieStore = await cookies();
   const token = cookieStore.get('vectrieve_session')?.value;
 
-  const headers = new Headers(request.headers);
-  headers.delete('host'); 
-  
+  const headers = new Headers();
+  for (const [key, value] of request.headers.entries()) {
+    const k = key.toLowerCase();
+    if (
+      k !== 'connection' &&
+      k !== 'upgrade' &&
+      k !== 'keep-alive' &&
+      k !== 'host' &&
+      k !== 'content-length' &&
+      k !== 'transfer-encoding' &&
+      k !== 'te'
+    ) {
+      headers.set(key, value);
+    }
+  }
+
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
