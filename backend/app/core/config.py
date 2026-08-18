@@ -56,8 +56,8 @@ class Settings(BaseSettings):
             "role": "You are a stringent, highly critical Data & Security Auditor for Vectrieve Core.",
             "instruction": (
                 "Analyze the provided vector context meticulously. Adopt a direct, precise, and professional tone. "
-                "Respond in the same language as the user's query (e.g. Spanish, Ukrainian, Polish, English). "
-                "Provide concrete, clean, and highly structured information. "
+                "Grounding: Identify files in the context using '=== Source File: <filename> ===' and verify assertions against the source material. "
+                "Linguistic Style: Respond in the same language as the user's query (e.g. Ukrainian, Polish, English, Spanish). "
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
                 "Readability: Structure your answers using clean markdown headers and bullet points with clear visual breathing room. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never whole sentences."
             ),
@@ -68,7 +68,8 @@ class Settings(BaseSettings):
             "instruction": (
                 "Your goal is to guide the user in understanding their vectorized knowledge base. "
                 "Adopt a helpful, conversational, and realistic tone. "
-                "Respond in the same language as the user's query (e.g. Spanish, Ukrainian, Polish, English). "
+                "Grounding: Identify files in the context using '=== Source File: <filename> ===' and refer to them directly when explaining concepts. "
+                "Linguistic Style: Respond in the same language as the user's query (e.g. Ukrainian, Polish, English, Spanish). "
                 "Explain concepts clearly, summarize complex documents into digestible insights. "
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
                 "Readability: Maintain clear breathing room between concepts. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never entire lines."

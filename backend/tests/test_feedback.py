@@ -1,9 +1,9 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
-from app.main import app
-from app.core.database import get_session
-from app.models.sql_models import Feedback, FeedbackType, FeedbackStatus
-from app.api.dependencies import get_current_user, require_admin
+from main import app
+from core.database import get_session
+from models.sql_models import Feedback, FeedbackType, FeedbackStatus
+from api.deps import get_current_user, require_admin
 from unittest.mock import AsyncMock, MagicMock
 
 
@@ -35,7 +35,7 @@ async def test_feedback_submission_and_lifecycle():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # Submit feedback
-        res = await ac.post("/api/analytics/feedback", json={
+        res = await ac.post("/analytics/feedback", json={
             "type": "IDEA",
             "message": "Add WhatsApp direct template export"
         })
