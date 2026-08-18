@@ -157,12 +157,7 @@ async def forgot_password(
         except Exception as e:
             print(f"⚠️ Email send exception: {e}")
 
-        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token.token}"
-        return {
-            "message": "If this email is registered, a password reset link has been sent.",
-            "reset_url": reset_url,
-            "token": reset_token.token,
-        }
+        return {"message": "If this email is registered, a password reset link has been sent."}
 
     # If user not found, still return standard message
     return {"message": "If this email is registered, a password reset link has been sent."}

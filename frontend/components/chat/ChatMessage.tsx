@@ -23,10 +23,27 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
     );
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(textContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textContent);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = textContent;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   const isStudentReply = lang === "student-reply" || lang === "whatsapp" || lang === "reply";

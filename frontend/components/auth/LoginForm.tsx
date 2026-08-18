@@ -164,9 +164,9 @@ export function LoginForm() {
             </form>
           </Form>
           <div className="mt-6 text-center">
-            <span className="text-sm text-zinc-500">Require an enterprise workspace? </span>
-            <a href="/register" className="text-sm text-white hover:underline underline-offset-4 transition-all">
-              Request provisioning
+            <span className="text-sm text-zinc-500">Don&apos;t have an account? </span>
+            <a href="/register" className="text-sm text-white font-medium hover:underline underline-offset-4 transition-all">
+              Sign up
             </a>
           </div>
         </CardContent>

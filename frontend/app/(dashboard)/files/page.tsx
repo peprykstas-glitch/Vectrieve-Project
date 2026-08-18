@@ -120,10 +120,27 @@ export default function KnowledgeBasePage() {
     setSelectedFileIds(new Set());
   };
 
-  const handleCopyChunk = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedChunkIdx(index);
-    setTimeout(() => setCopiedChunkIdx(null), 2000);
+  const handleCopyChunk = async (text: string, index: number) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+      setCopiedChunkIdx(index);
+      setTimeout(() => setCopiedChunkIdx(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy chunk:", err);
+    }
   };
 
   const filteredChunks = docChunks.filter(c =>
