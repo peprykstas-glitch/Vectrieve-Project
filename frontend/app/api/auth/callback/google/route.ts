@@ -16,17 +16,17 @@ function getOrigin(request: Request): string {
 }
 
 export async function GET(request: Request) {
+  const origin = getOrigin(request);
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
 
   if (error || !code) {
-    return NextResponse.redirect(new URL('/login?error=oauth_cancelled', request.url));
+    return NextResponse.redirect(new URL('/login?error=oauth_cancelled', origin));
   }
 
   try {
     // Construct the exact redirect_uri that was sent to Google
-    const origin = getOrigin(request);
     const redirect_uri = `${origin}/api/auth/callback/google`;
 
     const response = await fetch(`${BACKEND_URL}/auth/google`, {
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     if (!response.ok) {
       console.error('Google Auth backend error:', data);
       const errMsg = encodeURIComponent(data.detail || 'Google sign-in failed');
-      return NextResponse.redirect(new URL(`/login?error=${errMsg}`, request.url));
+      return NextResponse.redirect(new URL(`/login?error=${errMsg}`, origin));
     }
 
     // Set secure HttpOnly session cookie
@@ -55,15 +55,15 @@ export async function GET(request: Request) {
     cookieStore.set({
       name: 'vectrieve_session',
       value: data.access_token,
-      secure: process.env.COOKIE_SECURE === 'true' || url.protocol === 'https:',
+      secure: process.env.COOKIE_SECURE === 'true' || origin.startsWith('https:'),
       path: '/',
       maxAge: 60 * 60 * 24 * 60, // 60 days persistent session
     });
 
     // Successful login -> Redirect directly to the dashboard
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/', origin));
   } catch (err) {
     console.error('Google OAuth route error:', err);
-    return NextResponse.redirect(new URL('/login?error=server_error', request.url));
+    return NextResponse.redirect(new URL('/login?error=server_error', origin));
   }
 }
