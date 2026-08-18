@@ -56,7 +56,8 @@ services:
     depends_on:
       - backend
     environment:
-      - NEXT_PUBLIC_API_URL=http://159.89.110.69:8000
+      - NEXT_PUBLIC_API_URL=https://vectrieve.duckdns.org
       - INTERNAL_BACKEND_URL=http://backend:8000
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=1077219353292-43iph4lcgf8fouradbi9esuo4tov1s2m.apps.googleusercontent.com
     ports:
       - "127.0.0.1:3000:3000"
