@@ -98,7 +98,7 @@ All metrics in this section were directly measured on the production deployment 
 
 ### 3.8 Production Deployment & VPS Infrastructure
 * **Host Server:** Ubuntu 24.04 LTS on DigitalOcean VPS `159.89.110.69`
-* **Public Domain:** [http://vectrieve.duckdns.org](http://vectrieve.duckdns.org) (Live & operational)
+* **Public Domain:** [https://vectrieve.duckdns.org](https://vectrieve.duckdns.org) (Live, HTTPS SSL encrypted via Let's Encrypt)
 * **Docker Compose Stack:** 4 healthy production containers (`vectrieve-frontend`, `vectrieve-backend`, `vectrieve-postgres`, `vectrieve-qdrant`).
 * **Internationalization:** 100% full-surface i18n support across English (`en` default), Ukrainian (`uk`), Polish (`pl`), and Spanish (`es`).
 * **Active Admin User:** `pepryk.stas@gmail.com` (`user_id = 1`, `is_admin = true`, `is_approved = true`).
