@@ -20,16 +20,13 @@ async def test_google_auth_smart_account_unification(client, test_session):
     mock_http_client.__aexit__.return_value = None
 
     with patch("api.endpoints.auth.httpx.AsyncClient", return_value=mock_http_client):
-        # 1. First-time Google user creation
+        # 1. First-time Google user creation (non-admin -> pending approval)
         res = await client.post("/auth/google", json={
             "code": "4/0AeanS0...",
             "redirect_uri": "http://localhost:3000/api/auth/callback/google"
         })
-        assert res.status_code == 200
-        data = res.json()
-        assert "access_token" in data
-        assert data["token_type"] == "bearer"
-        assert data["user"]["email"] == "test_google_user@example.com"
+        assert res.status_code == 403
+        assert "pending administrator approval" in res.json()["detail"]
 
         # 2. Existing user account linking (User created via password, then signs in with Google)
         existing_pwd_user = User(

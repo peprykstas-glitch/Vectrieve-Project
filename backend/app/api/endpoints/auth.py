@@ -226,13 +226,22 @@ async def google_auth(
             username=email,
             hashed_password=dummy_hash,
             is_admin=is_admin,
-            is_approved=True,  # Google verified email is pre-approved
+            is_approved=is_admin,  # Admins are auto-approved; regular users require admin approval
             is_active=True,
             google_id=google_id,
         )
         session.add(user)
         await session.commit()
         await session.refresh(user)
+
+        # Send admin notification asynchronously for new accounts
+        if not is_admin:
+            try:
+                from services.email_service import send_admin_new_user_alert
+                import asyncio
+                asyncio.create_task(send_admin_new_user_alert(email))
+            except Exception as ex:
+                print(f"⚠️ Failed to queue admin alert: {ex}")
 
     # 4. Check account status
     if not user.is_active:
@@ -243,7 +252,7 @@ async def google_auth(
     if not user.is_approved:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account is pending administrator approval.",
+            detail="Your account is pending administrator approval. You will receive access once approved.",
         )
 
     # 5. Issue JWT access token

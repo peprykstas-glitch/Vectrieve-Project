@@ -133,7 +133,11 @@ export function LoginForm() {
               )}
               {oauthError && !globalError && (
                 <div className="p-3 text-sm text-amber-400 bg-amber-950/30 border border-amber-900/50 rounded-lg">
-                  Google sign-in was cancelled or encountered an error. Please try again.
+                  {oauthError === 'oauth_cancelled'
+                    ? 'Google sign-in was cancelled.'
+                    : oauthError === 'server_error'
+                    ? 'Unable to complete sign-in. Please try again.'
+                    : decodeURIComponent(oauthError)}
                 </div>
               )}
               {globalError && (

@@ -50,18 +50,35 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL(`/login?error=${errMsg}`, origin));
     }
 
-    // Set secure HttpOnly session cookie
-    const cookieStore = await cookies();
-    cookieStore.set({
+    // Set secure HttpOnly session cookie on the redirect response
+    const redirectResponse = NextResponse.redirect(new URL('/', origin));
+    redirectResponse.cookies.set({
       name: 'vectrieve_session',
       value: data.access_token,
-      secure: process.env.COOKIE_SECURE === 'true' || origin.startsWith('https:'),
+      httpOnly: true,
+      secure: origin.startsWith('https:'),
+      sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 60, // 60 days persistent session
     });
 
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set({
+        name: 'vectrieve_session',
+        value: data.access_token,
+        httpOnly: true,
+        secure: origin.startsWith('https:'),
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 60,
+      });
+    } catch (e) {
+      // Best effort in case cookieStore is read-only during streaming
+    }
+
     // Successful login -> Redirect directly to the dashboard
-    return NextResponse.redirect(new URL('/', origin));
+    return redirectResponse;
   } catch (err) {
     console.error('Google OAuth route error:', err);
     return NextResponse.redirect(new URL('/login?error=server_error', origin));
