@@ -129,7 +129,7 @@ async def main():
             # Process synchronously for script reliability
             await process_pdf_background(
                 doc_id=doc.id,
-                file_path=fpath,
+                tmp_path=fpath,
                 filename=filename,
                 user_id=user.id,
                 space_id=space.id
