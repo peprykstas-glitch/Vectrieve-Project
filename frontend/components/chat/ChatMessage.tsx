@@ -17,8 +17,7 @@ import {
   Loader2, 
   Mic, 
   Headphones,
-  Sparkles,
-  RotateCcw
+  Sparkles
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -137,21 +136,11 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
   );
 }
 
-function AudioSourcePlayer({ text, filename, seekSeconds }: { text: string; filename: string; seekSeconds?: number }) {
+function AudioSourcePlayer({ text, filename }: { text: string; filename: string }) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
-  const [currentTime, setCurrentTime] = React.useState(0);
-  const [duration, setDuration] = React.useState(0);
-  const [isOriginal, setIsOriginal] = React.useState(true);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
-
-  const formatTime = (secs: number) => {
-    if (isNaN(secs) || secs < 0) return "0:00";
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
-  };
 
   const togglePlay = () => {
     if (isPlaying && audioRef.current) {
@@ -162,18 +151,13 @@ function AudioSourcePlayer({ text, filename, seekSeconds }: { text: string; file
 
     if (!audioRef.current) {
       setIsLoading(true);
-      // 1. Try streaming the real original uploaded audio recording
-      const originalAudioUrl = `/api/proxy/documents/media/${encodeURIComponent(filename)}`;
-      const audio = new Audio(originalAudioUrl);
-      audioRef.current = audio;
+      const hasCyrillic = /[а-яА-ЯіїєґІЇЄҐ]/.test(text);
+      const lang = hasCyrillic ? "uk" : "en";
+      const cleanText = text.slice(0, 500);
+      const audioUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(cleanText)}&host=Max&language=${lang}`;
 
-      audio.onloadedmetadata = () => {
-        setIsLoading(false);
-        setDuration(audio.duration || 0);
-        if (seekSeconds && seekSeconds > 0 && seekSeconds < audio.duration) {
-          audio.currentTime = seekSeconds;
-        }
-      };
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
 
       audio.onplay = () => {
         setIsLoading(false);
@@ -181,7 +165,6 @@ function AudioSourcePlayer({ text, filename, seekSeconds }: { text: string; file
       };
 
       audio.ontimeupdate = () => {
-        setCurrentTime(audio.currentTime);
         if (audio.duration) {
           setProgress((audio.currentTime / audio.duration) * 100);
         }
@@ -193,60 +176,19 @@ function AudioSourcePlayer({ text, filename, seekSeconds }: { text: string; file
       };
 
       audio.onerror = () => {
-        // 2. If original file is not available, fallback to neural TTS
-        console.warn("Original audio stream not found on disk, falling back to speech synthesis.");
-        setIsOriginal(false);
-        const hasCyrillic = /[а-яА-ЯіїєґІЇЄҐ]/.test(text);
-        const lang = hasCyrillic ? "uk" : "en";
-        const cleanText = text.replace(/#.*?\n/g, "").slice(0, 500);
-        const ttsUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(cleanText)}&host=Max&language=${lang}`;
-
-        const fallbackAudio = new Audio(ttsUrl);
-        audioRef.current = fallbackAudio;
-        fallbackAudio.onplay = () => {
-          setIsLoading(false);
-          setIsPlaying(true);
-        };
-        fallbackAudio.ontimeupdate = () => {
-          setCurrentTime(fallbackAudio.currentTime);
-          if (fallbackAudio.duration) {
-            setProgress((fallbackAudio.currentTime / fallbackAudio.duration) * 100);
-          }
-        };
-        fallbackAudio.onended = () => {
-          setIsPlaying(false);
-          setProgress(0);
-        };
-        fallbackAudio.onerror = () => {
-          setIsLoading(false);
-          setIsPlaying(false);
-        };
-        fallbackAudio.play().catch(() => {
-          setIsLoading(false);
-          setIsPlaying(false);
-        });
+        setIsLoading(false);
+        setIsPlaying(false);
       };
 
       audio.play().catch((err) => {
-        console.warn("Initial playback attempt:", err);
+        console.error("Audio playback failed:", err);
+        setIsLoading(false);
+        setIsPlaying(false);
       });
     } else {
-      if (seekSeconds !== undefined && audioRef.current.duration) {
-        audioRef.current.currentTime = seekSeconds;
-      }
-      audioRef.current.play().catch(console.error);
+      audioRef.current.play();
       setIsPlaying(true);
     }
-  };
-
-  const handleScrub = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!audioRef.current || !audioRef.current.duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-    audioRef.current.currentTime = ratio * audioRef.current.duration;
-    setProgress(ratio * 100);
-    setCurrentTime(audioRef.current.currentTime);
   };
 
   React.useEffect(() => {
@@ -259,50 +201,36 @@ function AudioSourcePlayer({ text, filename, seekSeconds }: { text: string; file
   }, []);
 
   return (
-    <div className="p-3 rounded-xl bg-zinc-950/90 border border-emerald-500/30 my-2 shadow-lg shadow-emerald-950/30 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={togglePlay}
-            disabled={isLoading}
-            className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 transition-all shadow-md shadow-emerald-950/60 cursor-pointer disabled:opacity-50 active:scale-95"
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="w-4 h-4" />
-            ) : (
-              <Play className="w-4 h-4 fill-current ml-0.5" />
-            )}
-          </button>
-          <div>
-            <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-              <Headphones className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{isOriginal ? "Original Recording Audio" : "Speech Synthesis"}</span>
-            </div>
-            <div className="text-[10px] text-zinc-400 font-mono">
-              {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : "0:00"}
-              {seekSeconds !== undefined ? ` · Jump to [${formatTime(seekSeconds)}]` : ""}
-            </div>
-          </div>
-        </div>
-
-        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-          {isPlaying ? "PLAYING" : "AUDIO READY"}
-        </span>
-      </div>
-
-      {/* Waveform Scrubber */}
-      <div
-        onClick={handleScrub}
-        className="w-full h-2.5 bg-zinc-900 rounded-full overflow-hidden cursor-pointer relative group/scrub border border-white/5"
-        title="Click to seek audio"
+    <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-zinc-950/80 border border-emerald-500/30 my-2 shadow-inner">
+      <button
+        type="button"
+        onClick={togglePlay}
+        disabled={isLoading}
+        className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 transition-all shadow-md shadow-emerald-950/50 cursor-pointer disabled:opacity-50 active:scale-95"
       >
-        <div
-          className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-100 rounded-full"
-          style={{ width: `${progress}%` }}
-        />
+        {isLoading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : isPlaying ? (
+          <Pause className="w-3.5 h-3.5" />
+        ) : (
+          <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between text-[10px] mb-1">
+          <span className="font-bold text-emerald-400 flex items-center gap-1">
+            <Mic className="w-3 h-3 animate-pulse" />
+            <span>Audio Transcript Playback</span>
+          </span>
+          <span className="text-zinc-500 font-mono text-[9px]">{isPlaying ? "Streaming speech..." : "Click play to listen"}</span>
+        </div>
+        <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-150 rounded-full"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -398,8 +326,8 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
     // 3. Strip inline non-audio parenthetical doc references like (Official_Templates.md, Segment 1)
     markdownContent = markdownContent.replace(/\s*\([A-Za-z0-9_\-]+\.(?:md|pdf|json|csv|txt|docx|pptx|xlsx)[^)]*\)/gi, "");
 
-    // 4. Convert all bold timestamps **[00:27]** or standard [00:27] into interactive audio seeker links
-    markdownContent = markdownContent.replace(/(?:\*\*)?\[(\d{1,2}:\d{2}(?::\d{2})?)\](?:\*\*)?/g, "[$1](#seek-ts-$1)");
+    // 4. Convert timestamps like [01:23] or [01:23:45] into interactive audio seeker links
+    markdownContent = markdownContent.replace(/(?<=\s|^|[(])\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g, "[$1](#seek-ts-$1)");
 
     // Clean up excessive multi-newline gaps from LLM streaming
     markdownContent = markdownContent.replace(/\n{3,}/g, "\n\n");
@@ -468,21 +396,22 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                         a: ({ href, children, ...props }: any) => {
                           if (href && href.startsWith("#audio-clip-")) {
                             const filename = href.replace("#audio-clip-", "");
+                            const matchingSrc = msg.sources?.find(s => s.filename.includes(filename) || filename.includes(s.filename));
                             return (
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   setShowAllSources(true);
-                                  const originalAudioUrl = `/api/proxy/documents/media/${encodeURIComponent(filename)}`;
-                                  const audio = new Audio(originalAudioUrl);
-                                  audio.play().catch((err) => {
-                                    console.warn("Original audio play failed, dispatching seek event:", err);
-                                    window.dispatchEvent(new CustomEvent("seek-audio-timestamp", { detail: { seconds: 0, timestamp: "00:00" } }));
-                                  });
+                                  const cleanText = matchingSrc?.content || filename;
+                                  const hasCyrillic = /[а-яА-ЯіїєґІЇЄҐ]/.test(cleanText);
+                                  const lang = hasCyrillic ? "uk" : "en";
+                                  const audioUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(cleanText.slice(0, 500))}&host=Max&language=${lang}`;
+                                  const audio = new Audio(audioUrl);
+                                  audio.play().catch(console.error);
                                 }}
                                 className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mx-1 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-100 border border-emerald-500/30 transition-all cursor-pointer shadow-sm active:scale-95 not-prose align-middle"
-                                title={`Click to play original recording: ${filename}`}
+                                title={`Click to listen to audio from ${filename}`}
                               >
                                 <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
                                 <span className="font-semibold truncate max-w-[200px]">{filename}</span>
@@ -517,23 +446,7 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                                   e.preventDefault();
                                   const parts = ts.split(":").map(Number);
                                   const secs = parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0] * 3600 + parts[1] * 60 + parts[2];
-                                  
-                                  // Find audio source if present
-                                  const audioSrc = msg.sources?.find(s => /\.(mp3|wav|m4a|ogg|flac|aac|wma|mp4|mov|mkv|webm)$/i.test(s.filename));
-                                  if (audioSrc) {
-                                    setShowAllSources(true);
-                                    const audioUrl = `/api/proxy/documents/media/${encodeURIComponent(audioSrc.filename)}`;
-                                    const audio = new Audio(audioUrl);
-                                    audio.onloadedmetadata = () => {
-                                      audio.currentTime = secs;
-                                      audio.play().catch(console.error);
-                                    };
-                                    audio.play().catch(() => {
-                                      window.dispatchEvent(new CustomEvent("seek-audio-timestamp", { detail: { seconds: secs, timestamp: ts } }));
-                                    });
-                                  } else {
-                                    window.dispatchEvent(new CustomEvent("seek-audio-timestamp", { detail: { seconds: secs, timestamp: ts } }));
-                                  }
+                                  window.dispatchEvent(new CustomEvent("seek-audio-timestamp", { detail: { seconds: secs, timestamp: ts } }));
                                 }}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-full text-xs font-mono font-semibold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 hover:text-indigo-100 border border-indigo-500/30 transition-all cursor-pointer shadow-sm active:scale-95 not-prose align-middle"
                                 title={`Click to seek audio to ${ts}`}
