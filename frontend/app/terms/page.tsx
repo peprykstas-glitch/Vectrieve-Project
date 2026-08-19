@@ -1,104 +1,97 @@
 // app/terms/page.tsx
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, FileText, Lock, Globe2, Database } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Vectrieve',
-  description: 'Terms of Service for using the Vectrieve AI Knowledge Base.',
+  title: 'Terms of Service | Vectrieve Core',
+  description: 'Enterprise Terms of Service for using the Vectrieve Knowledge Intelligence Platform.',
 };
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0a] text-zinc-300 selection:bg-white/20 relative overflow-y-auto pb-20">
-      
+    <div className="min-h-screen w-full bg-[#08080a] text-zinc-300 selection:bg-white/20 relative overflow-y-auto pb-20">
       {/* Subtle background gradient */}
-      <div className="absolute top-0 inset-x-0 h-[500px] z-0 opacity-20 pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #333 0%, transparent 80%)' }} 
+      <div 
+        className="absolute top-0 inset-x-0 h-[600px] z-0 opacity-25 pointer-events-none" 
+        style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #4338ca 0%, transparent 70%)' }} 
       />
-      
-      <div className="z-10 max-w-3xl mx-auto px-6 pt-16 relative">
-        <Link href="/login" className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-sm mb-10 transition-colors">
+
+      <div className="z-10 max-w-4xl mx-auto px-6 pt-16 relative">
+        <Link href="/landing" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-10 transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Sign In
+          Back to Overview
         </Link>
 
-        <div className="flex items-center gap-2.5 mb-12">
+        <div className="flex items-center gap-3 mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-icon.png" alt="Vectrieve" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(0,212,255,0.4)]" />
-          <div className="flex items-center gap-1.5 font-bold tracking-tight">
-            <span className="text-xl font-bold tracking-tight text-white">Vectrieve</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
+          <img src="/logo-icon.png" alt="Vectrieve" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.4)]" />
+          <div className="flex items-center gap-2 font-bold tracking-tight">
+            <span className="text-2xl font-bold tracking-tight text-white">Vectrieve</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">CORE</span>
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Terms of Service</h1>
-        <p className="text-zinc-500 text-sm mb-8">Last updated: June 20, 2026</p>
+        <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">Enterprise Terms of Service</h1>
+        <p className="text-zinc-500 text-sm mb-10">Effective Date: August 20, 2026 · Version 2.4 (Enterprise Hybrid RAG)</p>
 
-        <div className="space-y-8 text-zinc-300 text-sm leading-relaxed">
+        <div className="space-y-10 text-zinc-300 text-sm leading-relaxed border-t border-white/10 pt-8">
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">1. Agreement to Terms</h2>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Globe2 className="w-4 h-4 text-indigo-400" />
+              1. Agreement to Terms
+            </h2>
             <p>
-              By provisioning, accessing, or using the Vectrieve AI Knowledge Base ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Service.
+              By accessing, deploying, or utilizing Vectrieve Core ("Service"), you agree to be legally bound by these Enterprise Terms of Service ("Terms"). These Terms govern all interactions with our hybrid retrieval-augmented generation engine, Knowledge Spaces, and API endpoints.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">2. Scope of Service & Workspaces</h2>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Database className="w-4 h-4 text-cyan-400" />
+              2. Scope of Service & Multi-Tenant Knowledge Spaces
+            </h2>
             <p>
-              Vectrieve provides a secure Retrieval-Augmented Generation (RAG) system. A workspace is provisioned on a per-organization basis, providing isolated database tables, document parsers, and vector indexing. You are responsible for ensuring that all authorized workspace users adhere to these Terms.
+              Vectrieve provides an enterprise intelligence architecture. Organizations are provisioned with cryptographically isolated **Knowledge Spaces**, separate document vector partitions in Qdrant, and role-based permissions (`OWNER`, `EDITOR`, `VIEWER`). You maintain full administrative authority over who has access to your Knowledge Spaces.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">3. Security Obligations</h2>
-            <p>
-              Due to our zero-knowledge architecture regarding master passwords:
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Lock className="w-4 h-4 text-emerald-400" />
+              3. Zero Data Retention & AI Zero-Training Invariant
+            </h2>
+            <p className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-200">
+              <strong>Core Guarantee:</strong> Vectrieve, Groq, and our infrastructure partners do NOT use your proprietary documents, vector embeddings, meeting transcripts, or chat transcripts to train or fine-tune public AI models. All inference is processed via zero-data-retention (ZDR) endpoints.
             </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-violet-400" />
+              4. Document Ownership & Intellectual Property
+            </h2>
+            <p>
+              You retain 100% full ownership, intellectual property rights, and copyright over all documents uploaded to Vectrieve (including PDFs, Office documents, audio recordings, spreadsheets, and scanned diagrams) and all synthesized answers generated by the platform.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              5. Acceptable Use & Security Responsibilities
+            </h2>
             <ul className="list-disc pl-5 space-y-2 text-zinc-400">
-              <li>You are entirely responsible for maintaining the confidentiality of your master password.</li>
-              <li>We do not store your master password in plaintext and cannot recover it if lost. Lost master credentials will result in permanent loss of access to your workspace.</li>
-              <li>You must immediately notify your IT administrator of any unauthorized use of your credentials.</li>
+              <li>You agree not to upload malicious binaries or run denial-of-service tests against production vector clusters.</li>
+              <li>You are responsible for securing account credentials and enforcing internal access policies for team members invited to your spaces.</li>
+              <li>You may export or delete your Knowledge Spaces and raw documents at any time with immediate cascading vector deletion.</li>
             </ul>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">4. User-Generated Data & Ownership</h2>
+            <h2 className="text-lg font-bold text-white">6. Service Availability & Enterprise SLA</h2>
             <p>
-              You retain full ownership, intellectual property rights, and copyright over all documents uploaded to the Service and all query outputs generated by the AI models. Vectrieve claims zero rights or ownership over your corporate knowledge.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">5. Acceptable Use Guidelines</h2>
-            <p>
-              You agree not to use the Service to:
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-zinc-400">
-              <li>Upload documents that violate third-party copyright, trade secrets, or patents.</li>
-              <li>Attempt to bypass tenant isolation boundaries, reverse-engineer DB schemas, or run automated denial-of-service scripts.</li>
-              <li>Inject malicious prompt payloads (jailbreaks) designed to disrupt or extract internal system prompt configurations.</li>
-            </ul>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">6. AI Accuracy Disclaimer (No Hallucination Guarantee)</h2>
-            <p>
-              Vectrieve utilizes state-of-the-art vector embedding and semantic search to cite sources and minimize AI hallucinations. However, AI model responses are generated probabilistically. <strong>We do not guarantee the absolute accuracy, completeness, or suitability of AI-generated answers.</strong> Users should verify critical data points directly via the cited document links provided.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-white">7. Limitation of Liability</h2>
-            <p>
-              To the maximum extent permitted by applicable law, in no event shall Vectrieve be liable for any direct, indirect, punitive, incidental, special, or consequential damages (including loss of data, security breaches, or system downtime) arising out of or in connection with the use or performance of the Service.
-            </p>
-          </section>
-
-          <section className="space-y-3 pt-6 border-t border-white/5">
-            <h2 className="text-lg font-semibold text-white">Termination</h2>
-            <p>
-              We reserve the right to suspend or terminate your workspace access immediately, without prior notice or liability, if you breach any provision of these Terms. Upon termination, all your data will be permanently deleted.
+              Vectrieve is architected for 99.9% uptime with dual PostgreSQL 16 persistence and redundant Qdrant vector indexing. Scheduled maintenance windows will be communicated via administrative dashboard alerts.
             </p>
           </section>
         </div>

@@ -9,6 +9,7 @@ export interface Document {
   chunk_count?: number;
   upload_timestamp: string;
   status: string;
+  summary?: string;
   error_log?: string;
 }
 

@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, Search, UploadCloud, Trash2, Loader2, Copy, Check, Sparkles, RefreshCw, Play } from "lucide-react";
+import { Database, Search, UploadCloud, Trash2, Loader2, Copy, Check, Sparkles, RefreshCw, Play, Table, Network, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFiles, Document } from "@/hooks/useFiles";
 import { FileTable } from "@/components/files/FileTable";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AudioBrief from "@/components/chat/AudioBrief";
+import KnowledgeGraph from "@/components/knowledge/KnowledgeGraph";
+import { exportExecutiveDossierPdf } from "@/lib/exportPdf";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function KnowledgeBasePage() {
@@ -26,6 +28,7 @@ export default function KnowledgeBasePage() {
 
   const [selectedFileIds, setSelectedFileIds] = useState<Set<number>>(new Set());
   const [viewDetailsDoc, setViewDetailsDoc] = useState<Document | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "graph">("table");
 
   // Extracted Document Chunks States
   const [docChunks, setDocChunks] = useState<{ index: number; content: string }[]>([]);
@@ -164,13 +167,41 @@ export default function KnowledgeBasePage() {
         />
 
         {/* Dynamic Action Bar */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-white">{t.files.title}</h1>
             <p className="text-xs text-zinc-500 mt-0.5">{t.files.subtitle}</p>
           </div>
           
           <div className="flex items-center gap-3">
+            {/* View Mode Switcher: Table vs Obsidian Knowledge Graph */}
+            <div className="flex items-center p-1 bg-zinc-900 border border-white/5 rounded-xl shadow-inner">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/50"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Table className="w-3.5 h-3.5" />
+                <span>File List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("graph")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === "graph"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/50"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Network className="w-3.5 h-3.5" />
+                <span>Knowledge Graph</span>
+              </button>
+            </div>
+
             {someSelected && (
               <Button 
                 onClick={handleBulkDelete}
@@ -191,21 +222,28 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label={t.files.searchPlaceholder}
-            placeholder={t.files.searchPlaceholder} 
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white shadow-xl placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
-          />
-        </div>
+        {/* Search & Filter Bar (in Table view) */}
+        {viewMode === "table" && (
+          <div className="relative w-full max-w-md">
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label={t.files.searchPlaceholder}
+              placeholder={t.files.searchPlaceholder} 
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white shadow-xl placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
+            />
+          </div>
+        )}
 
-        {/* Data Table / Empty State Management */}
-        {isLoading ? (
+        {/* Data Table / Knowledge Graph / Empty State Management */}
+        {viewMode === "graph" ? (
+          <KnowledgeGraph 
+            documents={filteredFiles} 
+            onSelectDocument={(doc) => setViewDetailsDoc(doc)} 
+          />
+        ) : isLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
           </div>
@@ -321,23 +359,44 @@ export default function KnowledgeBasePage() {
                           <Sparkles className="w-4 h-4 animate-pulse" />
                           <span>{title}</span>
                         </div>
-                        <button
-                          onClick={handleGenerateSummary}
-                          disabled={isGeneratingSummary}
-                          className="text-[11px] text-zinc-400 hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                        >
-                          {isGeneratingSummary ? (
-                            <>
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                              <span>Generating...</span>
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="w-3 h-3" />
-                              <span>Regenerate</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              exportExecutiveDossierPdf({
+                                title: "Executive Intelligence Dossier",
+                                filename: viewDetailsDoc.filename,
+                                category: isMedia ? "Meeting Recording & Audio Sync" : "Enterprise Document",
+                                summary: docSummary || "No briefing generated yet.",
+                                fileSize: viewDetailsDoc.file_size,
+                                chunkCount: viewDetailsDoc.chunk_count,
+                                createdAt: viewDetailsDoc.upload_timestamp,
+                              });
+                            }}
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 hover:text-indigo-100 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                            title="Export print-ready Executive PDF Dossier"
+                          >
+                            <Download className="w-3 h-3 text-indigo-400" />
+                            <span>Export PDF Dossier</span>
+                          </button>
+                          <button
+                            onClick={handleGenerateSummary}
+                            disabled={isGeneratingSummary}
+                            className="text-[11px] text-zinc-400 hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                          >
+                            {isGeneratingSummary ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                <span>Generating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-3 h-3" />
+                                <span>Regenerate</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                       <div className="prose prose-invert prose-zinc text-zinc-300 text-xs leading-relaxed max-w-none prose-p:leading-relaxed prose-p:mb-2 last:prose-p:mb-0 prose-ul:list-disc prose-ul:pl-4 prose-li:my-1">
                         <ReactMarkdown 

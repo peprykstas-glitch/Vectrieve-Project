@@ -1,0 +1,181 @@
+﻿TO DO LIST
+
+Welcome to Animafest
+In these videos we want to show you the most important information about functions of our system
+First what you see is TO-DO LIST. Here the most important thing is comments of the students who are registered in our system. Here they leave questions they have. You just need to click the message, then you enter the personal page of the student. You click the red box “We help you” or “Te ayudamos” and you can see the question. You can answer the student and then click “Send new Question”. After it you just close the personal page of the student and then you click. X To delete the answered message. 
+
+
+
+
+
+
+CANDIDATES
+1
+
+To enter the Candidates list you click on candidates and candidates. Here you have a full list of students who registered on our website and are looking for the internship. On the left you have the personal code of the student. After registration of the account every student receives a unique code. If you click the personal code, you can leave a comment about the student that will see only the animafest team. Next you have the trash button, which deletes a student's account from the system. This action cannot be later undone, you delete the account forever, so do not use it too often. Magnifying glass button gives you all the information about the student. We go back to this point later. Next you have the photo of the student and CV. After clicking you can see the whole photo of the student and check his CV. Next 3 buttons are just information on how we can contact the student, by Whatsapp, Skype or Viber. Next button with the question mark transfers you directly to the personal page of the student. You will be able to see exactly the same page as can see the student after logging in. In the next columns you see the most important information about the student. Added- date when the student registered on our website, name of the student and phone number, email. Arrival and departure are information about when the student wants to start and to finish the internship. Internship- what kind of internship the student wants. School- information about the school of the student. Country- country of Origin.
+2 diamonds
+
+
+Now. Near the name sometimes you see diamonds or no diamonds. Students of diamonds are the most important one. Red diamond students study Tourism, Hospitality, Gastronomy. For those students we can easily find an internship in a kitchen, bar, restaurant, animation, reception, our office, online internship and so on. Students with blue diamonds are students of languages and they can do an internship in a position of reception if they know english and spanish or animation or in our office or virtual internship. For students without diamonds it is hard to find an internship. Sometimes we can offer reception or animation, our office or virtual internship but we need to discuss such students if they can receive an internship. It is better to ask Santy. Not european students who have no diamonds, we can offer only office or online internship but first ask Santy
+3 ADDING SCHOOL, INTERVIEW, COMMENTS
+
+
+Now the magnifying glass. Here you can see all the information about the student. On the top you have full Name and personal code. Also the picture. the Photo should be in good quality and showing a smiling student. The system can accept pictures in, jpg format, 150 kilobytes, and 300 pixels size, maximum. The Student cannot delete the picture, only you can do that. The same with the CV. So if the student asks you about deleting one of these, just click, “X” button.
+When you click the question mark button it will transfer you to the personal page of the student. 
+Comments- here you click your name and you can leave your comment about the student. After writing a comment you click, add
+Always leave a comment after the interview. 
+In the interview you need to ask a student about his school, what does he study and where, what kind of internship he wants, when to start, for how many months, and what languages he speaks. It is important to check languages, especially english or spanish or both. After the interview, check if the information that student gave you is the same that we have in the system. Check the dates, internship school and languages. Remember to be polite, smile and be willing to help the student. 
+When you save the comment you will see changes on the candidates list. Students who do not have any comments are in grey color. The ones who have comments are in orange. That how you can see which students had interview and which had not
+Select school. Here if you see No country selected, no school, you need to add the school. By looking for the information below, School name, Stage coordinator, Website of the school, Stage Coordinator's e-mail address. Now let's try to add school. Try to copy the whole name of the school or just a short part of it. You can also search by the rest of the information like email, website. Click on the magnifying glass. You paste the name in the search bar and click search. If you find a school which fits, then click paste, then save data. And Done. 
+4 the rest of the info
+
+From the left you have arrival and departure. Those are dates that a student wants to do the internship. The dates can be changed. Just mark the dates the student wants, and then click save data. Days in the bracket show how many days the student wants to do the internship. The student can do an internship minimum 89 days up to 179 days. Students who are not european but they study in europe, they can do a maximum 89 days and they need a document called, residence permission. European- European students who want to do a 3 months internship always put, 89 days. It is easier to prepare document called N.I.E. You will know more about it in further videos
+Below You have personal information of the student.
+Look at the section Birth Date. Here student needs to put the correct date of birth. Remember that a student needs to be 18 years old minimum. Exception are students from Austria who can be even 16 years old. 
+Just below you have the place of birth which is also important. Here students need to put his place of birth. Below it is number of the passport which also should be uploaded.
+In section education you have School information, studies area of the student, and student program, like erasmus, Leonardo and so on. 
+In the last column you have stage info. Most important is,
+Internship- what kind of internship does the student want, and below you have what languages he speaks. Here you have information about languages the student knows. If after an interview with the student, you disagree with the student's choice, you can change the number of stars. Just click on edit and here you can change the level of language. 
+Down below you can read information about the experience of the student that had before. 
+5 Filters candidates list
+
+
+With filters you can lower the number of students that you are looking for. For example if you need students with good Spanish language, you click near spanish flag, Spanish level and you choose the level. Then you click the button APPLY FILTERS. Now you have students who speak very good spanish. Look at the number of students that now appeared. To turn off the language filter, you need to click the same button and put back the filter to the previous position, and click APPLY FILTERS. All filters in the system you turn on and off in the same way.
+Other filters you can find on the left. The most important are. Diamante. Here you can filter students with or without diamonds. Internships. Here you can filter students by the internship they want. Nationality. Here you can filter students by their nationality. Order by. Here you can group students by wanted order. Schools. Here you can filter students by the same school that they study in. Sign in date. Here you can filter out the students in a given period of time. These are the most important filters that you will use. 
+6. Adding students to the phone, quick message
+
+
+In the morning when you answer questions from the to do list. You should check the candidates list and see new students who registered on our website. Just remember to look at the dates of registration in column, added. That is how you can see who lately registered. Remember to add the school to the student. Now add every person to whatsapp by adding his name, personal code and phone number. Then send a quick message. Quick messages are messages saved already in phone memory. To see quick messages you need to enter a whatsapp chat of any person, type, slash  “/” and there it is. To find specific message you need to start typing key word of the message. Here for example for the first time we need to contact the student and send him a quick message with questions. You type, slash “/” and start typing a word. Questions or preguntas. Depends what the main language of the student. Then you send the message. Remember that when you receive answer for the questions from the student, you need to save it in his profile in section, comments. Remember to thank the student for the answer. Leaving comments helps in finding internship for a student.
+
+
+
+
+STAGIERS
+
+
+1. STAGIERS 1 DESCRIPTION 
+
+Now we start real play. Go to stagiers- stagiers. Here you have a list of students who received their internship. Who have been selected by the hotel. Above the profile of the student you have the name of the city where the hotel is. name of the hotel, with stars that has. and fiscal information. You also see the mark, verified. That means the hotel was verified by us that the hotel wants students in this position.
+You also see places with students profiles and empty places with red numbers. These are vacancies. Positions that the hotel still needs. Now the profile of the student. 
+The trash button deletes the student from the system. Be careful with that button. 
+Pencil button save the changes that you put in the changes of the dates that you see in the system. 
+Green magnifying glass gives you information about the selected student and the hotel. 
+Blue magnifying glass- here, like in the candidates list you see information that the student puts. 
+Next you have a photo and cv that the student puts. 
+Fire button- this button let you cancel the internship of the student or delete totally from the system. Also be careful with that button.
+Phone button- emergency numbers that students put on their profile.
+Question mark button- transfers you to personal page of the student
+Stagier column. Here you have information about Full name of the student, personal code, days the student has been selected, days from application to our website. Also you have information if the student confirmed his internship or not, and phone number of the student. 
+Next column shows you information about the internship that student has been selected for. 
+Period shows for how many months and days the student has the internship. 
+School column shows the school that you added for the student in the candidates list. Also you can see, Partner. IF you see different word than general that is mean, student was registered in the system with one of our partner from other country
+Next column shows if the student put information about his flight or not. 
+An Arrival and departure column shows dates that the student should start and finish the internship. 
+Gender-  gives information what gender does the hotel want. 
+This button duplicates the vacancy for the student. Useful when the student wants to extend his internship. But always ask before doing such an operation.
+Next column shows the date that the hotel wants the student in the hotel. It does not have to cover the actual starting dates of the student. 
+In the section comment you have, more information about hotel needs. 
+   2. STAGIERS FILTERS
+
+
+The same as in the candidates list, the same is with stagiers list. Here you have less flags. These flags help you to find vacancies where selected language is necessary. For example, when you click on russian flag, then you click apply filters. Now you will see vacancies where hotels need students with russian language. 
+Here also you have a list of filters that you can use. We will explain you most important
+Gender- you can use the filter to find vacancies only where boys or girls are necessary
+Filled?- With this filter you can have the number of vacancies with selected students or empty vacancies.
+Hotels- you can look for a specific hotel.
+Hotel chains- we have in our system hotels which belong to one big company. These are chain hotels.
+Hotel city- you can look for hotels by cities.
+Hotel Zone- you can look for hotels by zones in spain. 
+Internships- you can look for vacancies with a precise internship.
+Nationality- help you search for students with specific nationality
+Past, present, future- this filter shows you, students who finished their internship. Students who are during their internship. Students who have not started the internship yet. 
+Selection date- Shows you students selected in a demanding period of time.
+School- helps you to find students from a specific school.
+Stage confirmation- shows students who confirmed or not confirmed their internship. Students who have not confirmed yet, you can divide into periods of time as you can see.
+Travel information- here you can find students who put their travel info or not
+   3. Stagiers Details
+In this video we will explain to you the details about stagiers - stagiers. 
+This option helps you to find the student in the system. To find him you need his name or his personal code. Then you paste it into the search bar and you click, Search button. There you have the student. 
+System of stagiers is divided into seasons and years. It depends on when the student started the internship. To find the student in different seasons, click the season bar, change the season and, then click GO! 
+Now we will explain you buttons 
+Pencil button. When we need to change the dates for the student from stagiaires- stagiaires system, we can do it two ways. Or by changing the dates here and then saving it by the button, but every time you click the pencil the system will refresh and, again you will have to search for the student. It is better you save the code of the student. You can do it by the context menu. Mark the number and then click the right mouse button and, click command, copy, or by combination. Control plus C. And then control plus V, on your keyboard. You can change the dates also by entering green magnifying glass. Here you change the dates. And then You click save data. Then you close the window and you refresh the system page, by F5 key on your keyboard, or by clicking the arrow button on your browser. Now you see that the dates changed. 
+Green magnifying glass- here you have mixed information about the student and hotel. Name of the student. Gender information. What gender hotel needs. Comment that hotel left us. School. Here we can change the school for the student if in the candidates list he received the wrong school. Hotel in which a student is selected. Job. Actually the internship that the student is doing. How many months students will do the internship. season of winter and summer. Email of the student. Telephones of the student. Skype account. Address of the student. And the dates that the student is doing his internship. If it is necessary, every information in white bar, can be changed. Then after adding new information you click save Data. Here we show you an example of a mistake. Look at the days that student will do his internship and months. Student wants to do 89 days but months shows 6 months. We need to correct it. Enter Green magnifying glass, change the number of months, and save data. Now you can close this window, refresh the system and voila. It is necessary to have correct number of days and months because these numbers appear on the contract for the student.
+Blue magnifying glass. About this button we explained in candidates section
+Fire button- with this button you can cancel the internship, or delete a student from the system. Here you just change the reason. Never come, erase all. With this you delete the student from the system. Never come. You cancel the internship and the student goes back to the candidates list.  
+To confirm the choice you click, clear stagier. Before cancelling a student, you need to leave a comment, with information why the student was cancelled and from which hotel. You just need to copy the full name of the hotel with the city and paste to the comment. And why the student was cancelled. Always consult with someone from the team, before cancelling or deleting any student. 
+
+
+CONTRACTS
+
+
+   1. CONTRACTS DESCRIPTION
+
+
+Finally we can go to the hardest part. Contracts. In this section you will know what documents students have to upload to come. How can they do that, and much more. 
+To go to contracts section, go to stagiers. Contracts. Now you have 3 options to choose. More often is used, contracts ordered by hotels. That means you will have a list of students, ordered alphabetically by the cities of the hotels. 
+Above the students' accounts you see the city and the name of the hotel, and the fiscal name of the hotel. 
+Unlike the stagiers section, here, near the city of the hotel you have green magnifying glass. After you click it, you will see information about the hotel. Now the student panel. First 3 buttons work exactly the same like in stagiers section. Green Magnifying glass gives information about the hotel and student. blue magnifying glass gives information about the student. fire button cancel or delete student. Column, days to arrive. Days selected. Days that student was selected by the hotel. It counts from 0 and up. Days to arrive. Shows the days left to arrive at the hotel. Then you have short information about the student, and his passport number. If the student put on his profile. Then you have what kind of internship he is going to do, Period of time and school name, with access to detailed school information. Just click the magnifying glass. 
+   2. CONTRACTS 2 CONFIRMATION
+
+
+First we will explain to you how to confirm the student who has been selected to the hotel. To confirm the internship first you need to find him in the system. By name or by personal code. If you cannot find him, try to look in another season. In this case in summer,  2020. When you find the student tell him in which hotel he is selected. And what exactly dates he has. To check it, you need to click the green magnifying glass. When the student confirms his internship and all dates are correct, click box in section. Confirmed stage. Here you see the number of days that the student has been selected but did not confirm his internship. After confirmation, refresh the page. At the beginning we have two documents to manage. First is Contract. Contract needs to be signed by three parties. School. Hotel. And the Student. There are three rules of giving contracts. 
+First. If the student studies in Europe you send the contract by whatsapp directly to the student. Then the student needs to sign the document with the school and upload it back, to box number 1, on his personal page. After that he needs to inform you so you can send it to the hotel to sign. When the student uploads the contract to the proper box, you will see it in the system in section PDF A. Then you click the document and click the checkbox. Accept this PDF contract and send mail to the hotel.  Then you can close the window and mark the first button. This is information that the contract has been sent and the system will count the days from the day of sending the contract. Then refresh the page. The contract should change the color to green and near the button should appear 0 digit. That means the contract has been sent to the hotel. When the hotel signs the document, you see it in section, PDF B. Then the student should be able to download the contract from his personal page. In section documents. Click also two last checkboxes. This will close the box for the student, and change the color of the box to green. So the student will know that this document is done. 
+
+
+Second. If the student does not study in europe. You have to send the document, first to the hotel. To do it. First copy the code of the student. Enter to personal page. You can change the language of the page at the top of the page. Scroll down the page and here you will see two options. Convenio Ingles. Convenio Spanish. For students from Latino america download the contract in spanish. For others, download the contract in english. Now save the contract with the code that you copied. To do it, you can click, or right mouse button. And click Guardar como. Then paste code and download. You can click also on the top of the document and then save it. Or the fastest way. Control plus S, on your Keyboard. After this operation, go to the personal page of the student. Click Red box number 1. Seleccionar archivo and find the contract of the student. OR you can drag the downloaded file to this button and then click, upload School contract. Then you need to send it to the hotel. The same how was explained before
+Here in box number 1, you have also section erasmus. This is for the documents of students who have erasmus. They just need to upload it here. And we will send it with the contract to the hotel.
+
+Third. When the student wants to extend the internship. Inform someone from the team so we can do it. Then you just need to send a contract to the student by whatsapp and also upload to his personal page and send to the hotel. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+   3. CONTRACTS CARTA AND OTHER DOCUMENTS
+
+
+Another document that we have to send to the hotel is the CARTA document. After confirmation it should appear in the CARTA column. CARTA document, allows for non european students to apply for VISA document. To create the CARTA document we need three pieces of information from the student. Place of birth. date of birth. and passport number. If the student has to apply for a visa because he does not study in Europe, that means he didn't upload any of the information. Where to find this information? You need to go to the personal page of the student. Click blue box, edit profile. Here on the right, you have. Place of birth. Date of birth. Passport number. The student must upload this information or you need to do it. Then click the button. Save information. Go back to the system. Refresh the page and the document should appear, with the hand. Then just click the click button, And mark. Accept this PDF contract and send mail to the hotel. Then refresh the system again. 
+In conclusion. When you send documents for non european students, the hotel should receive the Contract and Carta. When the hotel signs the documents, It will look like that. That means they signed the documents. Now you can check if it is correct, by clicking the document button.
+To delete the document you click. Borrar. Then the document will be deleted from the system. 
+
+
+
+
+HOTELS
+
+
+   1. HOTELS- HOTELS
+
+
+As you may remember, In contracts you have green magnifying glass. This glass allows you to check information about the hotel. We will now discuss the most important information you will find there. Click the button. 
+From the left you have Basic hotel information. Here you see marks near. Free meals. Free accommodation. If the mark is blue, that means the hotel offers free meals and free accomodation. To the right you have fiscal information. The field. GRANT. You have information how much the hotel pays for the student. About accomodation, meals and payment, the student should see it on his personal page. Going back to the hotel information. The last column is contact data. Here you will find information about the people responsible for the hotel. Their names and email addresses. If the student really needs information about the responsible person, give them mail of human resources contact. RRHH.
+Down the page you have three bars. Blue bar, give information where the students will have accomodation. two red bars are the Description of the hotel. This description appears on the personal page of the student. 
+Here you can put descriptions in english and spanish. If the description is empty you can take it from the website of the hotel. Simply copy the text and paste here. You can also translate it to another language using a translator. After the operation click. Save data. 
+   2. HOTEL- ADDING PICTURE VIDEO AND LOGO
+
+
+There are more options that you can do with the hotel. Go to. Hotels. Search by name hotels. We will look for the hotel of our student. Type the name and click, search. You see that some hotels are dark. These are on black list so we do not cooperate at the moment. Now the explanation of the page. With the magnifying glass you can check info about the hotel. Here also you can enter directly to the website of the hotel with the WWW button. Look at the camera button. Here should be an interesting picture of the hotel. We need to find a picture. Go to the website of the hotel and find an interesting picture. Usually it should show the entrance of the hotel. In this case we will just choose the most interesting picture. When you find a picture. Click the right mouse button and then. Copy direction of the picture. You cannot download it and drop to our system. Then you click the box-arrow button, delete the not working picture. Choose from the list, picture option. Then put the link that you copied, and save. Refresh the page.
+Time for the logo of the hotel. It looks pretty similar. Go to the website of the hotel. Find the logo, click the right mouse button and. Copy the direction of the picture. Click the box-arrow button. Paste the link and save. Refresh the page and see the result.
+The last thing that you can add is video. It is a little bit more complicated. But do not be afraid. I am here to help you. You have to find the video of the hotel on YouTube. When you find a proper video. Enter to it, click share, and button embed. Here you need to copy the link in quotation marks, like this. Then just go to the hotel, click box-arrow button, choose the video option, paste the, link and save
+
+
+SCHOOL
+
+
+   1. SCHOOL 1 DESCRIPTION 
+
+
+We also have information about schools that are in our system. You can check the information about the school of the student by entering the green glass near the school name. 
+        On the left you have basic info about the school. Name, website, phone 
+        And address. Column contact data. Here you have information about the school contacts, and their emails. Name and email from contact number one will appear in the contract. In the comment section we can leave comments about the school. For example when we contacted the school and we want to leave any comment.
+ Another way to find the school is to go to schools- schools. Here you can find all schools that we have in the system. From the left you have magnifying glass which brings you to the information of the school. This black paper with red sign sends the school to black list. To this cemetery goes only schools which we do not work with anymore. So do not use this button without permission. Some schools have question marks. That means they have access to the special school system. Here also we can add the logo of the school. First enter the website of the school and find the school logo. Click the right button of the mouse and choose the copy direction of the picture. Then you go back to school. You click the box-arrow button. Paste the link of the logo, and save. Sometimes it is not possible to copy the link of the logo. In that case look for it in google. Process of adding the logo is the same. Copy the link of the picture and put into the logo column. Some schools have videos on youtube. We can add them to our system. Lets try on school Ecotur. Simply go to youtube, find the interesting video of the school. click share, and button embed. Here you need to copy the link in quotation marks, like this. Then just go to the school, click the box-arrow button, choose the video option, paste the link, and save. Refresh the page

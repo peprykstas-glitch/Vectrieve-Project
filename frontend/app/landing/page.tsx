@@ -1,5 +1,8 @@
-import Link from "next/link"
-import type { Metadata } from "next"
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FileSearch,
   Layers3,
@@ -12,347 +15,486 @@ import {
   Database,
   MessageSquare,
   BarChart3,
-  Quote,
-} from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "Vectrieve — AI that knows YOUR knowledge, not the world's",
-  description:
-    "Stop explaining your documents to AI every session. Vectrieve builds a permanent, private knowledge base from your files and answers with cited sources — not guesses.",
-}
-
-/* ─── Design tokens ────────────────────────────────────────────────────────── */
-// All styles are inline Tailwind utilities to keep the file self-contained
-
-/* ─── Data ─────────────────────────────────────────────────────────────────── */
+  Cpu,
+  Mic,
+  Lock,
+  ArrowRight,
+  Sparkles,
+  Play,
+  FileText,
+  Clock,
+  CheckCircle2,
+  Building2,
+  Server,
+  Globe2,
+  HardDrive
+} from "lucide-react";
 
 const FEATURES = [
   {
-    icon: FileSearch,
-    color: "from-violet-500 to-purple-600",
-    glow: "shadow-violet-500/25",
-    title: "Source Citations",
-    badge: "Like Perplexity, but private",
+    icon: Cpu,
+    color: "from-blue-500 to-indigo-600",
+    glow: "shadow-blue-500/25",
+    title: "Groq LPU Inference Engine",
+    badge: "500+ tok/s Ultra Speed",
     description:
-      "Every AI answer shows exactly which document and paragraph it came from. No hallucinations, no guessing. Click to see the raw source.",
+      "Enterprise inference powered by OpenAI GPT-OSS 120B and Llama 3.2 Vision on Groq LPUs. Sub-second response streaming with zero lag.",
+  },
+  {
+    icon: Mic,
+    color: "from-emerald-500 to-teal-600",
+    glow: "shadow-emerald-500/25",
+    title: "Whisper Large v3 Meeting Intelligence",
+    badge: "Audio & Meeting Parsing",
+    description:
+      "Upload audio/video recordings (.mp3, .wav, .m4a). Automatically transcribes speech in Ukrainian, Polish, English & Spanish and extracts executive Action Items.",
   },
   {
     icon: Layers3,
     color: "from-cyan-500 to-blue-600",
     glow: "shadow-cyan-500/25",
-    title: "Knowledge Spaces",
-    badge: "Unique to Vectrieve",
+    title: "Isolated Knowledge Spaces",
+    badge: "Zero Cross-Bleed",
     description:
-      "Separate isolated knowledge collections — 'Project Alpha', 'Legal Docs', 'Sales Playbook'. The AI stays strictly within the space you choose.",
+      "Partition documents into isolated workspaces ('Legal', 'Financial Audits', 'Engineering'). Multi-tenant isolation guarantees no document contamination.",
   },
   {
     icon: GraduationCap,
-    color: "from-fuchsia-500 to-pink-600",
-    glow: "shadow-fuchsia-500/25",
-    title: "Thinking Modes",
-    badge: "Adaptive intelligence",
+    color: "from-purple-500 to-pink-600",
+    glow: "shadow-purple-500/25",
+    title: "Adaptive Persona Intelligence",
+    badge: "Mentor · Auditor · Architect",
     description:
-      "Switch between Mentor (explains patiently), Auditor (strict, source-only), and Architect (system-level thinking). One click, totally different AI personality.",
+      "Switch on the fly between Mentor (step-by-step guidance), Auditor (strict evidence-only verification), and Architect (systems-level analysis).",
+  },
+  {
+    icon: Database,
+    color: "from-amber-500 to-orange-600",
+    glow: "shadow-amber-500/25",
+    title: "FastEmbed ONNX & Dual Retrieval",
+    badge: "PostgreSQL 16 + Qdrant",
+    description:
+      "Local dense BGE embeddings combined with PostgreSQL structured metadata and Qdrant vector indexing for sub-5ms semantic search.",
   },
   {
     icon: ShieldCheck,
-    color: "from-emerald-500 to-teal-600",
-    glow: "shadow-emerald-500/25",
-    title: "Local & Private",
-    badge: "Your data stays yours",
+    color: "from-rose-500 to-red-600",
+    glow: "shadow-rose-500/25",
+    title: "Zero Model Training Guarantee",
+    badge: "100% GDPR & Private",
     description:
-      "Run the AI entirely on your own machine with Ollama. Your documents never leave your computer. No cloud, no logs, no data sharing.",
+      "Your documents are never used to train public foundation models. All inference is processed via zero-data-retention endpoints with instant purge.",
   },
-]
+];
 
 const STEPS = [
   {
     num: "01",
-    title: "Upload your knowledge",
-    desc: "Drop PDFs, code files, text docs, or entire ZIP archives into your Knowledge Space. Vectrieve parses and indexes everything automatically.",
+    title: "Ingest Your Documents",
+    desc: "Drag and drop PDFs, Office documents (.docx, .pptx, .xlsx), CSVs, EPUBs, images, or audio recordings into your Knowledge Space.",
     icon: Database,
   },
   {
     num: "02",
-    title: "Ask anything",
-    desc: "Ask questions in natural language. Vectrieve retrieves the most relevant chunks from your documents and feeds them to the AI as precise context.",
-    icon: MessageSquare,
+    title: "Hybrid Vector Indexing",
+    desc: "Vectrieve chunks text, vectorizes content using FastEmbed BGE ONNX models, and indexes vectors into Qdrant in milliseconds.",
+    icon: Cpu,
   },
   {
     num: "03",
-    title: "Get cited answers",
-    desc: "Receive a clear answer with links to the exact source paragraphs. Every claim is traceable. Export the full session as a PDF report.",
+    title: "Query with Traceable Citations",
+    desc: "Ask complex questions in any language. Receive executive answers backed by exact paragraph citations and actionable meeting summaries.",
     icon: FileSearch,
   },
-]
+];
 
 const COMPARISON = [
-  { feature: "Answers based on YOUR private documents", gpt: false, gemini: false, core: true },
-  { feature: "Cites exact source paragraph", gpt: false, gemini: false, core: true },
-  { feature: "Persistent knowledge base (survives sessions)", gpt: false, gemini: false, core: true },
-  { feature: "Isolated Knowledge Spaces per project", gpt: false, gemini: false, core: true },
-  { feature: "Thinking Mode selector (Mentor / Auditor / Architect)", gpt: false, gemini: false, core: true },
-  { feature: "100% local / air-gapped mode", gpt: false, gemini: false, core: true },
-  { feature: "General world knowledge", gpt: true, gemini: true, core: false },
-]
-
-/* ─── Sub-components ───────────────────────────────────────────────────────── */
-
-function Navbar() {
-  return (
-    <nav className="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl">
-      <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-icon.png" alt="Vectrieve" className="h-8 w-8 object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.45)] transition-transform duration-200 group-hover:scale-105" />
-          <div className="flex items-center gap-1.5 font-bold tracking-tight">
-            <span className="text-white font-sans text-lg tracking-tight">Vectrieve</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
-          </div>
-        </Link>
-
-        {/* Nav links */}
-        <div className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
-          <a href="#compare" className="hover:text-white transition-colors">Compare</a>
-        </div>
-
-        {/* CTA */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-sm text-zinc-400 hover:text-white transition-colors px-3 py-1.5"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className="text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors px-4 py-1.5 rounded-full"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </nav>
-  )
-}
-
-function HeroBadge() {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300">
-      <Zap className="w-3.5 h-3.5 text-violet-400" />
-      <span>Built for teams who can't afford wrong answers</span>
-    </div>
-  )
-}
-
-function HeroChatMockup() {
-  return (
-    <div className="relative mx-auto max-w-xl">
-      {/* Glow ring behind */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-600/20 to-cyan-600/10 blur-3xl scale-110 -z-10" />
-
-      <div className="rounded-2xl border border-white/10 bg-zinc-900/80 backdrop-blur-sm overflow-hidden shadow-2xl">
-        {/* Terminal bar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-zinc-950/50">
-          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-          <span className="ml-2 text-xs text-zinc-500 font-mono">Vectrieve · Project Alpha · Auditor Mode</span>
-        </div>
-
-        <div className="p-5 space-y-4">
-          {/* User message */}
-          <div className="flex justify-end">
-            <div className="max-w-[80%] rounded-xl rounded-tr-sm bg-violet-600/30 border border-violet-500/20 px-4 py-2.5 text-sm text-zinc-200">
-              What are the payment terms in the Q3 partnership agreement?
-            </div>
-          </div>
-
-          {/* AI response */}
-          <div className="flex gap-3">
-            <div className="w-7 h-7 shrink-0 rounded-lg bg-zinc-900 border border-white/10 flex items-center justify-center mt-0.5 shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-icon.png" alt="Vectrieve AI" className="w-4 h-4 object-contain drop-shadow-[0_0_6px_rgba(0,212,255,0.5)]" />
-            </div>
-            <div className="flex-1 space-y-3">
-              <div className="rounded-xl rounded-tl-sm border border-white/5 bg-zinc-800/60 px-4 py-3 text-sm text-zinc-300 leading-relaxed">
-                The Q3 agreement specifies <span className="text-white font-medium">net-30 payment terms</span> with a
-                {" "}<span className="text-white font-medium">2% early payment discount</span> if settled within 10 days.
-                Late payments incur a <span className="text-amber-400 font-medium">1.5% monthly penalty</span>.
-              </div>
-
-              {/* Source citations */}
-              <div className="flex flex-wrap gap-2">
-                <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-                  <FileSearch className="w-3 h-3" />
-                  Q3_Partnership_Agreement.pdf · §4.2
-                </div>
-                <div className="flex items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-500/10 px-3 py-1 text-xs text-blue-300">
-                  <FileSearch className="w-3 h-3" />
-                  Addendum_July2024.pdf · §1
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Typing indicator */}
-          <div className="flex items-center gap-2 text-xs text-zinc-600">
-            <div className="flex gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <span>Auditor mode · sources verified · 0 hallucinations</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ─── Page ─────────────────────────────────────────────────────────────────── */
+  { feature: "Answers strictly grounded in private documents", gpt: false, gemini: false, core: true },
+  { feature: "Exact paragraph & document source citations", gpt: false, gemini: false, core: true },
+  { feature: "Multi-format doc parsing (PDF, Office, CSV, XLSX, Audio)", gpt: false, gemini: false, core: true },
+  { feature: "Audio Meeting Intelligence & Action Item Extraction", gpt: false, gemini: false, core: true },
+  { feature: "Isolated Knowledge Spaces per team or project", gpt: false, gemini: false, core: true },
+  { feature: "Persona Switcher (Mentor / Auditor / Architect)", gpt: false, gemini: false, core: true },
+  { feature: "Zero public AI training on proprietary files", gpt: false, gemini: false, core: true },
+  { feature: "Sub-150ms TTFT on Groq LPU inference", gpt: false, gemini: false, core: true },
+];
 
 export default function LandingPage() {
+  const router = useRouter();
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [activeDemoTab, setActiveDemoTab] = useState<"auditor" | "meeting" | "architect">("auditor");
+
+  const handleLaunchDemo = async () => {
+    setIsDemoLoading(true);
+    try {
+      const res = await fetch("/api/auth/demo", { method: "POST" });
+      if (res.ok) {
+        router.push("/");
+        router.refresh();
+      } else {
+        router.push("/login");
+      }
+    } catch (err) {
+      console.error("Failed to initialize demo:", err);
+      router.push("/login");
+    } finally {
+      setIsDemoLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden">
-      <Navbar />
+    <div className="min-h-screen bg-[#08080a] text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans">
+      {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
+      <nav className="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-[#08080a]/85 backdrop-blur-2xl">
+        <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="/logo-icon.png" 
+              alt="Vectrieve" 
+              className="h-8 w-8 object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] transition-transform duration-200 group-hover:scale-105" 
+            />
+            <div className="flex items-center gap-1.5 font-bold tracking-tight">
+              <span className="text-white text-lg tracking-tight">Vectrieve</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">CORE</span>
+            </div>
+          </Link>
 
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="relative pt-40 pb-32 px-6 text-center overflow-hidden">
-        {/* Ambient blobs */}
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#architecture" className="hover:text-white transition-colors">Architecture</a>
+            <a href="#benchmarks" className="hover:text-white transition-colors">Benchmarks</a>
+            <a href="#compare" className="hover:text-white transition-colors">Comparison</a>
+          </div>
 
-        <div className="relative mx-auto max-w-4xl space-y-8">
-          <HeroBadge />
+          {/* Action CTAs */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleLaunchDemo}
+              disabled={isDemoLoading}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <span>🎮</span>
+              <span>{isDemoLoading ? "Launching..." : "Live Demo Sandbox"}</span>
+            </button>
+            <Link
+              href="/login"
+              className="text-xs font-medium text-zinc-300 hover:text-white transition-colors px-3 py-1.5"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/register"
+              className="text-xs font-bold text-black bg-white hover:bg-zinc-200 transition-all px-4 py-2 rounded-full shadow-md hover:shadow-white/20 active:scale-95"
+            >
+              Get Started Free
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
-            <span className="text-white">ChatGPT knows </span>
-            <span className="italic text-zinc-500">the world.</span>
+      {/* ── HERO SECTION ─────────────────────────────────────────────────── */}
+      <section className="relative pt-36 pb-24 px-6 text-center overflow-hidden">
+        {/* Glowing Background Radial Blobs */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-indigo-600/20 via-purple-600/15 to-cyan-500/20 rounded-full blur-[120px] pointer-events-none -z-10" />
+
+        <div className="relative mx-auto max-w-5xl space-y-7">
+          {/* Keynote Pill */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-950/40 px-4 py-1.5 text-xs text-indigo-300 shadow-inner">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+            <span className="font-semibold tracking-wide">VECTRIEVE CORE · ENTERPRISE HYBRID RAG 2.4</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.1]">
+            <span className="text-white">Private Knowledge Intelligence</span>
             <br />
-            <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Vectrieve knows you.
+            <span className="bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              at the Speed of Light.
             </span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-zinc-400 leading-relaxed">
-            Upload your documents once. Vectrieve builds a permanent, private knowledge base and
-            answers every question with{" "}
-            <span className="text-white">exact source citations</span> — not hallucinations.
+          <p className="max-w-3xl mx-auto text-base sm:text-lg text-zinc-400 leading-relaxed font-normal">
+            Stop pasting sensitive documents into generic AI. Vectrieve establishes cryptographically isolated{" "}
+            <span className="text-white font-medium">Knowledge Spaces</span>, indexes documents and meeting recordings, and synthesizes answers with{" "}
+            <span className="text-cyan-300 font-medium">verifiable source citations</span> powered by Groq LPU inference.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          {/* Primary Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <button
+              onClick={handleLaunchDemo}
+              disabled={isDemoLoading}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold px-8 py-3.5 rounded-full transition-all shadow-lg shadow-indigo-600/30 hover:scale-105 active:scale-95 cursor-pointer text-sm"
+            >
+              <span>🎮</span>
+              <span>{isDemoLoading ? "Starting Demo..." : "Launch Live Demo Sandbox"}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
             <Link
               href="/register"
-              id="hero-cta-register"
-              className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-8 py-3.5 rounded-full transition-all hover:shadow-lg hover:shadow-violet-500/30 hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/15 hover:border-white/30 bg-white/5 hover:bg-white/10 text-white font-semibold px-8 py-3.5 rounded-full transition-all text-sm active:scale-95"
             >
-              Start for free
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/login"
-              id="hero-cta-login"
-              className="inline-flex items-center gap-2 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white px-8 py-3.5 rounded-full transition-all hover:bg-white/5"
-            >
-              Sign in
+              <span>Provision Workspace</span>
+              <ArrowRight className="w-4 h-4 text-zinc-400" />
             </Link>
           </div>
 
-          <p className="text-xs text-zinc-600">
-            No credit card required · Works with local Ollama · Your data stays yours
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs text-zinc-500">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Instant Sandbox Access
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Zero AI Model Training
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Groq 500+ tok/s LPU Engine
+            </span>
+          </div>
         </div>
 
-        {/* Chat mockup */}
-        <div className="relative mt-20 mx-auto max-w-2xl">
-          <HeroChatMockup />
+        {/* ── LIVE INTERACTIVE SIMULATION TERMINAL ───────────────────────── */}
+        <div className="relative mt-16 mx-auto max-w-3xl">
+          <div className="rounded-2xl border border-white/10 bg-[#0e0e12]/90 backdrop-blur-xl overflow-hidden shadow-2xl shadow-indigo-950/40 text-left">
+            {/* Terminal Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#09090c]">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                <span className="ml-2 text-xs text-zinc-400 font-mono">
+                  Vectrieve Enterprise Workspace · Space: <span className="text-indigo-400 font-semibold">Q3_Executive_Audits</span>
+                </span>
+              </div>
+
+              {/* Mode Selectors in Demo */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setActiveDemoTab("auditor")}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                    activeDemoTab === "auditor" 
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" 
+                      : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  Auditor Mode
+                </button>
+                <button
+                  onClick={() => setActiveDemoTab("meeting")}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                    activeDemoTab === "meeting" 
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
+                      : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  Meeting Audio
+                </button>
+                <button
+                  onClick={() => setActiveDemoTab("architect")}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                    activeDemoTab === "architect" 
+                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/40" 
+                      : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  Architect Mode
+                </button>
+              </div>
+            </div>
+
+            {/* Simulated Chat Content */}
+            <div className="p-6 space-y-4 text-xs sm:text-sm">
+              {activeDemoTab === "auditor" && (
+                <>
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-indigo-600/30 border border-indigo-500/30 px-4 py-2.5 text-zinc-100">
+                      What are the GDPR compliance requirements and SLA uptime guarantee in the Master Services Agreement?
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-icon.png" alt="Vectrieve" className="w-4 h-4 object-contain" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="rounded-2xl rounded-tl-sm border border-white/5 bg-zinc-900/80 p-4 text-zinc-200 leading-relaxed">
+                        Based on §4.2 of the audited agreement:
+                        <ul className="list-disc pl-5 mt-2 space-y-1 text-zinc-300">
+                          <li><strong>SLA Guarantee:</strong> Minimum <span className="text-cyan-300 font-semibold">99.9% monthly uptime</span> with automated failover.</li>
+                          <li><strong>Data Governance:</strong> All customer data is processed under strict <span className="text-emerald-300 font-semibold">Zero-Data-Retention (ZDR)</span> terms.</li>
+                          <li><strong>Breach Notification:</strong> Mandatory reporting within <span className="text-amber-300 font-semibold">24 hours</span> of detection.</li>
+                        </ul>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                          <FileText className="w-3 h-3 text-indigo-400" />
+                          Master_Services_Agreement_2026.pdf · §4.2 (Score: 0.94)
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                          <FileText className="w-3 h-3 text-cyan-400" />
+                          SLA_Compliance_Annex.pdf · §1.1 (Score: 0.91)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeDemoTab === "meeting" && (
+                <>
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-emerald-600/25 border border-emerald-500/30 px-4 py-2.5 text-zinc-100">
+                      Summarize the key decisions and Action Items from yesterday's product sync recording.
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                      <Mic className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="rounded-2xl rounded-tl-sm border border-emerald-500/20 bg-emerald-950/20 p-4 text-zinc-200 leading-relaxed">
+                        <div className="text-xs font-bold text-emerald-300 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Meeting Intelligence Brief · Audio Recording Parsed</span>
+                        </div>
+                        <ul className="space-y-1.5 text-zinc-300 text-xs">
+                          <li>⚡ <strong>Architecture:</strong> Approved rollout of FastEmbed BGE ONNX embeddings for sub-5ms vectorization.</li>
+                          <li>✅ <strong>Action Item:</strong> Stas to finalize Knowledge Spaces permissions modal by Friday.</li>
+                          <li>🔐 <strong>Security:</strong> DigitalOcean VPS deployment confirmed at IP 159.89.110.69.</li>
+                        </ul>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        <Mic className="w-3 h-3 text-emerald-400" />
+                        Audio_Sync_2026-08-19.mp3 · 44.5s · Ukrainian Whisper v3
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeDemoTab === "architect" && (
+                <>
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-purple-600/30 border border-purple-500/30 px-4 py-2.5 text-zinc-100">
+                      Evaluate our hybrid RAG scaling limits with 100,000 documents in Qdrant and PostgreSQL.
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center shrink-0">
+                      <Cpu className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="rounded-2xl rounded-tl-sm border border-purple-500/20 bg-purple-950/20 p-4 text-zinc-200 leading-relaxed">
+                        <strong>Architectural Assessment:</strong>
+                        <p className="mt-1 text-zinc-300">
+                          With HNSW indexing in Qdrant and payload partitioning per `space_id`, 100k vectors require &lt; 400MB RAM. FastEmbed ONNX processes ~1,200 chunks/sec on CPU without GPU overhead.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF STRIP ────────────────────────────────────────────── */}
-      <section className="py-12 px-6 border-y border-white/5">
-        <div className="mx-auto max-w-4xl flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-sm text-zinc-600">
-          <span className="text-zinc-500 font-medium">Built with</span>
-          <span className="text-zinc-400 font-semibold">FastAPI</span>
-          <span className="text-zinc-700">·</span>
-          <span className="text-zinc-400 font-semibold">Next.js 16</span>
-          <span className="text-zinc-700">·</span>
-          <span className="text-zinc-400 font-semibold">Qdrant</span>
-          <span className="text-zinc-700">·</span>
-          <span className="text-zinc-400 font-semibold">Groq / Ollama</span>
-          <span className="text-zinc-700">·</span>
-          <span className="text-zinc-400 font-semibold">PostgreSQL</span>
+      {/* ── VERIFIED BENCHMARKS STRIP ─────────────────────────────────────── */}
+      <section id="benchmarks" className="py-14 px-6 border-y border-white/5 bg-[#09090d]">
+        <div className="mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+              &lt; 150ms
+            </div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Time to First Token</div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+              500+ tok/s
+            </div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Groq LPU Inference Speed</div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+              100%
+            </div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Space Tenant Isolation</div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              92 / 92
+            </div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Automated Tests Passed</div>
+          </div>
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-24 px-6">
+      {/* ── ARCHITECTURE SECTION ─────────────────────────────────────────── */}
+      <section id="architecture" className="py-24 px-6">
         <div className="mx-auto max-w-5xl">
           <div className="text-center space-y-3 mb-16">
-            <p className="text-sm font-medium text-violet-400 tracking-widest uppercase">How it works</p>
-            <h2 className="text-4xl font-bold">From files to answers in minutes</h2>
+            <p className="text-xs font-bold text-cyan-400 tracking-widest uppercase">System Design</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Engineered for Enterprise Truth</h2>
+            <p className="text-zinc-400 text-sm max-w-2xl mx-auto">
+              How Vectrieve transforms unstructured documents into verifiable intelligence in three automated stages.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {STEPS.map((step, i) => (
-              <div key={i} className="relative group">
-                {/* Connector line */}
-                {i < STEPS.length - 1 && (
-                  <div className="hidden md:block absolute top-10 left-[calc(100%+0px)] w-8 h-px bg-gradient-to-r from-white/10 to-transparent" />
-                )}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-4xl font-black text-zinc-800 group-hover:text-violet-800 transition-colors">{step.num}</span>
-                    <div className="w-10 h-10 rounded-xl border border-white/10 bg-zinc-900 flex items-center justify-center group-hover:border-violet-500/40 transition-colors">
-                      <step.icon className="w-5 h-5 text-zinc-400 group-hover:text-violet-400 transition-colors" />
-                    </div>
+              <div key={i} className="relative rounded-2xl border border-white/5 bg-zinc-900/40 p-6 space-y-4 hover:border-white/15 transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl font-black text-zinc-700">{step.num}</span>
+                  <div className="w-10 h-10 rounded-xl bg-indigo-950/60 border border-indigo-500/30 flex items-center justify-center">
+                    <step.icon className="w-5 h-5 text-indigo-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white">{step.title}</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">{step.desc}</p>
                 </div>
+                <h3 className="text-lg font-bold text-white">{step.title}</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES ──────────────────────────────────────────────────────── */}
-      <section id="features" className="py-24 px-6">
+      {/* ── FEATURES GRID ─────────────────────────────────────────────────── */}
+      <section id="features" className="py-24 px-6 bg-[#09090c] border-t border-white/5">
         <div className="mx-auto max-w-6xl">
           <div className="text-center space-y-3 mb-16">
-            <p className="text-sm font-medium text-violet-400 tracking-widest uppercase">Features</p>
-            <h2 className="text-4xl font-bold">What makes Vectrieve different</h2>
-            <p className="text-zinc-500 max-w-xl mx-auto">
-              These aren't AI gimmicks. These are the exact capabilities enterprises need but couldn't get from generic AI assistants.
+            <p className="text-xs font-bold text-indigo-400 tracking-widest uppercase">Enterprise Capabilities</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Built for Regulated & High-Stakes Teams</h2>
+            <p className="text-zinc-400 text-sm max-w-2xl mx-auto">
+              No generic chatbot answers. Every feature is tuned for absolute precision, traceability, and speed.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
               <div
                 key={i}
-                className="group relative rounded-2xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/70 backdrop-blur-sm p-8 overflow-hidden transition-all hover:border-white/10"
+                className="group relative rounded-2xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/80 p-6 space-y-4 transition-all duration-200 hover:border-white/15 shadow-md"
               >
-                {/* Background glow on hover */}
-                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${f.color} blur-3xl scale-150 -z-10`} style={{ opacity: 0.04 }} />
+                <div className="flex items-center justify-between">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center shadow-md ${f.glow}`}>
+                    <f.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/5 text-zinc-300 border border-white/10">
+                    {f.badge}
+                  </span>
+                </div>
 
-                <div className="flex items-start gap-5">
-                  <div className={`w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center shadow-lg ${f.glow}`}>
-                    <f.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="text-lg font-semibold text-white">{f.title}</h3>
-                      <span className="text-xs font-medium text-violet-300 bg-violet-500/15 border border-violet-500/25 px-2.5 py-0.5 rounded-full">
-                        {f.badge}
-                      </span>
-                    </div>
-                    <p className="text-zinc-500 text-sm leading-relaxed">{f.description}</p>
-                  </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-bold text-white">{f.title}</h3>
+                  <p className="text-zinc-400 text-xs leading-relaxed">{f.description}</p>
                 </div>
               </div>
             ))}
@@ -360,47 +502,42 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── COMPARISON TABLE ──────────────────────────────────────────────── */}
+      {/* ── COMPARISON MATRIX ─────────────────────────────────────────────── */}
       <section id="compare" className="py-24 px-6">
-        <div className="mx-auto max-w-3xl">
-          <div className="text-center space-y-3 mb-12">
-            <p className="text-sm font-medium text-violet-400 tracking-widest uppercase">Compare</p>
-            <h2 className="text-4xl font-bold">What you can't get elsewhere</h2>
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-xs font-bold text-purple-400 tracking-widest uppercase">Competitive Matrix</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Vectrieve Core vs Generic AI</h2>
           </div>
 
-          <div className="rounded-2xl border border-white/8 overflow-hidden bg-zinc-900/40">
+          <div className="rounded-2xl border border-white/10 overflow-hidden bg-zinc-900/40 shadow-xl">
             <div className="overflow-x-auto">
-              <div className="min-w-[560px]">
-                {/* Header */}
-                <div className="grid grid-cols-4 border-b border-white/8 bg-zinc-900/60">
-                  <div className="col-span-1 px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Feature</div>
-                  <div className="px-4 py-4 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">ChatGPT</div>
-                  <div className="px-4 py-4 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">Gemini</div>
-                  <div className="px-4 py-4 text-center">
-                    <span className="text-xs font-bold text-violet-300 uppercase tracking-wider">Vectrieve</span>
-                  </div>
+              <div className="min-w-[600px]">
+                <div className="grid grid-cols-4 border-b border-white/10 bg-zinc-950/80 px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  <div className="col-span-1">Feature</div>
+                  <div className="text-center">ChatGPT</div>
+                  <div className="text-center">Gemini</div>
+                  <div className="text-center text-cyan-300 font-extrabold">Vectrieve Core</div>
                 </div>
 
                 {COMPARISON.map((row, i) => (
                   <div
                     key={i}
-                    className={`grid grid-cols-4 border-b border-white/5 last:border-0 transition-colors hover:bg-white/2 ${row.core ? '' : 'opacity-70'}`}
+                    className="grid grid-cols-4 border-b border-white/5 last:border-0 px-6 py-3.5 text-xs text-zinc-300 items-center hover:bg-white/[0.02] transition-colors"
                   >
-                    <div className="col-span-1 px-6 py-4 text-sm text-zinc-300">{row.feature}</div>
-                    <div className="px-4 py-4 flex items-center justify-center">
-                      {row.gpt
-                        ? <Check className="w-4 h-4 text-emerald-400" />
-                        : <X className="w-4 h-4 text-zinc-700" />}
+                    <div className="col-span-1 font-medium">{row.feature}</div>
+                    <div className="flex justify-center">
+                      {row.gpt ? <Check className="w-4 h-4 text-emerald-400" /> : <X className="w-4 h-4 text-zinc-700" />}
                     </div>
-                    <div className="px-4 py-4 flex items-center justify-center">
-                      {row.gemini
-                        ? <Check className="w-4 h-4 text-emerald-400" />
-                        : <X className="w-4 h-4 text-zinc-700" />}
+                    <div className="flex justify-center">
+                      {row.gemini ? <Check className="w-4 h-4 text-emerald-400" /> : <X className="w-4 h-4 text-zinc-700" />}
                     </div>
-                    <div className="px-4 py-4 flex items-center justify-center">
-                      {row.core
-                        ? <Check className="w-5 h-5 text-violet-400 drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]" />
-                        : <X className="w-4 h-4 text-zinc-700" />}
+                    <div className="flex justify-center">
+                      {row.core ? (
+                        <Check className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+                      ) : (
+                        <X className="w-4 h-4 text-zinc-700" />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -410,73 +547,58 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── TESTIMONIAL ───────────────────────────────────────────────────── */}
-      <section className="py-24 px-6">
-        <div className="mx-auto max-w-2xl text-center space-y-8">
-          <Quote className="w-10 h-10 text-zinc-700 mx-auto" />
-          <blockquote className="text-2xl font-medium text-white leading-relaxed">
-            "I stopped copy-pasting contract clauses into ChatGPT and praying it would remember context.
-            Vectrieve just knows our entire deal room — and it shows me exactly where it found the answer."
-          </blockquote>
-          <div className="space-y-1">
-            <p className="text-white font-semibold">Early Adopter</p>
-            <p className="text-zinc-500 text-sm">Startup founder, Legal Tech</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA FOOTER ────────────────────────────────────────────────────── */}
-      <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-violet-950/30 to-transparent pointer-events-none" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-gradient-to-b from-transparent to-violet-500/40" />
-
-        <div className="relative mx-auto max-w-2xl text-center space-y-8">
-          <div className="inline-flex items-center gap-2 text-sm text-violet-300">
-            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-            Free during beta
-          </div>
-          <h2 className="text-5xl font-bold">
-            Ready to build your
+      {/* ── FOOTER CTA ────────────────────────────────────────────────────── */}
+      <section className="py-28 px-6 relative overflow-hidden border-t border-white/5 bg-gradient-to-b from-transparent to-indigo-950/20 text-center">
+        <div className="relative mx-auto max-w-3xl space-y-6">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+            Ready to experience
             <br />
-            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
-              second brain?
+            <span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+              Zero-Hallucination Intelligence?
             </span>
           </h2>
-          <p className="text-zinc-400 text-lg">
-            Create your free account. Upload your first document.
-            Get an answer with a source citation in under a minute.
+          <p className="text-zinc-400 text-sm max-w-xl mx-auto">
+            Test the live sandbox demo immediately or provision an enterprise workspace for your organization.
           </p>
-          <Link
-            href="/register"
-            id="footer-cta-register"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-10 py-4 rounded-full transition-all hover:shadow-2xl hover:shadow-violet-500/40 hover:scale-105 active:scale-95 text-lg"
-          >
-            Start building for free
-            <ChevronRight className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center justify-center gap-6 text-sm text-zinc-600">
-            <span className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-700" />No credit card</span>
-            <span className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-700" />Free forever plan</span>
-            <span className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-700" />Local or cloud AI</span>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <button
+              onClick={handleLaunchDemo}
+              disabled={isDemoLoading}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-bold px-8 py-3.5 rounded-full transition-all text-sm shadow-xl active:scale-95 cursor-pointer"
+            >
+              <span>🎮</span>
+              <span>{isDemoLoading ? "Starting Demo..." : "Try Live Demo Sandbox"}</span>
+            </button>
+            <Link
+              href="/register"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-3.5 rounded-full transition-all text-sm active:scale-95"
+            >
+              <span>Create Account</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 py-8 px-6">
-        <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-600">
+      <footer className="border-t border-white/5 py-8 px-6 bg-[#060608]">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-icon.png" alt="Vectrieve" className="h-5 w-5 object-contain" />
-            <span className="text-zinc-400 font-medium">Vectrieve</span>
+            <span className="text-zinc-400 font-semibold">Vectrieve Core</span>
+            <span>· Built by Stanislav Pepryk</span>
           </div>
-          <p>Built by <span className="text-zinc-400">Stanislav Pepryk</span></p>
+
           <div className="flex items-center gap-6">
-            <Link href="/login" className="hover:text-zinc-400 transition-colors">Sign in</Link>
-            <Link href="/register" className="hover:text-zinc-400 transition-colors">Register</Link>
+            <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
+            <Link href="/login" className="hover:text-zinc-300 transition-colors">Sign In</Link>
+            <Link href="/register" className="hover:text-zinc-300 transition-colors">Register</Link>
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }

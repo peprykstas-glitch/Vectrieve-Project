@@ -379,3 +379,87 @@ async def reset_password(
     print(f"✅ Password reset successfully for user: {user.username}")
 
     return {"message": "Password has been reset successfully. You can now sign in."}
+
+
+# --- ЕНДПОІНТ GUEST DEMO SANDBOX ---
+@router.post("/demo")
+async def guest_demo_login(session: AsyncSession = Depends(get_session)):
+    """
+    Provisions or signs into a designated Demo Guest account
+    so pending users and visitors can experience Vectrieve immediately.
+    """
+    from models.sql_models import Space, SpaceMember, SpaceRole
+    from models.document import Document, DocumentStatus
+
+    demo_email = "demo.guest@vectrieve.ai"
+    stmt = select(User).where(User.username == demo_email)
+    res = await session.execute(stmt)
+    demo_user = res.scalar_one_or_none()
+
+    if not demo_user:
+        demo_user = User(
+            username=demo_email,
+            hashed_password=await get_password_hash("DemoGuestPassword2026!"),
+            is_active=True,
+            is_approved=True,
+            is_admin=False,
+            full_name="Guest Explorer (Demo)",
+        )
+        session.add(demo_user)
+        await session.commit()
+        await session.refresh(demo_user)
+
+    # Ensure demo Showcase Knowledge Space exists
+    space_stmt = select(Space).where(Space.user_id == demo_user.id)
+    space_res = await session.execute(space_stmt)
+    demo_space = space_res.scalar_one_or_none()
+
+    if not demo_space:
+        demo_space = Space(
+            name="Vectrieve Enterprise Showcase",
+            description="Preloaded enterprise knowledge base with sample architectural blueprints, audits, and performance benchmarks.",
+            user_id=demo_user.id,
+            llm_model="openai/gpt-oss-120b",
+        )
+        session.add(demo_space)
+        await session.commit()
+        await session.refresh(demo_space)
+
+        # Space membership
+        member = SpaceMember(space_id=demo_space.id, user_id=demo_user.id, role=SpaceRole.OWNER)
+        session.add(member)
+
+        # Prepopulate demo documents
+        sample_doc_1 = Document(
+            filename="Vectrieve_Architecture_Brief.pdf",
+            user_id=demo_user.id,
+            space_id=demo_space.id,
+            status=DocumentStatus.COMPLETED.value,
+            chunk_count=12,
+            file_size=245000,
+            summary="Enterprise Hybrid RAG Architecture combining Groq LPU inference, FastEmbed dense vector embeddings, PostgreSQL 16 metadata storage, and Qdrant vector database."
+        )
+        sample_doc_2 = Document(
+            filename="Q3_Enterprise_Performance_Audit.xlsx",
+            user_id=demo_user.id,
+            space_id=demo_space.id,
+            status=DocumentStatus.COMPLETED.value,
+            chunk_count=8,
+            file_size=128000,
+            summary="Financial and SLA performance audit demonstrating 500+ tok/s response speed, 99.98% uptime, and zero-data-retention compliance under GDPR frameworks."
+        )
+        session.add(sample_doc_1)
+        session.add(sample_doc_2)
+        await session.commit()
+
+    access_token = create_access_token(data={"sub": demo_user.username})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": demo_user.id,
+            "email": demo_user.username,
+            "is_admin": False,
+            "is_demo": True,
+        }
+    }

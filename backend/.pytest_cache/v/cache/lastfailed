@@ -1,5 +1,3 @@
 {
-  "scratch/test_422.py": true,
-  "tests/test_llm_prompts.py::test_persona_instructions_have_ukrainian_polish_rules": true,
-  "tests/test_llm_prompts.py::test_rag_prompt_assembly_with_file_grounding": true
+  "scratch/test_422.py": true
 }

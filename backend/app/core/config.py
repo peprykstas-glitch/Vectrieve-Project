@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     LOG_FILE: str = "analytics_log.csv"
 
     # --- Email & Transactional API ---
+    FRONTEND_URL: str = "https://vectrieve.duckdns.org"
     RESEND_API_KEY: str = ""
     RESEND_FROM: str = "Vectrieve <onboarding@resend.dev>"
     SMTP_HOST: str = ""

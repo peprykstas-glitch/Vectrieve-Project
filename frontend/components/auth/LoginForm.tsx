@@ -190,7 +190,7 @@ export function LoginForm() {
               {/* High contrast primary button with loading state micro-interactions */}
               <Button 
                 type="submit" 
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium"
+                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium cursor-pointer"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -199,6 +199,35 @@ export function LoginForm() {
                   <>Sign In <ArrowRight className="ml-2 h-4 w-4" /></>
                 )}
               </Button>
+
+              {/* Live Demo Sandbox Access Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsSubmitting(true);
+                    try {
+                      const res = await fetch('/api/auth/demo', { method: 'POST' });
+                      if (res.ok) {
+                        router.push('/');
+                        router.refresh();
+                      } else {
+                        setGlobalError('Demo sandbox initialization failed. Please try again.');
+                      }
+                    } catch (e: any) {
+                      setGlobalError(e.message || 'Demo service unavailable');
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/30 bg-indigo-950/20 hover:bg-indigo-950/40 text-indigo-300 hover:text-indigo-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
+                >
+                  <span>🎮</span>
+                  <span>Explore Live Demo Sandbox (Instant Access)</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                </button>
+              </div>
             </form>
           </Form>
           <div className="mt-6 text-center">
