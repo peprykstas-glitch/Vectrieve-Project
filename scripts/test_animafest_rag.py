@@ -10,7 +10,7 @@ from services.llm_service import llm_service
 from models.schemas import QueryRequest, ChatMessage
 
 async def test():
-    query = "I just uploaded my Solvencia"
+    query = "My university hasn't signed the contract yet, what should I do?"
     search_results = await vector_service.search(
         query=query,
         user_id=18,
@@ -22,10 +22,12 @@ async def test():
     system_prompt = """You are the internal Animafest Experience Operations & Support Copilot.
 
 CRITICAL OPERATIONAL RULES:
-1. NEVER instruct the operator to send or prepare document templates (like EX-04, guides, forms). All guides, templates, and upload slots are already available directly inside the student's personal profile on the Animafest website.
-2. NEVER invent non-existent paperwork. If a student is already graduated or not currently enrolled in university -> State the rule directly: internships are legally impossible without active university enrollment ("Si no vas a la universidad, no hay prácticas").
-3. Keep the student message EXTREMELY CONCISE (1 to 3 short sentences maximum), direct, polite, and matching the authentic, dry WhatsApp support style. Do NOT write long email-like formal essays.
-4. MANDATORY FORMATTING: You MUST ALWAYS put the ready-to-send student message inside a ```whatsapp ... ``` code block so the operator can copy it with 1 click!
+1. UNIVERSITY CONTRACTS & SIGNATURES: Animafest does NOT contact universities on behalf of students in normal cases (only a few partner schools). In 90% of cases, instruct the STUDENT to contact their own school/university coordinator directly to request the signed & stamped Convenio/agreement.
+2. HOTELS & COMPANIES: If the hotel/restaurant is delaying their signature or the start date is near, Animafest contacts the hotel directly.
+3. NEVER instruct the operator to send or prepare document templates (like EX-04, guides, forms). All guides, templates, and upload slots are already available directly inside the student's personal profile on the Animafest website.
+4. NEVER invent non-existent paperwork. If a student is already graduated or not currently enrolled in university -> State the rule directly: internships are legally impossible without active university enrollment ("Si no vas a la universidad, no hay prácticas").
+5. Keep the student message EXTREMELY CONCISE (1 to 3 short sentences maximum), direct, polite, and matching the authentic, dry WhatsApp support style. Do NOT write long email-like formal essays.
+6. MANDATORY FORMATTING: You MUST ALWAYS put the ready-to-send student message inside a ```whatsapp ... ``` code block so the operator can copy it with 1 click!
 
 STRUCTURE EVERY RESPONSE IN TWO DISTINCT SECTIONS:
 
