@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, Search, UploadCloud, Trash2, Loader2, Copy, Check, Sparkles, RefreshCw } from "lucide-react";
+import { Database, Search, UploadCloud, Trash2, Loader2, Copy, Check, Sparkles, RefreshCw, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFiles, Document } from "@/hooks/useFiles";
 import { FileTable } from "@/components/files/FileTable";
@@ -340,8 +340,38 @@ export default function KnowledgeBasePage() {
                         </button>
                       </div>
                       <div className="prose prose-invert prose-zinc text-zinc-300 text-xs leading-relaxed max-w-none prose-p:leading-relaxed prose-p:mb-2 last:prose-p:mb-0 prose-ul:list-disc prose-ul:pl-4 prose-li:my-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {docSummary}
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ href, children, ...props }: any) => {
+                              if (href && href.startsWith("#seek-ts-")) {
+                                const ts = href.replace("#seek-ts-", "");
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const parts = ts.split(":").map(Number);
+                                      const secs = parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0] * 3600 + parts[1] * 60 + parts[2];
+                                      window.dispatchEvent(new CustomEvent("seek-audio-timestamp", { detail: { seconds: secs, timestamp: ts } }));
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-full text-xs font-mono font-semibold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 hover:text-indigo-100 border border-indigo-500/30 transition-all cursor-pointer shadow-sm active:scale-95 not-prose align-middle"
+                                    title={`Click to seek audio to ${ts}`}
+                                  >
+                                    <Play className="w-2.5 h-2.5 fill-indigo-400 text-indigo-400" />
+                                    <span>{ts}</span>
+                                  </button>
+                                );
+                              }
+                              return (
+                                <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline" {...props}>
+                                  {children}
+                                </a>
+                              );
+                            }
+                          }}
+                        >
+                          {docSummary.replace(/(?<=\s|^|[(])\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g, "[$1](#seek-ts-$1)")}
                         </ReactMarkdown>
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Bot, FileText, ChevronDown, BrainCircuit, Copy, Check, MessageSquare, Send } from "lucide-react";
+import { User, Bot, FileText, ChevronDown, BrainCircuit, Copy, Check, MessageSquare, Send, Play } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Message, Source } from "@/hooks/useChat";
@@ -182,6 +182,9 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
     // Strip inline parenthetical document references like (Official_Communication_Templates_and_Triggers.md, Segment 1)
     markdownContent = markdownContent.replace(/\s*\([A-Za-z0-9_\-]+\.(?:md|pdf|json|csv|txt|docx|pptx|xlsx)[^)]*\)/gi, "");
 
+    // Convert timestamps like [01:23] or [01:23:45] into interactive seeker links
+    markdownContent = markdownContent.replace(/(?<=\s|^|[(])\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g, "[$1](#seek-ts-$1)");
+
     // Clean up excessive multi-newline gaps from LLM streaming
     markdownContent = markdownContent.replace(/\n{3,}/g, "\n\n");
 
@@ -243,7 +246,33 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        code: CodeBlock
+                        code: CodeBlock,
+                        a: ({ href, children, ...props }: any) => {
+                          if (href && href.startsWith("#seek-ts-")) {
+                            const ts = href.replace("#seek-ts-", "");
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const parts = ts.split(":").map(Number);
+                                  const secs = parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0] * 3600 + parts[1] * 60 + parts[2];
+                                  window.dispatchEvent(new CustomEvent("seek-audio-timestamp", { detail: { seconds: secs, timestamp: ts } }));
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-full text-xs font-mono font-semibold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 hover:text-indigo-100 border border-indigo-500/30 transition-all cursor-pointer shadow-sm active:scale-95 not-prose align-middle"
+                                title={`Click to seek audio to ${ts}`}
+                              >
+                                <Play className="w-2.5 h-2.5 fill-indigo-400 text-indigo-400" />
+                                <span>{ts}</span>
+                              </button>
+                            );
+                          }
+                          return (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline" {...props}>
+                              {children}
+                            </a>
+                          );
+                        }
                       }}
                     >
                       {markdownContent}

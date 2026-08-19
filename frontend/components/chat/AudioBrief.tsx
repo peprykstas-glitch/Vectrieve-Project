@@ -13,7 +13,9 @@ import {
   X,
   MessageSquare,
   Mic,
-  SlidersHorizontal
+  SlidersHorizontal,
+  SkipBack,
+  SkipForward
 } from "lucide-react";
 
 interface AudioBriefProps {
@@ -203,6 +205,50 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [podcast, isPlaying, currentTurnIdx]);
+
+  // Global listener for click-to-seek timestamp events dispatched from ChatMessage or Meeting Intelligence
+  useEffect(() => {
+    const handleTimestampSeek = (e: any) => {
+      const { seconds, timestamp } = e.detail || {};
+      if (!podcast || !podcast.transcript || podcast.transcript.length === 0) {
+        return;
+      }
+      let targetSec = seconds;
+      if (targetSec === undefined && timestamp) {
+        const parts = timestamp.split(":").map(Number);
+        if (parts.length === 2) targetSec = parts[0] * 60 + parts[1];
+        else if (parts.length === 3) targetSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+      }
+      if (targetSec !== undefined) {
+        // Map seconds across transcript turns (estimated ~10-12s per turn)
+        const estTurn = Math.min(Math.floor(targetSec / 10), podcast.transcript.length - 1);
+        setCurrentTurnIdx(Math.max(0, estTurn));
+        setIsPlaying(true);
+      }
+    };
+
+    window.addEventListener("seek-audio-timestamp", handleTimestampSeek);
+    return () => window.removeEventListener("seek-audio-timestamp", handleTimestampSeek);
+  }, [podcast]);
+
+  const handleWaveformClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !audioRef.current.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    audioRef.current.currentTime = ratio * audioRef.current.duration;
+    setActiveProgress(ratio);
+  };
+
+  const handleJump = (deltaSeconds: number) => {
+    if (!audioRef.current) return;
+    const duration = audioRef.current.duration || 0;
+    const newTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + deltaSeconds));
+    audioRef.current.currentTime = newTime;
+    if (duration > 0) {
+      setActiveProgress(newTime / duration);
+    }
+  };
 
   // Real audio-reactive visualizer loop (reads the shared analyser node each frame)
   useEffect(() => {
@@ -882,15 +928,24 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                 </button>
               </div>
 
-              {/* Audio-reactive visualizer, driven by the live analyser node */}
-              <div className="h-8 flex items-end gap-1 px-3 bg-zinc-950 border border-white/5 rounded-xl overflow-hidden py-1.5 shadow-inner">
+              {/* Interactive Audio Waveform Visualizer & Scrub Bar */}
+              <div 
+                onClick={handleWaveformClick}
+                className="h-8 flex items-end gap-1 px-3 bg-zinc-950 border border-white/5 rounded-xl overflow-hidden py-1.5 shadow-inner cursor-pointer relative group/wave select-none"
+                title="Click waveform to scrub and seek"
+              >
+                {/* Active progress scrub overlay */}
+                <div 
+                  className="absolute left-0 top-0 bottom-0 bg-indigo-500/10 pointer-events-none transition-all duration-100 border-r border-indigo-500/50"
+                  style={{ width: `${Math.round(activeProgress * 100)}%` }}
+                />
                 {barLevels.map((level, idx) => (
                   <div
                     key={idx}
-                    className="w-1 bg-gradient-to-t from-indigo-500 via-purple-500 to-emerald-450 rounded-full transition-transform duration-75 ease-out motion-reduce:transition-none"
+                    className="w-1 bg-gradient-to-t from-indigo-500 via-purple-500 to-emerald-450 rounded-full transition-transform duration-75 ease-out motion-reduce:transition-none relative z-10"
                     style={{
                       height: "100%",
-                      transform: `scaleY(${isPlaying ? Math.max(0.1, level) : 0.2})`,
+                      transform: `scaleY(${isPlaying ? Math.max(0.12, level) : 0.2})`,
                       transformOrigin: "bottom",
                     }}
                   />
@@ -899,7 +954,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
 
               {/* Player Core Bar */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={handlePlayPause}
                     className={`h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer ${isPlaying
@@ -909,12 +964,31 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                   >
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
                   </button>
+
+                  <button
+                    onClick={() => handleJump(-5)}
+                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent flex items-center gap-0.5 text-[9px] font-mono font-semibold"
+                    title="Jump backward 5s"
+                  >
+                    <SkipBack className="w-3 h-3" />
+                    <span>-5s</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleJump(5)}
+                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent flex items-center gap-0.5 text-[9px] font-mono font-semibold"
+                    title="Jump forward 5s"
+                  >
+                    <span>+5s</span>
+                    <SkipForward className="w-3 h-3" />
+                  </button>
+
                   <button
                     onClick={handleReset}
                     className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent"
                     title="Restart brief"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                   
                   {/* volume controls with hover slide-out slider */}
@@ -924,7 +998,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                       className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer border-0 bg-transparent"
                       title={isMuted ? "Unmute" : "Mute"}
                     >
-                      {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
+                      {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5" />}
                     </button>
                     <div className="w-0 overflow-hidden group-hover:w-16 transition-all duration-300 flex items-center">
                       <input
@@ -942,7 +1016,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
 
                 {/* Speed Multiplier select */}
                 <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-white/5">
-                  {[1.0, 1.25, 1.5].map((rate) => (
+                  {[1.0, 1.25, 1.5, 2.0].map((rate) => (
                     <button
                       key={rate}
                       onClick={() => handleSpeedChange(rate)}
