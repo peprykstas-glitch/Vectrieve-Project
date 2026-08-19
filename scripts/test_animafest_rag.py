@@ -11,14 +11,14 @@ from models.schemas import QueryRequest, ChatMessage
 
 async def test():
     query = "Hola, ya terminé mis estudios en la universidad y tengo mi título. ¿Puedo hacer las prácticas con ustedes?"
-    context_chunks = await vector_service.search_knowledge_hybrid(
-        query, 
-        limit=5, 
-        user_id=18, 
+    search_results = await vector_service.search(
+        query=query,
+        user_id=18,
+        limit=5,
         space_id="0312404a-650b-4e4a-af30-a0660872650d"
     )
-    print(f"Found {len(context_chunks)} context chunks in Animafest Knowledge Base.")
-    context_str = "\n\n".join([c.content for c in context_chunks])
+    print(f"Found {len(search_results)} context chunks in Animafest Knowledge Base.")
+    context_str = "\n\n".join([r.text for r in search_results])
     
     system_prompt = """You are the official Animafest Experience AI Customer Support & Operations Assistant.
 Your mission is to help Animafest staff and operators resolve student inquiries regarding internships, documentation, visas, NIE, TIE, EX-04, insurance, hotels, and platform procedures.
