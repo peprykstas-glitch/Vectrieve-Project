@@ -29,7 +29,7 @@ Vectrieve AI is a multi-tenant, Retrieval-Augmented Generation (RAG) platform de
    ├── ⚖️ Cross-Encoder Reranker (ms-marco-MiniLM-L-6-v2)
    ├── 🗄️ PostgreSQL 16 (Relational Metadata & Lexical Full-Text Search)
    ├── 🎯 Qdrant v1.7 (Dense Cosine Similarity Search)
-   └── ⚡ Groq Cloud API (openai/gpt-oss-120b & llama-3.3-70b-versatile)
+   └── ⚡ Groq Cloud LPU (openai/gpt-oss-120b, llama-3.2-90b-vision-preview, whisper-large-v3)
 ```
 
 ---
@@ -46,7 +46,7 @@ Vectrieve AI is a multi-tenant, Retrieval-Augmented Generation (RAG) platform de
 | **Vector Engine** | Qdrant | `1.7.4` | Cosine similarity vector search with JSON payload filters. |
 | **Embedding Engine** | FastEmbed (ONNX Runtime) | `0.4.1` | Local in-process 768-dim dense embedding generation (`nomic-embed-text-v1.5`). |
 | **Reranker Model** | TextCrossEncoder (`ms-marco-MiniLM-L-6-v2`) | HuggingFace | Cross-encoder contextual relevance reranking. |
-| **LLM Inference** | Groq Cloud LPU API | API v1 | `openai/gpt-oss-120b` (Chat/RAG), `llama-3.3-70b-versatile` (Titles/Briefings). |
+| **LLM Inference** | Groq Cloud LPU API | API v1 | `openai/gpt-oss-120b` (Primary Chat/RAG/Briefings), `llama-3.2-90b-vision-preview` (Vision OCR), `whisper-large-v3` (Audio STT). |
 | **Audio Synthesis** | Edge-TTS (Microsoft Neural Voices) | `6.1.3` | Multi-speaker podcast and overview audio generation (`uk-UA`, `en-US`). |
 
 ---
@@ -161,4 +161,4 @@ All ongoing work strictly adheres to [GEMINI.md](file:///c:/Projects/Project%20X
 * **Auditor / Lead Architect:** Antigravity AI & Stas Pepryk.
 * **Verification Date:** 18 August 2026.
 * **Verification Environment:** DigitalOcean Droplet `159.89.110.69`, Ubuntu 24.04, Docker 27.x.
-* **Codebase Commit Reference:** `c5ac96fb` (branch `main`).
+* **Codebase Commit Reference:** `c5ac96fb` (branch `main`)

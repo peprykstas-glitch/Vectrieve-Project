@@ -1,87 +1,90 @@
-# Vectrieve AI (v2.0)
+# Vectrieve Core — Enterprise Hybrid RAG & Knowledge Intelligence Platform
 
-Vectrieve is a secure, local Retrieval-Augmented Generation (RAG) Knowledge Assistant designed for developers and product teams. It enables precise, isolated context retrieval from documents, source code, and custom workspaces with zero data leakage.
-
----
-
-## Key Capabilities
-
-* **Multi-Tenant Workspace Isolation (Spaces):** Partition files, chat histories, and system prompts into separate workspaces. Data never bleeds between spaces in either vector (dense) or database (sparse) search steps.
-* **Codebase & Document Intelligence:** Index and analyze project files (`.py`, `.js`, `.tsx`, `.ts`) alongside large text files and PDFs using optimized Qdrant vector storage.
-* **Granular LLM Directives:** Set custom system prompts per workspace to align model behavior, formatting rules, and constraints for specific task domains.
-* **Performance Telemetry:** Real-time feedback, latency tracking, and model usage analytics.
+Vectrieve Core is a high-throughput, multi-tenant Retrieval-Augmented Generation (RAG) platform and Private Knowledge Intelligence Assistant engineered for enterprise teams. It provides sub-second semantic retrieval across documents, audio meetings, and tabular data with strict workspace isolation and zero data leakage.
 
 ---
 
-## System Architecture
+## 🚀 Key Capabilities
 
-The application is structured into isolated backend and frontend services, coordinated via Docker Compose:
+* **Multi-Tenant Workspaces & Granular RBAC:** Complete data isolation by `space_id` with role-based permissions (`OWNER`, `EDITOR`, `VIEWER`), cross-space isolation, and real-time collaboration.
+* **Dual-Stage Hybrid Search & Reranking:** Parallel dense vector retrieval (Qdrant) and sparse lexical search (PostgreSQL full-text) reranked by FastEmbed Cross-Encoder models (`ms-marco-MiniLM-L-6-v2`) for pinpoint factual accuracy.
+* **Multi-Format Ingestion & Table Chunking:** Intelligent semantic chunking for `.pdf`, `.docx`, `.xlsx`, `.csv`, `.pptx`, `.md`, and `.txt` with streaming disk writes (`NamedTemporaryFile`) preventing memory spikes during multi-megabyte uploads.
+* **Audio & Meeting Intelligence (Groq Whisper):** Drag-and-drop ingestion of `.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, and `.mkv` files with automated Whisper transcription and executive briefing extraction (Summary, Key Decisions, Action Items, Next Steps).
+* **Multimodal Vision OCR:** Automatic diagram, chart, and presentation slide captioning via `llama-3.2-90b-vision-preview`.
+* **High-Throughput LPU Inference:** Powered by Groq Cloud LPUs running `openai/gpt-oss-120b` streaming at ~500 tokens/second with Bring-Your-Own-Key (BYOK) support.
+* **Full-Surface Localization (i18n):** Complete 4-language support across English (`en` default), Ukrainian (`uk`), Polish (`pl`), and Spanish (`es`).
+* **Seamless Identity & Auth:** Argon2 password hashing with JWT HttpOnly cookies alongside one-click Google OAuth2 SSO with automatic duplicate-free account unification.
+
+---
+
+## 🏛️ System Architecture
 
 ```
-[ Frontend: Next.js 14 / TS ] ---> [ BFF Proxy / API Gateway ]
-                                              |
-                                              v
-                                   [ Backend: FastAPI ]
-                                     /             \
-                                    v               v
-                         [ Postgres DB ]     [ Qdrant Vector DB ]
+[ Client Browser / Mobile Web ]
+             │
+             ▼ (HTTPS Port 443 / 80)
+ [ Next.js 16 Frontend (Turbopack, React 19) ]
+             │
+             ▼ (Internal Docker Network / Port 8000)
+ [ FastAPI Application Gateway (Python 3.12) ]
+      ├── 🔐 Auth & Quota Guard (Argon2 / JWT Cookies / UserSettings Quotas)
+      ├── 📄 Multi-Format Ingestion Engine (PDF, DOCX, XLSX, CSV, PPTX, Media)
+      ├── 🎙️ Audio Parser & Meeting Intelligence (Groq Whisper Large v3)
+      ├── 🧬 FastEmbed ONNX Runtime (BAAI/bge-small / nomic-embed)
+      ├── ⚖️ Cross-Encoder Reranker (ms-marco-MiniLM-L-6-v2)
+      ├── 🗄️ PostgreSQL 16 (Relational Metadata & Lexical Full-Text Search)
+      ├── 🎯 Qdrant Vector Engine (Dense Cosine Similarity Search)
+      └── ⚡ Groq Cloud LPU (openai/gpt-oss-120b & llama-3.2-90b-vision)
 ```
 
 ---
 
-## Technical Stack
+## 🛠️ Technical Stack
 
-* **Large Language Models:** Groq Cloud APIs (e.g., Llama-3-70b) and local Ollama integrations.
-* **Vector Engine:** Qdrant (deployed inside Docker).
-* **Database & Migration:** PostgreSQL, SQLite (testing), SQLAlchemy/SQLModel, and Alembic.
-* **Backend Framework:** Python 3.12, FastAPI, PyPDF2/PDFPlumber, Pydantic v2.
-* **Frontend Application:** TypeScript, Next.js 14, Tailwind CSS, Shadcn UI.
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | Next.js 16 (Turbopack), React 19, Tailwind CSS, Lucide Icons | Liquid glass interface, SSE token streaming, i18n localization. |
+| **Backend** | FastAPI, Python 3.12, SQLModel / SQLAlchemy (Async), Pydantic v2 | High-concurrency async REST API, background workers, streaming. |
+| **Vector Engine** | Qdrant Vector Database | Sub-millisecond dense vector indexing with payload filtering. |
+| **Relational DB** | PostgreSQL 16 (with Alembic migrations) | Multi-tenant RBAC, document metadata, full-text lexical search. |
+| **Embedding & Reranker**| FastEmbed (ONNX Runtime) | Zero-cost in-container dense embeddings and cross-encoder reranking. |
+| **LLM Inference** | Groq Cloud LPU (`openai/gpt-oss-120b`) | Ultra-fast ~500 t/s generation with 131k context window and 4k completion tokens. |
+| **Vision & Audio** | `llama-3.2-90b-vision-preview`, `whisper-large-v3` | Diagram/presentation OCR and meeting audio transcription. |
 
 ---
 
-## Getting Started
+## 💻 Getting Started (Local Development)
 
 ### Prerequisites
 * Docker Desktop installed and running
 * Python 3.12+
-* Node.js 18+
+* Node.js 20+
 
 ### 1. Database Infrastructure
-Spin up Qdrant and PostgreSQL databases:
+Start the PostgreSQL and Qdrant services:
 ```bash
-docker-compose up -d
+docker compose up -d db qdrant
 ```
 
 ### 2. Backend Services
-Navigate to the backend directory, initialize your virtual environment, and install dependencies:
 ```bash
 cd backend
 python -m venv venv
 
 # Windows PowerShell:
 .\venv\Scripts\Activate.ps1
-
 # Linux / macOS:
 source venv/bin/activate
 
 pip install -r requirements.txt
-```
-
-Run database migrations to initialize tables and indices:
-```bash
 alembic upgrade head
-```
-
-Launch the FastAPI dev server:
-```bash
 python main.py
 # Server starts at http://localhost:8000
 ```
 
 ### 3. Frontend Application
-Navigate to the frontend directory, install dependencies, and start the development server:
 ```bash
-cd vectrieve-frontend
+cd frontend
 npm install
 npm run dev
 # Application starts at http://localhost:3000
@@ -89,9 +92,10 @@ npm run dev
 
 ---
 
-## Running Integration Tests
-Execute the pytest suite to verify database schemas, workspace isolation bounds, and API route security:
+## 🧪 Automated Testing
+Execute the complete pytest test suite:
 ```bash
 cd backend
 venv/Scripts/python -m pytest
+# 92 passing unit & integration tests
 ```

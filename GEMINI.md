@@ -7,7 +7,7 @@
 **Project:** Vectrieve Core (Private AI Knowledge & Hybrid RAG Assistant)
 - **Frontend:** Next.js 16 (Turbopack, TypeScript, Tailwind CSS, Lucide Icons, i18n Context).
 - **Backend:** FastAPI (Python 3.12, SQLModel, Alembic, PostgreSQL, Qdrant Vector DB).
-- **Inference Mode:** Cloud Enterprise (Groq Cloud API `llama-3.3-70b-versatile` / FastEmbed BGE ONNX embeddings).
+- **Inference Mode:** Cloud Enterprise (Groq Cloud API `openai/gpt-oss-120b` / FastEmbed BGE ONNX embeddings / Whisper Large v3 / `llama-3.2-90b-vision-preview`).
 - **Production Server:** Ubuntu VPS `159.89.110.69` (Docker Compose `docker-compose.prod.yml`).
 
 ---
