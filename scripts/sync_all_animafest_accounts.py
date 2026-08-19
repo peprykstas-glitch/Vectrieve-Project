@@ -11,7 +11,8 @@ sys.path.insert(0, os.path.abspath("backend/app"))
 sys.path.insert(0, os.path.abspath("backend"))
 
 from models.user import User
-from models.sql_models import Space, SpaceMember, SpaceRole, UserSettings
+from models.sql_models import Space, SpaceMember, SpaceRole
+from models.user_settings import UserSettings
 from models.document import Document, DocumentStatus
 from services.pdf_parser import process_pdf_background
 from services.vector_service import vector_service
