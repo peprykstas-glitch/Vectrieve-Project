@@ -1,24 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  User, 
-  Bot, 
-  FileText, 
-  ChevronDown, 
-  BrainCircuit, 
-  Copy, 
-  Check, 
-  MessageSquare, 
-  Send, 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Loader2, 
-  Mic, 
-  Headphones,
-  Sparkles
-} from "lucide-react";
+import { User, Bot, FileText, ChevronDown, BrainCircuit, Copy, Check, MessageSquare, Send, Play } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Message, Source } from "@/hooks/useChat";
@@ -81,24 +63,25 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
           </div>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-emerald-300 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all duration-150 cursor-pointer active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-zinc-950 border border-emerald-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+            title="Copy ready message for student"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Copied!</span>
+                <Check className="w-3.5 h-3.5" />
+                <span>Copied!</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                <Copy className="w-3.5 h-3.5" />
                 <span>Copy Message</span>
               </>
             )}
           </button>
         </div>
-        
-        {/* WhatsApp Message Bubble Content */}
-        <div className="p-4 bg-emerald-950/20 text-emerald-100 text-sm leading-relaxed font-sans whitespace-pre-wrap selection:bg-emerald-500/30">
+
+        {/* Message body */}
+        <div className="p-4 font-sans text-sm leading-relaxed text-emerald-100/95 whitespace-pre-wrap select-text">
           {textContent}
         </div>
       </div>
@@ -136,134 +119,17 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
   );
 }
 
-function AudioSourcePlayer({ text, filename }: { text: string; filename: string }) {
-  const [isPlaying, setIsPlaying] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [progress, setProgress] = React.useState(0);
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
-
-  const togglePlay = () => {
-    if (isPlaying && audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-      return;
-    }
-
-    if (!audioRef.current) {
-      setIsLoading(true);
-      const hasCyrillic = /[а-яА-ЯіїєґІЇЄҐ]/.test(text);
-      const lang = hasCyrillic ? "uk" : "en";
-      const cleanText = text.slice(0, 500);
-      const audioUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(cleanText)}&host=Max&language=${lang}`;
-
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-
-      audio.onplay = () => {
-        setIsLoading(false);
-        setIsPlaying(true);
-      };
-
-      audio.ontimeupdate = () => {
-        if (audio.duration) {
-          setProgress((audio.currentTime / audio.duration) * 100);
-        }
-      };
-
-      audio.onended = () => {
-        setIsPlaying(false);
-        setProgress(0);
-      };
-
-      audio.onerror = () => {
-        setIsLoading(false);
-        setIsPlaying(false);
-      };
-
-      audio.play().catch((err) => {
-        console.error("Audio playback failed:", err);
-        setIsLoading(false);
-        setIsPlaying(false);
-      });
-    } else {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
-  return (
-    <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-zinc-950/80 border border-emerald-500/30 my-2 shadow-inner">
-      <button
-        type="button"
-        onClick={togglePlay}
-        disabled={isLoading}
-        className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 transition-all shadow-md shadow-emerald-950/50 cursor-pointer disabled:opacity-50 active:scale-95"
-      >
-        {isLoading ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : isPlaying ? (
-          <Pause className="w-3.5 h-3.5" />
-        ) : (
-          <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-        )}
-      </button>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between text-[10px] mb-1">
-          <span className="font-bold text-emerald-400 flex items-center gap-1">
-            <Mic className="w-3 h-3 animate-pulse" />
-            <span>Audio Transcript Playback</span>
-          </span>
-          <span className="text-zinc-500 font-mono text-[9px]">{isPlaying ? "Streaming speech..." : "Click play to listen"}</span>
-        </div>
-        <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-150 rounded-full"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Citation({ src }: { src: Source }) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const isAudio = /\.(mp3|wav|m4a|ogg|flac|aac|wma|mp4|mov|mkv|webm)$/i.test(src.filename);
-
   return (
-    <div className={`rounded-xl text-xs overflow-hidden transition-all duration-200 border ${
-      isAudio 
-        ? "bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50 shadow-sm shadow-emerald-950/20" 
-        : "bg-zinc-900/40 border-white/5 hover:border-zinc-700/50"
-    }`}>
+    <div className="bg-zinc-900/40 border border-white/5 rounded-xl text-xs text-zinc-300 overflow-hidden transition-all duration-200 hover:border-zinc-700/50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-2.5 text-left font-medium select-none flex items-center justify-between hover:bg-zinc-800/30 transition-colors border-0 bg-transparent cursor-pointer"
       >
         <span className="flex items-center gap-2 truncate">
-          {isAudio ? (
-            <Volume2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          ) : (
-            <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          )}
-          <span className={`truncate max-w-[220px] sm:max-w-sm text-xs ${isAudio ? "text-emerald-300 font-semibold" : "text-zinc-300"}`}>
-            {src.filename}
-          </span>
-          {isAudio && (
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
-              Audio
-            </span>
-          )}
+          <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" /> 
+          <span className="truncate max-w-[220px] sm:max-w-sm text-zinc-300 text-xs">{src.filename}</span>
         </span>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-zinc-500 text-[10px] bg-zinc-950 border border-white/5 px-2 py-0.5 rounded-full font-semibold">
@@ -279,12 +145,9 @@ function Citation({ src }: { src: Source }) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-white/5 bg-zinc-950/60 p-3 space-y-2"
+            className="overflow-hidden border-t border-white/5 bg-zinc-950/60"
           >
-            {isAudio && (
-              <AudioSourcePlayer text={src.content} filename={src.filename} />
-            )}
-            <div className="font-mono text-[11px] leading-relaxed text-zinc-400 max-h-40 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+            <div className="p-3 font-mono text-[11px] leading-relaxed text-zinc-400 max-h-40 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
               {src.content}
             </div>
           </motion.div>
@@ -316,23 +179,14 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
       }
     }
 
-    // 1. Convert Chinese bracket citations 【filename.ext】 to clickable interactive pills
-    markdownContent = markdownContent.replace(/【\s*(.*?\.(?:mp3|wav|m4a|ogg|flac|aac|mp4|mov|mkv))\s*】/gi, "[$1](#audio-clip-$1)");
-    markdownContent = markdownContent.replace(/【\s*(.*?\.(?:pdf|docx|xlsx|csv|pptx|txt|md|json))\s*】/gi, "[$1](#doc-cite-$1)");
-
-    // 2. Convert standard parenthetical references (filename.mp3)
-    markdownContent = markdownContent.replace(/\(\s*(.*?\.(?:mp3|wav|m4a|ogg|flac|aac|mp4|mov|mkv))\s*\)/gi, "[$1](#audio-clip-$1)");
-
-    // 3. Strip inline non-audio parenthetical doc references like (Official_Templates.md, Segment 1)
+    // Strip inline parenthetical document references like (Official_Communication_Templates_and_Triggers.md, Segment 1)
     markdownContent = markdownContent.replace(/\s*\([A-Za-z0-9_\-]+\.(?:md|pdf|json|csv|txt|docx|pptx|xlsx)[^)]*\)/gi, "");
 
-    // 4. Convert timestamps like [01:23] or [01:23:45] into interactive audio seeker links
+    // Convert timestamps like [01:23] or [01:23:45] into interactive seeker links
     markdownContent = markdownContent.replace(/(?<=\s|^|[(])\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g, "[$1](#seek-ts-$1)");
 
     // Clean up excessive multi-newline gaps from LLM streaming
     markdownContent = markdownContent.replace(/\n{3,}/g, "\n\n");
-
-    const hasAudioSource = msg.sources?.some(s => /\.(mp3|wav|m4a|ogg|flac|aac|wma|mp4|mov|mkv|webm)$/i.test(s.filename));
 
     return (
       <motion.div
@@ -394,49 +248,6 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                       components={{
                         code: CodeBlock,
                         a: ({ href, children, ...props }: any) => {
-                          if (href && href.startsWith("#audio-clip-")) {
-                            const filename = href.replace("#audio-clip-", "");
-                            const matchingSrc = msg.sources?.find(s => s.filename.includes(filename) || filename.includes(s.filename));
-                            return (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setShowAllSources(true);
-                                  const cleanText = matchingSrc?.content || filename;
-                                  const hasCyrillic = /[а-яА-ЯіїєґІЇЄҐ]/.test(cleanText);
-                                  const lang = hasCyrillic ? "uk" : "en";
-                                  const audioUrl = `/api/proxy/podcast/audio?text=${encodeURIComponent(cleanText.slice(0, 500))}&host=Max&language=${lang}`;
-                                  const audio = new Audio(audioUrl);
-                                  audio.play().catch(console.error);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mx-1 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-100 border border-emerald-500/30 transition-all cursor-pointer shadow-sm active:scale-95 not-prose align-middle"
-                                title={`Click to listen to audio from ${filename}`}
-                              >
-                                <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                                <span className="font-semibold truncate max-w-[200px]">{filename}</span>
-                              </button>
-                            );
-                          }
-
-                          if (href && href.startsWith("#doc-cite-")) {
-                            const filename = href.replace("#doc-cite-", "");
-                            return (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setShowAllSources(true);
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-md text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-indigo-100 border border-indigo-500/20 transition-all cursor-pointer not-prose align-middle"
-                                title={`View verified citation: ${filename}`}
-                              >
-                                <FileText className="w-3 h-3 text-indigo-400" />
-                                <span className="truncate max-w-[180px]">{filename}</span>
-                              </button>
-                            );
-                          }
-
                           if (href && href.startsWith("#seek-ts-")) {
                             const ts = href.replace("#seek-ts-", "");
                             return (
@@ -456,7 +267,6 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                               </button>
                             );
                           }
-
                           return (
                             <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline" {...props}>
                               {children}
@@ -483,14 +293,11 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
             </div>
           )}
 
-          {/* RAG Citations & Audio Sources */}
+          {/* RAG Citations (Subtle chips at the bottom) */}
           {msg.sources && msg.sources.length > 0 && (
             <div className="mt-3.5 flex flex-col gap-2 w-full pt-2 border-t border-white/5">
               <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  {hasAudioSource && <Headphones className="w-3 h-3 text-emerald-400" />}
-                  Verified Sources ({msg.sources.length})
-                </span>
+                <span>Verified Sources ({msg.sources.length})</span>
                 {msg.sources.length > 2 && (
                   <button 
                     onClick={() => setShowAllSources(!showAllSources)}
