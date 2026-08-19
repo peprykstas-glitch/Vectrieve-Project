@@ -86,6 +86,21 @@ async def upload_file(
     await session.commit()
     await session.refresh(doc)
 
+    # If media file, also persist a permanent copy in media_storage so original recording can be streamed & seeked
+    media_extensions = (".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".wma", ".mp4", ".mov", ".mkv", ".webm")
+    is_media = Path(file.filename or "").suffix.lower() in media_extensions
+    if is_media:
+        try:
+            import shutil
+            media_dir = Path("/app/data/media_storage") if Path("/app/data").exists() else Path(__file__).resolve().parent.parent / "media_storage"
+            media_dir.mkdir(parents=True, exist_ok=True)
+            persisted_path = media_dir / f"{doc.id}_{file.filename}"
+            shutil.copyfile(tmp_path, persisted_path)
+            canonical_path = media_dir / file.filename
+            shutil.copyfile(tmp_path, canonical_path)
+        except Exception as copy_err:
+            print(f"⚠️ Failed to copy media file to persistent media_storage: {copy_err}")
+
     # process_pdf_background now receives a Path, not raw bytes
     background_tasks.add_task(
         process_pdf_background,
@@ -100,7 +115,67 @@ async def upload_file(
 
 from sqlmodel import select
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
 from services.vector_service import get_vector_service, VectorService
+
+@router.get("/media/{filename}")
+async def get_media_file(
+    filename: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Serve the original uploaded audio/video recording for playback with HTTP Range seeking support."""
+    from models.sql_models import SpaceMember
+
+    media_dir = Path("/app/data/media_storage") if Path("/app/data").exists() else Path(__file__).resolve().parent.parent / "media_storage"
+
+    # Look up document by filename accessible to this user
+    doc_stmt = select(Document).where(Document.filename == filename)
+    doc_res = await session.execute(doc_stmt)
+    docs = doc_res.scalars().all()
+
+    accessible_doc = None
+    for d in docs:
+        if d.user_id == current_user.id:
+            accessible_doc = d
+            break
+        if d.space_id:
+            sm_stmt = select(SpaceMember).where(
+                SpaceMember.space_id == d.space_id,
+                SpaceMember.user_id == current_user.id
+            )
+            sm_res = await session.execute(sm_stmt)
+            if sm_res.scalar_one_or_none():
+                accessible_doc = d
+                break
+
+    if not accessible_doc and not current_user.is_admin:
+        raise HTTPException(status_code=404, detail="Media file not found or unauthorized")
+
+    media_path = None
+    if accessible_doc:
+        candidate = media_dir / f"{accessible_doc.id}_{accessible_doc.filename}"
+        if candidate.exists():
+            media_path = candidate
+
+    if not media_path:
+        candidate = media_dir / filename
+        if candidate.exists():
+            media_path = candidate
+
+    if not media_path or not media_path.exists():
+        raise HTTPException(status_code=404, detail="Original media recording file not found on server disk")
+
+    import mimetypes
+    content_type, _ = mimetypes.guess_type(str(media_path))
+    content_type = content_type or "audio/mpeg"
+
+    return FileResponse(
+        path=media_path,
+        media_type=content_type,
+        filename=filename,
+        headers={"Accept-Ranges": "bytes"}
+    )
 
 @router.get("", response_model=list[DocumentRead])
 async def list_files(
