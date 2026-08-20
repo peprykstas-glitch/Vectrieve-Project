@@ -141,17 +141,14 @@ class LLMService:
     async def generate_title(
         self, user_query: str, ai_response: str, groq_api_key: Optional[str] = None
     ) -> str:
-        prompt = f"""You are a precise, concise chat title generator for Vectrieve Core.
-Generate a very short, clean title (2 to 4 words maximum, under 30 characters) that captures the core subject of this chat.
-CRITICAL RULES:
-1. Detect the user's language (Ukrainian, Polish, English, Spanish, etc.) and write the title in the EXACT SAME language.
-2. Make it punchy, professional, and descriptive (e.g. "Аналіз резюме", "Пароль від сейфу", "Spanish Student Visa", "Звіт про доходи").
-3. Do NOT include quotation marks, markdown formatting, bullet points, colons, or prefixes (like "Title:", "Тема:", "Summary:").
-4. Do NOT add a period or punctuation at the end.
-5. Respond ONLY with the raw title text.
+        # Fast deterministic heuristic first to save tokens
+        clean_q = re.sub(r'^(привіт|hello|hi|buenos días|buenas tardes|dzień dobry|siemanko|por favor|please|proszę)\b[\s,]*', '', user_query.strip(), flags=re.IGNORECASE).strip()
+        words = [w.strip() for w in clean_q.split() if w.strip()]
+        if words and len(words) <= 5:
+            return " ".join(words[:4]).capitalize()
 
-User Query: "{user_query[:300]}"
-AI Summary: "{ai_response[:300]}"
+        prompt = f"""Generate a 2 to 4 word title in the user's language without quotes or punctuation:
+Query: "{user_query[:200]}"
 """
         client = None
         if groq_api_key:
@@ -162,11 +159,12 @@ AI Summary: "{ai_response[:300]}"
 
         if client:
             try:
+                # Use lightweight 8B model to save 120B daily token quota
                 completion = await client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model="openai/gpt-oss-120b",
+                    model="llama-3.1-8b-instant",
                     temperature=0.2,
-                    max_tokens=25,
+                    max_tokens=20,
                 )
                 raw_title = completion.choices[0].message.content.strip()
                 cleaned = re.sub(r'^(title|тема|subject|topic):\s*', '', raw_title, flags=re.IGNORECASE)
@@ -178,10 +176,9 @@ AI Summary: "{ai_response[:300]}"
                 print(f"⚠️ Title generation LLM error: {e}")
 
         # Intelligent fallback
-        words = [w.strip() for w in user_query.strip().split() if w.strip()]
         if not words:
             return "New Chat"
-        return " ".join(words[:4])
+        return " ".join(words[:4]).capitalize()
 
     async def generate_suggestions(
         self, user_query: str, ai_response: str, request_mode: str = "cloud", model_name: str = None
@@ -189,20 +186,16 @@ AI Summary: "{ai_response[:300]}"
         prompt = f"""
 You are Vectrieve Core, an advanced RAG assistant.
 Based on the user's query and your intelligence response below, generate exactly 3 engaging, short (max 8-10 words each) follow-up questions.
-CRITICAL: Detect the language of the user query and response (e.g., Ukrainian, Polish, English) and write the follow-up questions in the SAME language.
-- If the conversation is in Ukrainian, the suggestions MUST be in Ukrainian.
-- If the conversation is in Polish, the suggestions MUST be in Polish.
-- If the conversation is in English, the suggestions MUST be in English.
+CRITICAL: Detect the language of the user query and response (e.g., Ukrainian, Polish, English, Spanish) and write the follow-up questions in the SAME language.
+- If Ukrainian: write in Ukrainian.
+- If Polish: write in Polish.
+- If Spanish: write in Spanish.
+- If English: write in English.
 
 User Query: "{user_query}"
-Response: "{ai_response[:1000]}"
+Response: "{ai_response[:800]}"
 
 Respond ONLY with a raw JSON list of strings. Do not add any markdown formatting, backticks, or extra text.
-
-Examples:
-- If Ukrainian: ["Які ключові зобов'язання у розділі 4?", "Як ми можемо оптимізувати цей шаблон?", "Які основні ризики згадуються у тексті?"]
-- If Polish: ["Jakie są kluczowe zobowiązania w sekcji 4?", "Jak możemy zoptymalizować ten szablon?", "Jakie główne ryzyka są wymienione w tekście?"]
-- If English: ["What are the key liabilities in section 4?", "How can we optimize this onboarding template?", "Is there a penalty for contract breach?"]
 """
         messages = [{"role": "user", "content": prompt}]
         try:
@@ -221,10 +214,10 @@ Examples:
             else:
                 if not self.groq_client:
                     return []
-                model_to_use = model_name or settings.MODEL_NAME
+                # Use ultra-fast 8B model with 500k+ TPD quota so we do NOT burn 120B quota
                 completion = await self.groq_client.chat.completions.create(
                     messages=messages,
-                    model=model_to_use,
+                    model="llama-3.1-8b-instant",
                     temperature=0.3,
                     max_tokens=120,
                 )

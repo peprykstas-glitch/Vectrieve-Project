@@ -250,12 +250,12 @@ async def _prepare_rag_context(
 
     full_context = f"--- DOCUMENT CONTEXT ---\n{rag_context}{multi_source_instruction}"
 
-    # 5. Fetch recent conversation history (last 10 turns)
+    # 5. Fetch recent conversation history (last 6 turns for optimal token budget)
     stmt = (
         select(ChatHistory)
         .where(ChatHistory.session_id == session_id)
         .order_by(ChatHistory.timestamp.desc())
-        .limit(10)
+        .limit(6)
     )
     result = await session.execute(stmt)
     history_records = result.scalars().all()
