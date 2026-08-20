@@ -2,8 +2,10 @@ import asyncio
 import os
 import sys
 
+sys.path.insert(0, "/app/app")
 sys.path.insert(0, os.path.abspath("backend/app"))
 sys.path.insert(0, os.path.abspath("backend"))
+sys.path.insert(0, os.path.abspath("app"))
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
