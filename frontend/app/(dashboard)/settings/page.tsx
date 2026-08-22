@@ -35,8 +35,17 @@ export default function SettingsPage() {
   const [trialUsed, setTrialUsed] = useState(0);
   const [trialLimit, setTrialLimit] = useState(20);
   const [trialRemaining, setTrialRemaining] = useState(20);
+  const [isDemoUser, setIsDemoUser] = useState(false);
 
   useEffect(() => {
+    apiClient<{ is_demo?: boolean }>("/auth/me")
+      .then((user) => {
+        if (user.is_demo) {
+          setIsDemoUser(true);
+        }
+      })
+      .catch(() => {});
+
     apiClient<SettingsData>("/settings")
       .then((data) => {
         setGroqApiKey(data.groq_api_key || "");
@@ -121,6 +130,19 @@ export default function SettingsPage() {
             )}
           </Button>
         </div>
+
+        {/* Demo Mode Notice */}
+        {isDemoUser && (
+          <div className="flex items-start gap-3 px-4 py-3.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl">
+            <Zap className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-[12px] font-semibold text-amber-300">Guest Demo Sandbox Mode</p>
+              <p className="text-[11px] text-amber-400/80 mt-0.5 leading-relaxed">
+                You are exploring Vectrieve in a private, isolated guest session. Interface language, font scaling, and persona modes are fully customizable. Custom API key storage and persistent server infrastructure settings are reserved for registered workspace accounts.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Cloud-only banner */}
         <div className="flex items-start gap-3 px-4 py-3.5 bg-indigo-500/5 border border-indigo-500/15 rounded-2xl">
