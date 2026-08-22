@@ -181,11 +181,12 @@ Query: "{user_query[:200]}"
         return " ".join(words[:4]).capitalize()
 
     async def generate_suggestions(
-        self, user_query: str, ai_response: str, request_mode: str = "cloud", model_name: str = None
+        self, user_query: str, ai_response: str, request_mode: str = "cloud", model_name: str = None,
+        groq_api_key: Optional[str] = None
     ) -> List[str]:
-        prompt = f"""
-You are Vectrieve Core, an advanced RAG assistant.
-Based on the user's query and your intelligence response below, generate exactly 3 engaging, short (max 8-10 words each) follow-up questions.
+        prompt = f"""You are Vectrieve Core, an advanced RAG assistant.
+Based on the user's query and your intelligence response below, generate exactly 3 engaging, short (max 8-10 words each) follow-up questions tailored specifically to the topics and documents discussed.
+
 CRITICAL: Detect the language of the user query and response (e.g., Ukrainian, Polish, English, Spanish) and write the follow-up questions in the SAME language.
 - If Ukrainian: write in Ukrainian.
 - If Polish: write in Polish.
@@ -193,10 +194,10 @@ CRITICAL: Detect the language of the user query and response (e.g., Ukrainian, P
 - If English: write in English.
 
 User Query: "{user_query}"
-Response: "{ai_response[:800]}"
+Response: "{ai_response[:1000]}"
 
-Respond ONLY with a raw JSON list of strings. Do not add any markdown formatting, backticks, or extra text.
-"""
+Respond ONLY with a raw JSON list of strings or a JSON object with a "questions" list, e.g. ["Question 1?", "Question 2?", "Question 3?"]."""
+
         messages = [{"role": "user", "content": prompt}]
         try:
             if request_mode == "local":
@@ -207,19 +208,24 @@ Respond ONLY with a raw JSON list of strings. Do not add any markdown formatting
                     res = client.chat(
                         model=m_name,
                         messages=messages,
-                        options={"temperature": 0.3, "num_predict": 100}
+                        options={"temperature": 0.3, "num_predict": 120}
                     )
                     return res["message"]["content"]
                 response_text = await asyncio.to_thread(_ollama_call)
             else:
-                if not self.groq_client:
-                    return []
+                client = self._get_groq_client(groq_api_key)
+                if not client:
+                    client = self.groq_client
+                if not client:
+                    return self._get_language_fallback_suggestions(user_query, ai_response)
+
                 # Use ultra-fast 8B model with 500k+ TPD quota so we do NOT burn 120B quota
-                completion = await self.groq_client.chat.completions.create(
+                completion = await client.chat.completions.create(
                     messages=messages,
                     model="llama-3.1-8b-instant",
-                    temperature=0.3,
-                    max_tokens=120,
+                    temperature=0.35,
+                    max_tokens=150,
+                    response_format={"type": "json_object"}
                 )
                 response_text = completion.choices[0].message.content
 
@@ -232,16 +238,67 @@ Respond ONLY with a raw JSON list of strings. Do not add any markdown formatting
                     lines = lines[:-1]
                 text = "\n".join(lines).strip()
             
-            prompts = json.loads(text)
-            if isinstance(prompts, list):
-                return [str(p)[:100] for p in prompts[:3]]
+            try:
+                data = json.loads(text)
+                if isinstance(data, dict):
+                    # Check for common keys like "questions", "suggestions", "follow_ups"
+                    for key in ["questions", "suggestions", "follow_ups", "prompts", "items"]:
+                        if key in data and isinstance(data[key], list) and len(data[key]) > 0:
+                            return [str(q).strip()[:100] for q in data[key][:3] if str(q).strip()]
+                    # Or take all string values
+                    str_vals = [str(v).strip()[:100] for v in data.values() if isinstance(v, str) and len(v) > 3]
+                    if len(str_vals) >= 2:
+                        return str_vals[:3]
+                elif isinstance(data, list):
+                    return [str(p).strip()[:100] for p in data[:3] if str(p).strip()]
+            except json.JSONDecodeError:
+                # Regex fallback for json lists or quoted strings
+                import re
+                matches = re.findall(r'"([^"]{5,100})"', text)
+                if len(matches) >= 2:
+                    return matches[:3]
+                # Numbered list fallback
+                lines = [re.sub(r'^\d+[\.\)]\s*', '', l).strip() for l in text.split('\n') if l.strip()]
+                cleaned_lines = [l for l in lines if len(l) > 5 and not l.lower().startswith(('here', '{', '['))]
+                if len(cleaned_lines) >= 2:
+                    return cleaned_lines[:3]
+
         except Exception as e:
             print(f"⚠️ Failed to generate dynamic suggestions: {e}")
         
+        return self._get_language_fallback_suggestions(user_query, ai_response)
+
+    def _get_language_fallback_suggestions(self, user_query: str, ai_response: str) -> List[str]:
+        import re
+        full_text = f"{user_query} {ai_response}"
+        
+        # Ukrainian detection (Cyrillic + specific Ukrainian letters like і, ї, є, ґ)
+        if re.search(r'[\u0400-\u04FF]', full_text):
+            return [
+                "Які наступні практичні кроки?",
+                "Чи є додаткові вимоги або ризики?",
+                "Поясни детальніше цей пункт."
+            ]
+        # Polish detection
+        if re.search(r'[ąćęłńóśźż]', full_text, re.IGNORECASE):
+            return [
+                "Jakie są kolejne kroki operacyjne?",
+                "Czy istnieją dodatkowe wymagania?",
+                "Wyjaśnij ten punkt bardziej szczegółowo."
+            ]
+        # Spanish detection
+        if re.search(r'[áéíóúñ¿¡]', full_text, re.IGNORECASE) or any(w in full_text.lower() for w in [" que ", " para ", " con ", " los "]):
+            return [
+                "¿Cuáles son los siguientes pasos?",
+                "¿Existen requisitos adicionales?",
+                "Explica este punto con más detalle."
+            ]
+        
+        # Default English
         return [
-            "Can you summarize the key findings?",
-            "What are the next operational steps?",
-            "Analyze potential risks in the context."
+            "What are the immediate next steps?",
+            "Are there any specific edge cases or risks?",
+            "Could you provide a more detailed breakdown?"
         ]
 
     async def _run_cloud(

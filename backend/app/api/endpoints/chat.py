@@ -341,7 +341,7 @@ async def handle_query(
     # Generate dynamic follow-up suggestions
     try:
         suggested_prompts = await llm_service.generate_suggestions(
-            user_query, response_text, body.mode, body.model
+            user_query, response_text, body.mode, body.model, groq_api_key=resolved_groq_key
         )
     except Exception:
         suggested_prompts = []
@@ -455,7 +455,7 @@ async def handle_query_stream(
             response_text = "".join(full_response)
             try:
                 suggested_prompts = await llm_service.generate_suggestions(
-                    user_query, response_text, body.mode, body.model
+                    user_query, response_text, body.mode, body.model, groq_api_key=resolved_groq_key
                 )
             except Exception:
                 suggested_prompts = []
