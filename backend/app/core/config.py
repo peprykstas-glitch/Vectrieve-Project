@@ -64,7 +64,11 @@ class Settings(BaseSettings):
                 "Linguistic Style: Respond in the same language as the user's query (e.g. Ukrainian, Polish, English, Spanish). "
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
                 "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself (avoid '• Category:\n  • Item 1'). Instead, format category titles as clean bold subheaders or '### Subheader' followed by standard bullet points ('- Item 1\n- Item 2'). "
-                "Readability: Structure your answers using clean markdown headers, tables, and bullet points with clear visual breathing room. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never whole sentences."
+                "Readability: Structure your answers using clean markdown headers, tables, and bullet points with clear visual breathing room. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never whole sentences. "
+                "Visualizations & Charts: When presenting workflows, audit processes, system topologies, statistical comparisons, or quantitative metrics, generate interactive visual blocks: "
+                "- For process flows, audit sequences, and state diagrams: use ```mermaid code blocks. "
+                "- For quantitative charts, statistical comparisons, and data trends: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\" | \"pie\", \"title\": \"...\", \"data\": [...]}. "
+                "- For summary KPI cards: use ```metrics with JSON: [{\"label\": \"...\", \"value\": \"...\", \"change\": \"+X%\", \"trend\": \"positive\"}]."
             ),
             "temp": 0.1,
         },
@@ -79,7 +83,11 @@ class Settings(BaseSettings):
                 "Explain concepts clearly, summarize complex documents into digestible insights. "
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
                 "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself (avoid '• Category:\n  • Item 1'). Instead, format category titles as clean bold subheaders or '### Subheader' followed by standard bullet points ('- Item 1\n- Item 2'). "
-                "Readability: Maintain clear breathing room between concepts. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never entire lines."
+                "Readability: Maintain clear breathing room between concepts. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never entire lines. "
+                "Visualizations & Charts: When explaining processes, concepts, statistics, or comparisons, actively provide interactive visuals: "
+                "- For concept maps, process flows, and architectural relationships: use ```mermaid code blocks. "
+                "- For data comparisons, benchmarks, and distributions: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\" | \"pie\", \"title\": \"...\", \"data\": [...]}. "
+                "- For key highlight KPIs: use ```metrics with JSON: [{\"label\": \"...\", \"value\": \"...\"}]."
             ),
             "temp": 0.6,
         },
@@ -95,7 +103,11 @@ class Settings(BaseSettings):
                 "Linguistic Style: If responding in Ukrainian or Polish, use correct technical terminology, natural phrasing, "
                 "and proper grammatical cases. "
                 "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself. Use clean subheaders or bold titles with bullet points underneath. "
-                "Readability: Structure your technical recommendations with clear lists, tables, short explanation sentences, and code blocks where applicable."
+                "Readability: Structure your technical recommendations with clear lists, tables, short explanation sentences, and code blocks where applicable. "
+                "Visualizations & Topology: When designing systems, showing data flows, or comparing performance benchmarks, actively generate interactive visuals: "
+                "- For architecture topologies, sequence interactions, and ER diagrams: use ```mermaid code blocks. "
+                "- For latency, throughput, memory, and benchmark comparisons: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\", \"title\": \"...\", \"data\": [...]}. "
+                "- For system performance KPIs: use ```metrics with JSON: [{\"label\": \"...\", \"value\": \"...\", \"trend\": \"positive\"}]."
             ),
             "temp": 0.7,
         },

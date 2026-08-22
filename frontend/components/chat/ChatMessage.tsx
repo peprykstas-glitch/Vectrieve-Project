@@ -5,6 +5,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Message, Source } from "@/hooks/useChat";
 
+import ChatMermaid from "./visualizations/ChatMermaid";
+import ChatChart from "./visualizations/ChatChart";
+import ChatMetricsCard from "./visualizations/ChatMetricsCard";
+import ChatNetworkGraph from "./visualizations/ChatNetworkGraph";
+
 interface ChatMessageProps {
   msg: Message;
 }
@@ -21,6 +26,53 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
         {children}
       </code>
     );
+  }
+
+  // --- 1. Interactive Mermaid Diagrams & Architecture Flowcharts ---
+  if (lang === "mermaid") {
+    return <ChatMermaid chart={textContent} />;
+  }
+
+  // --- 2. Interactive Recharts (Bar, Line, Area, Pie) ---
+  if (
+    lang === "chart" ||
+    lang === "charts" ||
+    lang === "recharts" ||
+    lang === "chart-json" ||
+    lang === "chartjs"
+  ) {
+    return <ChatChart jsonString={textContent} />;
+  }
+
+  // --- 3. Interactive KPI Metrics Cards ---
+  if (lang === "metrics" || lang === "kpi" || lang === "stats") {
+    return <ChatMetricsCard jsonString={textContent} />;
+  }
+
+  // --- 4. Interactive Network Topology / Graph ---
+  if (lang === "graph" || lang === "network" || lang === "mindmap") {
+    return <ChatNetworkGraph jsonString={textContent} />;
+  }
+
+  // --- 5. Smart JSON Detection (Chart / Network / Metrics) ---
+  if (lang === "json") {
+    const trimmed = textContent.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed.type && ["bar", "line", "area", "pie"].includes(parsed.type) && Array.isArray(parsed.data)) {
+          return <ChatChart jsonString={textContent} />;
+        }
+        if (Array.isArray(parsed.nodes) && Array.isArray(parsed.edges)) {
+          return <ChatNetworkGraph jsonString={textContent} />;
+        }
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].label && parsed[0].value) {
+          return <ChatMetricsCard jsonString={textContent} />;
+        }
+      } catch {
+        // Fall through to standard code block
+      }
+    }
   }
 
   const handleCopy = async () => {
