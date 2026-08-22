@@ -7,7 +7,7 @@ import { useGlobalSettings } from "@/components/global-settings";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio, Zap, ExternalLink, Settings2 } from "lucide-react";
+import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio, Zap, ExternalLink, Settings2, GitCompare, ListTodo } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import AudioBrief from "./AudioBrief";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -38,32 +38,25 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
 
   if (text.includes("internship") || text.includes("practice") || text.includes("student") || text.includes("animafest")) {
     return [
-      "How can we automate CV screening for incoming students?",
-      "Create an onboarding checklist template for new interns.",
-      "Which documents typically cause delays during visa/contract processing?"
-    ];
-  }
-  
-  if (text.includes("file") || text.includes("document") || text.includes("upload") || text.includes("segment")) {
-    return [
-      "Show me the status of my recently uploaded documents.",
-      "What is the maximum vector capacity of our Qdrant instance?",
-      "How do I purge old or outdated files from the database?"
+      "How many documents are needed for my internship case?",
+      "List the exact 7 required documents for first practice.",
+      "Explain the differences between extension in same vs different hotel."
     ];
   }
   
   return [
-    "Provide an Executive Summary of your findings.",
-    "What are the concrete next steps we should take?",
-    "How can this help optimize our team's daily workflow?"
+    "What are the key conclusions in these documents?",
+    "Summarize the main action items and next steps.",
+    "Highlight the most critical risks or obligations."
   ];
 }
 
 export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
+  const router = useRouter();
   const { t } = useLanguage();
   const { computeMode, aiPersona, setHeaderRightAction } = useGlobalSettings();
   const { messages, isLoading, isProcessingFiles, submitQuery, sessionId, trialRemaining, trialExpired, setTrialExpired } = useChat(computeMode, aiPersona, initialSessionId, initialSpaceId);
-  const router = useRouter();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const [showAudioBrief, setShowAudioBrief] = useState(false);
@@ -80,34 +73,34 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
   const quickActions = [
     {
-      title: "Analyze Workspace",
-      desc: "Verify uploaded document statuses and indexes",
-      prompt: "Show me a status report of my uploaded files.",
-      icon: Database,
-      color: "text-blue-400 group-hover:text-blue-300",
-      border: "hover:border-blue-500/30",
-    },
-    {
-      title: "Executive Audit",
-      desc: "Detect compliance risks or contractual anomalies",
-      prompt: "Perform a deep risk audit across all knowledge base files.",
-      icon: ShieldCheck,
-      color: "text-amber-400 group-hover:text-amber-300",
-      border: "hover:border-amber-500/30",
-    },
-    {
-      title: "Semantic Synthesis",
-      desc: "Uncover hidden insights across connected files",
-      prompt: "Synthesize key strategic takeaways from all uploaded documents.",
+      title: "Executive Summary",
+      desc: "Extract key takeaways, decisions, and strategic conclusions",
+      prompt: "Provide an executive summary of the key findings, conclusions, and decisions across all uploaded documents.",
       icon: Sparkles,
       color: "text-purple-400 group-hover:text-purple-300",
       border: "hover:border-purple-500/30",
     },
     {
-      title: "Audio Briefing",
-      desc: "Generate conversational overview podcast with hosts",
-      prompt: "Create an executive audio briefing summary.",
-      icon: Radio,
+      title: "Compliance & Risk Audit",
+      desc: "Detect contractual liabilities, clauses, and anomalies",
+      prompt: "Perform a compliance and risk audit on the uploaded files, highlighting key obligations, liabilities, and discrepancies.",
+      icon: ShieldCheck,
+      color: "text-amber-400 group-hover:text-amber-300",
+      border: "hover:border-amber-500/30",
+    },
+    {
+      title: "Compare & Cross-Reference",
+      desc: "Analyze differences, overlaps, and contradictions across files",
+      prompt: "Compare the key arguments, specifications, and differences across the uploaded documents.",
+      icon: GitCompare,
+      color: "text-cyan-400 group-hover:text-cyan-300",
+      border: "hover:border-cyan-500/30",
+    },
+    {
+      title: "Action Items & Checklist",
+      desc: "Extract actionable next steps, responsibilities, and deadlines",
+      prompt: "Extract all actionable tasks, next steps, responsibilities, and deadlines from the files into a structured checklist.",
+      icon: ListTodo,
       color: "text-emerald-400 group-hover:text-emerald-300",
       border: "hover:border-emerald-500/30",
     },
