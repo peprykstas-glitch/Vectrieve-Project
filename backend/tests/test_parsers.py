@@ -191,6 +191,7 @@ def test_parse_file_sync_csv(tmp_path):
 
 def test_parse_file_sync_excel(tmp_path):
     """_parse_file_sync correctly parses Excel worksheets into row-grouped chunks with headers."""
+    pytest.importorskip("openpyxl")
     from services.pdf_parser import _parse_file_sync
     import pandas as pd
     
