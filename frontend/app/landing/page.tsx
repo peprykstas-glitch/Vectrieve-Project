@@ -173,10 +173,10 @@ export default function LandingPage() {
             <button
               onClick={handleLaunchDemo}
               disabled={isDemoLoading}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
             >
-              <span>🎮</span>
-              <span>{isDemoLoading ? "Launching..." : "Live Demo Sandbox"}</span>
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{isDemoLoading ? "Loading..." : "Live Demo"}</span>
             </button>
             <Link
               href="/login"
@@ -186,7 +186,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/register"
-              className="text-xs font-bold text-black bg-white hover:bg-zinc-200 transition-all px-4 py-2 rounded-full shadow-md hover:shadow-white/20 active:scale-95"
+              className="text-xs font-bold text-black bg-white hover:bg-zinc-200 transition-all px-4 py-2 rounded-lg shadow-md hover:shadow-white/20 active:scale-95"
             >
               Get Started Free
             </Link>
@@ -221,20 +221,20 @@ export default function LandingPage() {
           </p>
 
           {/* Primary Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
             <button
               onClick={handleLaunchDemo}
               disabled={isDemoLoading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold px-8 py-3.5 rounded-full transition-all shadow-lg shadow-indigo-600/30 hover:scale-105 active:scale-95 cursor-pointer text-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-950/40 hover:scale-[1.02] active:scale-98 cursor-pointer text-sm"
             >
-              <span>🎮</span>
-              <span>{isDemoLoading ? "Starting Demo..." : "Launch Live Demo Sandbox"}</span>
-              <ChevronRight className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-cyan-300" />
+              <span>{isDemoLoading ? "Starting Demo..." : "Explore Interactive Demo"}</span>
+              <ChevronRight className="w-4 h-4 text-indigo-200 ml-0.5" />
             </button>
 
             <Link
               href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/15 hover:border-white/30 bg-white/5 hover:bg-white/10 text-white font-semibold px-8 py-3.5 rounded-full transition-all text-sm active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/10 hover:border-white/25 bg-white/5 hover:bg-white/10 text-white font-medium px-7 py-3.5 rounded-xl transition-all text-sm active:scale-98"
             >
               <span>Provision Workspace</span>
               <ArrowRight className="w-4 h-4 text-zinc-400" />
@@ -243,7 +243,7 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs text-zinc-500">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Instant Sandbox Access
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Instant Demo Access
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Zero AI Model Training
@@ -561,18 +561,18 @@ export default function LandingPage() {
             Test the live sandbox demo immediately or provision an enterprise workspace for your organization.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
             <button
               onClick={handleLaunchDemo}
               disabled={isDemoLoading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-bold px-8 py-3.5 rounded-full transition-all text-sm shadow-xl active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-semibold px-7 py-3.5 rounded-xl transition-all text-sm shadow-xl active:scale-98 cursor-pointer"
             >
-              <span>🎮</span>
-              <span>{isDemoLoading ? "Starting Demo..." : "Try Live Demo Sandbox"}</span>
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span>{isDemoLoading ? "Starting Demo..." : "Explore Interactive Demo"}</span>
             </button>
             <Link
               href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-3.5 rounded-full transition-all text-sm active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all text-sm active:scale-98"
             >
               <span>Create Account</span>
               <ChevronRight className="w-4 h-4" />

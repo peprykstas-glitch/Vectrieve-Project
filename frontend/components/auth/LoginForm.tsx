@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 
 import { loginSchema, type LoginFormValues } from '@/lib/schemas/auth';
 import { apiClient } from '@/lib/api/client';
@@ -221,11 +221,11 @@ export function LoginForm() {
                     }
                   }}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/30 bg-indigo-950/20 hover:bg-indigo-950/40 text-indigo-300 hover:text-indigo-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
+                  className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
                 >
-                  <span>🎮</span>
-                  <span>Explore Live Demo Sandbox (Instant Access)</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Explore Interactive Demo (Instant Access)</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5 text-zinc-400" />
                 </button>
               </div>
             </form>
