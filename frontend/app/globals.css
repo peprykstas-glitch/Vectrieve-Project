@@ -169,17 +169,17 @@
   text-rendering: optimizeLegibility;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 
-  /* Base text — 15px with generous 1.8 line-height like Gemini */
-  font-size: 15px;
-  line-height: 1.8;
+  /* Base text — 14.5px with comfortable 1.75 line-height like Gemini / Claude */
+  font-size: 14.5px;
+  line-height: 1.75;
   color: #d4d4d8; /* zinc-300 */
-  letter-spacing: -0.006em;
-  word-spacing: 0.02em;
+  letter-spacing: -0.005em;
+  word-spacing: 0.015em;
 }
 
 /* ── Paragraphs ── */
 .chat-prose p {
-  margin: 0.75em 0;
+  margin: 0.65em 0;
   color: #d4d4d8;
 }
 
@@ -191,46 +191,55 @@
   margin-bottom: 0;
 }
 
-/* ── Headings: Clean separation line + indigo accent like Gemini ── */
-.chat-prose h1,
-.chat-prose h2 {
-  font-size: 1.05em;
+/* ── Headings: Clean, modern hierarchy like ChatGPT / Claude / Gemini ── */
+.chat-prose h1 {
+  font-size: 1.35em;
   font-weight: 700;
-  color: #e4e4e7; /* zinc-200 */
-  margin: 1.5em 0 0.6em 0;
+  color: #ffffff;
+  margin: 1.3em 0 0.5em 0;
+  letter-spacing: -0.015em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.3em;
+}
+
+.chat-prose h2 {
+  font-size: 1.18em;
+  font-weight: 700;
+  color: #f4f4f5;
+  margin: 1.2em 0 0.45em 0;
   letter-spacing: -0.01em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-bottom: 0.35em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.25em;
 }
 
 .chat-prose h3 {
-  font-size: 0.72em;
-  font-weight: 700;
-  color: #818cf8; /* indigo-400 */
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin: 1.6em 0 0.65em 0;
+  font-size: 1.05em;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 1.05em 0 0.35em 0;
+  letter-spacing: -0.005em;
+  text-transform: none;
 }
 
 .chat-prose h4 {
-  font-size: 0.9em;
+  font-size: 0.98em;
   font-weight: 600;
   color: #e4e4e7;
-  margin: 1.2em 0 0.4em 0;
+  margin: 0.9em 0 0.3em 0;
 }
 
-/* ── Bold — high-contrast but NOT overwhelming ── */
+/* ── Bold — high-contrast lead keywords ── */
 .chat-prose strong,
 .chat-prose b {
   font-weight: 600;
-  color: #fafafa; /* zinc-50 — bright white accent on lead keywords */
+  color: #ffffff; /* pure white accent */
 }
 
-/* ── Lists — the crucial readability element ── */
+/* ── Lists — spacious and structured ── */
 .chat-prose ul,
 .chat-prose ol {
-  margin: 0.65em 0;
-  padding-left: 1.25em;
+  margin: 0.55em 0;
+  padding-left: 1.3em;
 }
 
 .chat-prose ul {
@@ -242,21 +251,30 @@
 }
 
 .chat-prose li {
-  margin: 0.4em 0;
+  margin: 0.35em 0;
   line-height: 1.7;
   color: #d4d4d8;
-  padding-left: 0.2em;
+  padding-left: 0.15em;
 }
 
 .chat-prose li::marker {
-  color: #6366f1; /* indigo-500 marker dots */
+  color: #818cf8; /* indigo-400 marker dots */
 }
 
-/* Nested lists */
+/* Nested lists (Claude / ChatGPT style) */
 .chat-prose li > ul,
 .chat-prose li > ol {
   margin-top: 0.3em;
-  margin-bottom: 0.1em;
+  margin-bottom: 0.2em;
+  padding-left: 1.25em;
+}
+
+.chat-prose ul ul {
+  list-style-type: circle;
+}
+
+.chat-prose ul ul li::marker {
+  color: #a5b4fc; /* subtle indigo ring */
 }
 
 /* ── Blockquote ── */

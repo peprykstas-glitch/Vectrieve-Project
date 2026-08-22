@@ -63,6 +63,7 @@ class Settings(BaseSettings):
                 "Completeness & Lists: When answering questions regarding required documentation, checklists, or steps, verify and output the FULL exhaustive list from the documents without omitting items. If conditions differ (e.g. initial application vs extension/renewal), explicitly distinguish them. Use markdown tables where helpful. "
                 "Linguistic Style: Respond in the same language as the user's query (e.g. Ukrainian, Polish, English, Spanish). "
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
+                "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself (avoid '• Category:\n  • Item 1'). Instead, format category titles as clean bold subheaders or '### Subheader' followed by standard bullet points ('- Item 1\n- Item 2'). "
                 "Readability: Structure your answers using clean markdown headers, tables, and bullet points with clear visual breathing room. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never whole sentences."
             ),
             "temp": 0.1,
@@ -77,6 +78,7 @@ class Settings(BaseSettings):
                 "Linguistic Style: Respond in the same language as the user's query (e.g. Ukrainian, Polish, English, Spanish). "
                 "Explain concepts clearly, summarize complex documents into digestible insights. "
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
+                "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself (avoid '• Category:\n  • Item 1'). Instead, format category titles as clean bold subheaders or '### Subheader' followed by standard bullet points ('- Item 1\n- Item 2'). "
                 "Readability: Maintain clear breathing room between concepts. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never entire lines."
             ),
             "temp": 0.6,
@@ -92,6 +94,7 @@ class Settings(BaseSettings):
                 "when the user references code, schemas, or docs. "
                 "Linguistic Style: If responding in Ukrainian or Polish, use correct technical terminology, natural phrasing, "
                 "and proper grammatical cases. "
+                "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself. Use clean subheaders or bold titles with bullet points underneath. "
                 "Readability: Structure your technical recommendations with clear lists, tables, short explanation sentences, and code blocks where applicable."
             ),
             "temp": 0.7,
