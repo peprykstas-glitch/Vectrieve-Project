@@ -173,7 +173,7 @@ export default function KnowledgeBasePage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* View Mode Switcher: Table vs Obsidian Knowledge Graph */}
+            {/* View Mode Switcher: Table vs Knowledge Graph */}
             <div className="flex items-center p-1 bg-zinc-900 border border-white/5 rounded-xl shadow-inner">
               <button
                 type="button"
