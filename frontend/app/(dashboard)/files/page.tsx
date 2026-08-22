@@ -7,7 +7,6 @@ import { useFiles, Document } from "@/hooks/useFiles";
 import { FileTable } from "@/components/files/FileTable";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import AudioBrief from "@/components/chat/AudioBrief";
 import KnowledgeGraph from "@/components/knowledge/KnowledgeGraph";
 import { exportExecutiveDossierPdf } from "@/lib/exportPdf";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -467,16 +466,6 @@ export default function KnowledgeBasePage() {
 
                 return null;
               })()}
-
-              {/* AI Audio Podcast Briefing */}
-              {viewDetailsDoc.status === "COMPLETED" && (
-                <div className="pt-2">
-                  <AudioBrief 
-                    documentId={viewDetailsDoc.id} 
-                    filename={viewDetailsDoc.filename} 
-                  />
-                </div>
-              )}
 
               {/* Extracted Text Segments with Search & Copy */}
               <div className="pt-2">

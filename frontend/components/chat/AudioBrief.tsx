@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * @legacy - Audio Briefing / Podcast Overview
+ * Temporarily retired from active UI to streamline enterprise UX.
+ * Preserved for future reactivation or dedicated media workspace tab.
+ */
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   Play,

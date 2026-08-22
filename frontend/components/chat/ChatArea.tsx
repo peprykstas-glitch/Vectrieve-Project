@@ -7,9 +7,8 @@ import { useGlobalSettings } from "@/components/global-settings";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Radio, Zap, ExternalLink, Settings2, GitCompare, ListTodo } from "lucide-react";
+import { Sparkles, Activity, Database, ShieldCheck, Download, Printer, Plus, Zap, ExternalLink, Settings2, GitCompare, ListTodo } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
-import AudioBrief from "./AudioBrief";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface ChatAreaProps {
@@ -59,7 +58,6 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
-  const [showAudioBrief, setShowAudioBrief] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -236,16 +234,6 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
             <Zap className="w-3 h-3 text-amber-400" />
             <span>{trialRemaining} trial left</span>
           </div>
-        )}
-
-        {sessionId && messages.length > 1 && (
-          <button 
-            onClick={() => setShowAudioBrief(true)}
-            className="h-7.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 backdrop-blur-xl border border-emerald-500/25 text-emerald-400 hover:text-emerald-300 text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_12px_rgba(16,185,129,0.15)] active:scale-95"
-          >
-            <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
-            <span>Audio Briefing</span>
-          </button>
         )}
 
         <button 
@@ -461,19 +449,6 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
         >
           <Plus className="w-5 h-5" />
         </button>
-      )}
-
-      {/* Audio Briefing Floating Overlay Modal */}
-      {showAudioBrief && sessionId && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-800 shadow-2xl relative bg-zinc-900">
-            <AudioBrief 
-              sessionId={sessionId}
-              filename="Active Chat Session" 
-              onClose={() => setShowAudioBrief(false)} 
-            />
-          </div>
-        </div>
       )}
     </div>
   );
