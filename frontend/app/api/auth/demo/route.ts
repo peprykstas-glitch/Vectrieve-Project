@@ -1,38 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { getInternalBackendUrl } from '@/lib/server-backend';
 
 export async function POST(req: NextRequest) {
-  const backendUrl = process.env.INTERNAL_BACKEND_URL || 'http://127.0.0.1:8000';
-
   try {
-    const res = await fetch(`${backendUrl}/api/auth/demo`, {
+    const res = await fetch(`${getInternalBackendUrl()}/auth/demo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Failed to initialize demo sandbox' }));
-      return NextResponse.json(err, { status: res.status });
+    let data: any = {};
+    try {
+      data = await res.json();
+    } catch {
+      data = { detail: res.statusText || 'Server error' };
     }
 
-    const data = await res.json();
-    const token = data.access_token;
-
-    const response = NextResponse.json({ success: true, user: data.user });
+    if (!res.ok) {
+      return NextResponse.json(data, { status: res.status });
+    }
 
     // Set secure session cookie (HttpOnly)
-    response.cookies.set('vectrieve_session', token, {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: 'vectrieve_session',
+      value: data.access_token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60 * 24 * 30, // 30 days
     });
 
-    return response;
+    return NextResponse.json({ success: true, user: data.user });
   } catch (err: any) {
     console.error('Demo sandbox initialization error:', err);
     return NextResponse.json(
-      { error: err.message || 'Demo backend service is temporarily unavailable' },
+      { detail: err.message || 'Demo backend service is temporarily unavailable' },
       { status: 500 }
     );
   }

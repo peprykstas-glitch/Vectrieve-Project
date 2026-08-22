@@ -209,10 +209,10 @@ export function LoginForm() {
                     try {
                       const res = await fetch('/api/auth/demo', { method: 'POST' });
                       if (res.ok) {
-                        router.push('/');
-                        router.refresh();
+                        window.location.href = '/';
                       } else {
-                        setGlobalError('Demo sandbox initialization failed. Please try again.');
+                        const errData = await res.json().catch(() => ({ detail: 'Demo initialization failed' }));
+                        setGlobalError(errData.detail || 'Demo initialization failed. Please try again.');
                       }
                     } catch (e: any) {
                       setGlobalError(e.message || 'Demo service unavailable');

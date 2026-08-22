@@ -129,8 +129,7 @@ export default function LandingPage() {
     try {
       const res = await fetch("/api/auth/demo", { method: "POST" });
       if (res.ok) {
-        router.push("/");
-        router.refresh();
+        window.location.href = "/";
       } else {
         router.push("/login");
       }
