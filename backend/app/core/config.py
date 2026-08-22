@@ -65,9 +65,9 @@ class Settings(BaseSettings):
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
                 "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself (avoid '• Category:\n  • Item 1'). Instead, format category titles as clean bold subheaders or '### Subheader' followed by standard bullet points ('- Item 1\n- Item 2'). "
                 "Readability: Structure your answers using clean markdown headers, tables, and bullet points with clear visual breathing room. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never whole sentences. "
-                "Visualizations & Charts: When presenting workflows, audit processes, system topologies, statistical comparisons, or quantitative metrics, generate interactive visual blocks: "
-                "- For process flows, audit sequences, and state diagrams: use ```mermaid code blocks. "
-                "- For quantitative charts, statistical comparisons, and data trends: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\" | \"pie\", \"title\": \"...\", \"data\": [...]}. "
+                "Constructive Visual Synthesis: When the user asks for a graph, chart, diagram, or visual map of topics, questions, or workflows (even if exact numerical counts are not pre-calculated), NEVER refuse with 'Unable to fulfill request'. Instead, extract the core question topics, audit categories, or operational steps from the context and construct the visual: "
+                "- For workflows, topic maps, and question hierarchies: use ```mermaid code blocks (e.g. flowchart TD or mindmap). "
+                "- For category breakdowns, metrics, and comparisons: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\" | \"pie\", \"title\": \"...\", \"data\": [...]}. "
                 "- For summary KPI cards: use ```metrics with JSON: [{\"label\": \"...\", \"value\": \"...\", \"change\": \"+X%\", \"trend\": \"positive\"}]."
             ),
             "temp": 0.1,
@@ -84,9 +84,9 @@ class Settings(BaseSettings):
                 "Cleanliness: Do NOT print raw file citations in parentheses like '(FileName.md, Segment 1)' in your text sentences; citations are handled automatically. "
                 "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself (avoid '• Category:\n  • Item 1'). Instead, format category titles as clean bold subheaders or '### Subheader' followed by standard bullet points ('- Item 1\n- Item 2'). "
                 "Readability: Maintain clear breathing room between concepts. Bold only the leading keyword of a bullet (e.g. '• **Allowance**: €450/month'), never entire lines. "
-                "Visualizations & Charts: When explaining processes, concepts, statistics, or comparisons, actively provide interactive visuals: "
-                "- For concept maps, process flows, and architectural relationships: use ```mermaid code blocks. "
-                "- For data comparisons, benchmarks, and distributions: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\" | \"pie\", \"title\": \"...\", \"data\": [...]}. "
+                "Constructive Visual Synthesis: When the user asks for a graph, flowchart, chart, or visual overview of questions, concepts, or documents (even if exact numbers are not pre-calculated), NEVER refuse with 'Unable to fulfill request'. Instead, synthesize the primary question domains, inquiry stages, and concepts from the context into a clear visual diagram: "
+                "- For concept maps, question workflows, and processes: use ```mermaid code blocks (e.g. flowchart TD, mindmap, or sequenceDiagram). "
+                "- For topic distributions, category comparisons, and benchmarks: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\" | \"pie\", \"title\": \"...\", \"data\": [...]}. "
                 "- For key highlight KPIs: use ```metrics with JSON: [{\"label\": \"...\", \"value\": \"...\"}]."
             ),
             "temp": 0.6,
@@ -104,8 +104,8 @@ class Settings(BaseSettings):
                 "and proper grammatical cases. "
                 "Hierarchy & Formatting: When grouping items under sub-categories, do NOT put a bullet on the category title itself. Use clean subheaders or bold titles with bullet points underneath. "
                 "Readability: Structure your technical recommendations with clear lists, tables, short explanation sentences, and code blocks where applicable. "
-                "Visualizations & Topology: When designing systems, showing data flows, or comparing performance benchmarks, actively generate interactive visuals: "
-                "- For architecture topologies, sequence interactions, and ER diagrams: use ```mermaid code blocks. "
+                "Constructive Visual Synthesis: When designing systems, showing data flows, or comparing performance benchmarks, actively generate interactive visuals: "
+                "- For architecture topologies, sequence interactions, question workflows, and ER diagrams: use ```mermaid code blocks. "
                 "- For latency, throughput, memory, and benchmark comparisons: use ```chart with JSON: {\"type\": \"bar\" | \"line\" | \"area\", \"title\": \"...\", \"data\": [...]}. "
                 "- For system performance KPIs: use ```metrics with JSON: [{\"label\": \"...\", \"value\": \"...\", \"trend\": \"positive\"}]."
             ),
