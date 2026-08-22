@@ -405,35 +405,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── VERIFIED BENCHMARKS STRIP ─────────────────────────────────────── */}
+      {/* ── VERIFIED BUSINESS VALUE STRIP ─────────────────────────────────── */}
       <section id="benchmarks" className="py-14 px-6 border-y border-white/5 bg-[#09090d]">
         <div className="mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div className="space-y-1">
             <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-              &lt; 150ms
+              10x
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Time to First Token</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Faster Document Search & Audits</div>
           </div>
 
           <div className="space-y-1">
             <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-              500+ tok/s
+              100%
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Groq LPU Inference Speed</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Grounded Answers with Citations</div>
           </div>
 
           <div className="space-y-1">
             <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
-              100%
+              0%
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Space Tenant Isolation</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Zero Public AI Model Training</div>
           </div>
 
           <div className="space-y-1">
             <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-              92 / 92
+              &lt; 1s
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Automated Tests Passed</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Sub-Second Response Latency</div>
           </div>
         </div>
       </section>
