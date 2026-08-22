@@ -27,6 +27,7 @@ class QueryRequest(BaseModel):
     # 👇 НОВЕ ПОЛЕ: Обмежує RAG пошук тільки прикріпленими файлами
     attached_filenames: Optional[List[str]] = None 
     space_id: Optional[str] = None
+    space_system_prompt: Optional[str] = None
 
 class QueryResponse(BaseModel):
     response_text: str

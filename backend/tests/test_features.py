@@ -444,19 +444,32 @@ async def test_resolve_llm_config():
     assert req2.temperature == 0.7
     assert req2.max_tokens == 500
 
-    # Test 3: Client overrides space soft defaults
+    # Test 3: Client overrides space soft defaults & space prompt propagates
+    space_w_prompt = Space(
+        id="space-prompt-id",
+        name="Space with custom prompt",
+        user_id=1,
+        system_prompt="You are a legal tax advisor."
+    )
     req3 = QueryRequest(
         messages=[ChatMessage(role="user", content="hello")],
         temperature=0.9,
         max_tokens=150,
         top_p=0.95
     )
-    resolve_llm_config(req3, space=space_w_limits)
-    assert req3.mode == "local"
-    assert req3.model == "llama-local-7b"
+    resolve_llm_config(req3, space=space_w_prompt)
+    assert req3.space_system_prompt == "You are a legal tax advisor."
     assert req3.temperature == 0.9
     assert req3.max_tokens == 150
     assert req3.top_p == 0.95
+
+    # Test prompt blending in LLMService
+    from services.llm_service import llm_service
+    sys_prompt, temp = llm_service._build_system_prompt(req3, "Some context")
+    assert "You are Vectrieve Core's Intelligence Mentor." in sys_prompt
+    assert "--- WORKSPACE SPECIFIC INSTRUCTIONS ---" in sys_prompt
+    assert "You are a legal tax advisor." in sys_prompt
+    assert "Some context" in sys_prompt
 
     # Test 4: Validation compatibility check
     from pydantic import ValidationError

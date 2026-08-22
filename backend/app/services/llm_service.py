@@ -77,10 +77,7 @@ class LLMService:
         except ImportError:
             print("⚠️ Ollama package not installed. Local mode disabled.")
 
-    async def generate_response(
-        self, request: QueryRequest, context_str: str, history_messages: list = None,
-        groq_api_key: Optional[str] = None
-    ) -> tuple[str, str]:
+    def _build_system_prompt(self, request: QueryRequest, context_str: str) -> tuple[str, float]:
         mode_key = (
             request.thinking_mode.lower() if request.thinking_mode else "mentor"
         )
@@ -94,13 +91,26 @@ class LLMService:
         )
 
         base_prompt = f"{persona['role']} {persona['instruction']}"
+
+        # If space defines custom domain instructions, seamlessly blend them without identity clash
+        if getattr(request, "space_system_prompt", None) and request.space_system_prompt.strip():
+            base_prompt += f"\n\n--- WORKSPACE SPECIFIC INSTRUCTIONS ---\n{request.space_system_prompt.strip()}\n---------------------------------------"
+
         if context_str:
             if mode_key == "auditor":
-                system_prompt = f"{base_prompt} Answer strictly using the CONTEXT below. --- CONTEXT ---\n{context_str}"
+                system_prompt = f"{base_prompt}\n\nAnswer strictly using the CONTEXT below. --- CONTEXT ---\n{context_str}"
             else:
-                system_prompt = f"{base_prompt} Use the CONTEXT below as a primary source. --- CONTEXT ---\n{context_str}"
+                system_prompt = f"{base_prompt}\n\nUse the CONTEXT below as a primary source. --- CONTEXT ---\n{context_str}"
         else:
-            system_prompt = f"{base_prompt} No specific context provided."
+            system_prompt = f"{base_prompt}\n\nNo specific context provided."
+
+        return system_prompt, temperature
+
+    async def generate_response(
+        self, request: QueryRequest, context_str: str, history_messages: list = None,
+        groq_api_key: Optional[str] = None
+    ) -> tuple[str, str]:
+        system_prompt, temperature = self._build_system_prompt(request, context_str)
 
         messages = [{"role": "system", "content": system_prompt}]
 
@@ -333,26 +343,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
         groq_api_key: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """Yield response text as chunks for SSE streaming."""
-        mode_key = (
-            request.thinking_mode.lower() if request.thinking_mode else "mentor"
-        )
-        persona = settings.THINKING_MODES.get(
-            mode_key, settings.THINKING_MODES["mentor"]
-        )
-        temperature = (
-            request.temperature
-            if request.temperature is not None
-            else persona["temp"]
-        )
-
-        base_prompt = f"{persona['role']} {persona['instruction']}"
-        if context_str:
-            if mode_key == "auditor":
-                system_prompt = f"{base_prompt} Answer strictly using the CONTEXT below. --- CONTEXT ---\n{context_str}"
-            else:
-                system_prompt = f"{base_prompt} Use the CONTEXT below as a primary source. --- CONTEXT ---\n{context_str}"
-        else:
-            system_prompt = f"{base_prompt} No specific context provided."
+        system_prompt, temperature = self._build_system_prompt(request, context_str)
 
         messages = [{"role": "system", "content": system_prompt}]
         # Issue B fix: trim history to stay within token budget

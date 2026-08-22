@@ -263,9 +263,6 @@ async def _prepare_rag_context(
         {"role": m.role, "content": m.content} for m in reversed(history_records)
     ]
 
-    if space and space.system_prompt:
-        history_messages.insert(0, {"role": "system", "content": space.system_prompt})
-
     # ── Groq key resolution (trial mode) ──────────────────────────────────────
     # 1. Load user's settings row.
     user_cfg_stmt = select(UserSettings).where(UserSettings.user_id == current_user.id)

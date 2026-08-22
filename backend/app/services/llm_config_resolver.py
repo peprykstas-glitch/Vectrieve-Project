@@ -23,3 +23,6 @@ def resolve_llm_config(request: QueryRequest, space: Optional[Space]) -> None:
         request.max_tokens = space.max_tokens if (space and space.max_tokens is not None) else None
     if request.top_p is None:
         request.top_p = space.top_p if (space and space.top_p is not None) else None
+
+    if space and space.system_prompt:
+        request.space_system_prompt = space.system_prompt
