@@ -17,7 +17,8 @@ import {
   X,
   ChevronDown,
   Plus,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from "lucide-react"
 import {
   Sidebar,
@@ -295,6 +296,7 @@ function UserCard() {
 }
 
 import { SpaceSettingsModal } from "@/components/spaces/SpaceSettingsModal"
+import { SpaceMembersModal } from "@/components/spaces/SpaceMembersModal"
 
 function SpaceSwitcher() {
   const { spaces, fetchSpaces, activeSpace: currentSpace } = useGlobalSettings()
@@ -304,6 +306,7 @@ function SpaceSwitcher() {
   const [newSpacePrompt, setNewSpacePrompt] = React.useState("")
   const [isCreating, setIsCreating] = React.useState(false)
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null)
+  const [membersModalSpace, setMembersModalSpace] = React.useState<Space | null>(null)
   const searchParams = useSearchParams()
   const pathname = usePathname()
   
@@ -344,14 +347,24 @@ function SpaceSwitcher() {
       <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2 px-1">
         <span>Current Workspace</span>
         {currentSpace && (
-          <button
-            type="button"
-            onClick={() => setEditingSpace(currentSpace)}
-            className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-indigo-300 rounded transition-colors cursor-pointer border-0 bg-transparent"
-            title="Edit Workspace Instructions & Name"
-          >
-            <Settings className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setMembersModalSpace(currentSpace)}
+              className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-indigo-300 rounded transition-colors cursor-pointer border-0 bg-transparent"
+              title="Manage Workspace Members & Share"
+            >
+              <Users className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingSpace(currentSpace)}
+              className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-indigo-300 rounded transition-colors cursor-pointer border-0 bg-transparent"
+              title="Edit Workspace Instructions & Name"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
       
@@ -371,6 +384,15 @@ function SpaceSwitcher() {
           isOpen={Boolean(editingSpace)}
           onClose={() => setEditingSpace(null)}
           onSaved={() => fetchSpaces()}
+        />
+      )}
+
+      {membersModalSpace && (
+        <SpaceMembersModal
+          spaceId={membersModalSpace.id}
+          spaceName={membersModalSpace.name}
+          isOpen={Boolean(membersModalSpace)}
+          onClose={() => setMembersModalSpace(null)}
         />
       )}
       
@@ -401,6 +423,18 @@ function SpaceSwitcher() {
                   {s.name}
                 </button>
                 <div className="flex items-center gap-1 opacity-0 group-hover/space:opacity-100 transition-opacity mr-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMembersModalSpace(s);
+                      setIsOpen(false);
+                    }}
+                    className="p-1 text-zinc-500 hover:text-indigo-300 hover:bg-zinc-700/50 rounded transition-colors cursor-pointer bg-transparent border-0"
+                    title="Manage Members & Share"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     type="button"
                     onClick={(e) => {
