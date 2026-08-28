@@ -106,11 +106,17 @@ class LLMService:
         if getattr(request, "space_system_prompt", None) and request.space_system_prompt.strip():
             base_prompt += f"\n\n--- WORKSPACE SPECIFIC INSTRUCTIONS ---\n{request.space_system_prompt.strip()}\n---------------------------------------"
 
-        if context_str:
+        # Ensure context_str does not exceed prompt budget for strict 8k TPM models (e.g. gpt-oss-120b on free tier)
+        max_context_chars = 22000
+        safe_context = context_str
+        if safe_context and len(safe_context) > max_context_chars:
+            safe_context = safe_context[:max_context_chars] + "\n\n[... Remaining context condensed to stay within token budget ...]"
+
+        if safe_context:
             if mode_key == "auditor":
-                system_prompt = f"{base_prompt}\n\nAnswer strictly using the CONTEXT below. --- CONTEXT ---\n{context_str}"
+                system_prompt = f"{base_prompt}\n\nAnswer strictly using the CONTEXT below. --- CONTEXT ---\n{safe_context}"
             else:
-                system_prompt = f"{base_prompt}\n\nUse the CONTEXT below as a primary source. --- CONTEXT ---\n{context_str}"
+                system_prompt = f"{base_prompt}\n\nUse the CONTEXT below as a primary source. --- CONTEXT ---\n{safe_context}"
         else:
             system_prompt = f"{base_prompt}\n\nNo specific context provided."
 
