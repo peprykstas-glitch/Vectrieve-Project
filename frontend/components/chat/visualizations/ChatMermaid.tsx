@@ -107,8 +107,14 @@ export function healMermaidCode(raw: string): string {
 }
 
 /**
- * Injects an ultra-premium, balanced dark theme into rendered SVG
- * Guarantees 100% pure bright white text on root and all child nodes.
+ * Premium Mindmap SVG Theme — Clean, Modern, Readable
+ *
+ * Design philosophy:
+ *   - Root node: solid medium-dark background with high-contrast white text
+ *   - Category nodes (depth 1): slightly lighter, with a subtle left-border accent
+ *   - Detail nodes (depth 2+): lighter still, clear text hierarchy
+ *   - Connection lines: soft, organic, not distracting
+ *   - No harsh neon. No aggressive glows. Professional and readable.
  */
 export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string {
   if (!rawSvg) return "";
@@ -116,7 +122,6 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
   let svg = rawSvg;
 
   if (isFullscreen) {
-    // Replace ID to avoid duplicate DOM ID collision between inline and modal SVG
     svg = svg.replace(/id="mermaid-([a-zA-Z0-9_-]+)"/g, 'id="mermaid-fs-$1"');
     svg = svg.replace(/#mermaid-([a-zA-Z0-9_-]+)/g, '#mermaid-fs-$1');
   }
@@ -133,112 +138,102 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
     }
   }
 
-  // Directly force fill="#ffffff" and inline style on ALL <text> and <tspan> tags
-  svg = svg.replace(/<text\b([^>]*)>/gi, (m, attrs) => {
+  // Force all text/tspan to white with inline attributes (baseline safety net)
+  svg = svg.replace(/<text\b([^>]*)>/gi, (_m, attrs) => {
     const cleanAttrs = attrs
       .replace(/\bfill="[^"]*"/gi, "")
       .replace(/\bstyle="[^"]*"/gi, "");
-    return `<text ${cleanAttrs} fill="#ffffff" style="fill:#ffffff !important;color:#ffffff !important;">`;
+    return `<text ${cleanAttrs} fill="#f0f0f5" style="fill:#f0f0f5 !important;">`;
   });
-  svg = svg.replace(/<tspan\b([^>]*)>/gi, (m, attrs) => {
+  svg = svg.replace(/<tspan\b([^>]*)>/gi, (_m, attrs) => {
     const cleanAttrs = attrs
       .replace(/\bfill="[^"]*"/gi, "")
       .replace(/\bstyle="[^"]*"/gi, "");
-    return `<tspan ${cleanAttrs} fill="#ffffff" style="fill:#ffffff !important;color:#ffffff !important;">`;
+    return `<tspan ${cleanAttrs} fill="#f0f0f5" style="fill:#f0f0f5 !important;">`;
   });
 
-  // Clean any remaining hardcoded dark colors
-  svg = svg.replace(/fill="#(?:000000|111827|18181b|000|222222|09090b)"/gi, 'fill="#ffffff"');
-  svg = svg.replace(/fill="black"/gi, 'fill="#ffffff"');
+  // Clean hardcoded dark fills from Mermaid internals
+  svg = svg.replace(/fill="#(?:000000|111827|18181b|000|222222|09090b)"/gi, 'fill="#f0f0f5"');
+  svg = svg.replace(/fill="black"/gi, 'fill="#f0f0f5"');
 
   const premiumStyles = `
     <style>
-      /* Center Root Node - Elegant Dark Sapphire Core with Soft Sky Blue Stroke */
+      /* ──────────────────────────────────────────────────────────
+         ROOT NODE — Solid slate-blue, visible and prominent
+         ────────────────────────────────────────────────────────── */
       .section-root rect, .section-root circle, .section-root polygon, .section-root path,
       .mindmap-node.section-root rect, .mindmap-node.section-root circle,
       g[class*="root"] rect, g[class*="root"] circle, g[class*="root"] path,
       .mindmap-node:first-of-type circle, .mindmap-node:first-of-type rect {
-        fill: #132b4f !important;
-        stroke: #38bdf8 !important;
-        stroke-width: 2.8px !important;
-        filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45)) drop-shadow(0 4px 14px rgba(0,0,0,0.9)) !important;
+        fill: #334155 !important;
+        stroke: #94a3b8 !important;
+        stroke-width: 2.5px !important;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)) !important;
       }
 
-      /* Mindmap Branch Categories - Sleek Dark Glass Jewel Tones */
-      .section-0 rect, .section-0 circle, .section-0 path { fill: #0f172a !important; stroke: #3b82f6 !important; stroke-width: 2px !important; }
-      .section-1 rect, .section-1 circle, .section-1 path { fill: #1a0f2e !important; stroke: #a855f7 !important; stroke-width: 2px !important; }
-      .section-2 rect, .section-2 circle, .section-2 path { fill: #06281e !important; stroke: #10b981 !important; stroke-width: 2px !important; }
-      .section-3 rect, .section-3 circle, .section-3 path { fill: #082733 !important; stroke: #06b6d4 !important; stroke-width: 2px !important; }
-      .section-4 rect, .section-4 circle, .section-4 path { fill: #2d1604 !important; stroke: #f59e0b !important; stroke-width: 2px !important; }
-      .section-5 rect, .section-5 circle, .section-5 path { fill: #2e0918 !important; stroke: #f43f5e !important; stroke-width: 2px !important; }
-      .section-6 rect, .section-6 circle, .section-6 path { fill: #0f172a !important; stroke: #64748b !important; stroke-width: 2px !important; }
-      .section-7 rect, .section-7 circle, .section-7 path { fill: #13173d !important; stroke: #6366f1 !important; stroke-width: 2px !important; }
+      /* ──────────────────────────────────────────────────────────
+         BRANCH CATEGORIES — Each has a muted but distinct palette
+         Dark enough for white text, light enough to feel airy
+         ────────────────────────────────────────────────────────── */
+      .section-0 rect, .section-0 circle, .section-0 path { fill: #1e3a5f !important; stroke: #60a5fa !important; stroke-width: 1.5px !important; }
+      .section-1 rect, .section-1 circle, .section-1 path { fill: #312e5c !important; stroke: #a78bfa !important; stroke-width: 1.5px !important; }
+      .section-2 rect, .section-2 circle, .section-2 path { fill: #1a3a2a !important; stroke: #6ee7b7 !important; stroke-width: 1.5px !important; }
+      .section-3 rect, .section-3 circle, .section-3 path { fill: #1a3544 !important; stroke: #67e8f9 !important; stroke-width: 1.5px !important; }
+      .section-4 rect, .section-4 circle, .section-4 path { fill: #3d2b10 !important; stroke: #fbbf24 !important; stroke-width: 1.5px !important; }
+      .section-5 rect, .section-5 circle, .section-5 path { fill: #3d1525 !important; stroke: #fb7185 !important; stroke-width: 1.5px !important; }
+      .section-6 rect, .section-6 circle, .section-6 path { fill: #27303d !important; stroke: #94a3b8 !important; stroke-width: 1.5px !important; }
+      .section-7 rect, .section-7 circle, .section-7 path { fill: #272650 !important; stroke: #818cf8 !important; stroke-width: 1.5px !important; }
 
-      /* ALL Text & Tspans - Pure Bright White with Crisp Dark Legibility Shadow */
-      svg text,
-      svg tspan,
-      svg text *,
-      svg tspan *,
-      .mindmap-node text,
-      .mindmap-node tspan,
-      .mindmap-node text *,
-      .node text,
-      .node tspan,
-      .section-root text,
-      .section-root tspan,
-      .section-root text *,
-      g[class*="root"] text,
-      g[class*="root"] tspan,
-      g[class*="root"] text *,
-      g text,
-      g tspan {
-        fill: #ffffff !important;
-        color: #ffffff !important;
+      /* ──────────────────────────────────────────────────────────
+         TYPOGRAPHY — Clean, readable, professional
+         ────────────────────────────────────────────────────────── */
+      svg text, svg tspan,
+      .mindmap-node text, .mindmap-node tspan,
+      .node text, .node tspan,
+      g text, g tspan {
+        fill: #f0f0f5 !important;
+        color: #f0f0f5 !important;
         stroke: none !important;
         font-family: "Inter", system-ui, -apple-system, sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 13.5px !important;
-        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.98)) drop-shadow(0 0 1px rgba(0,0,0,1)) !important;
-        letter-spacing: 0.015em !important;
+        font-weight: 500 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.01em !important;
         opacity: 1 !important;
         visibility: visible !important;
       }
 
-      /* Root Node Text - Pure Bold White */
-      .section-root text,
-      .section-root tspan,
-      .mindmap-node.section-root text,
-      .mindmap-node.section-root tspan,
-      g[class*="root"] text,
-      g[class*="root"] tspan,
-      .mindmap-node:first-of-type text,
-      .mindmap-node:first-of-type tspan {
+      /* Root text — slightly larger and bolder */
+      .section-root text, .section-root tspan,
+      .mindmap-node.section-root text, .mindmap-node.section-root tspan,
+      g[class*="root"] text, g[class*="root"] tspan,
+      .mindmap-node:first-of-type text, .mindmap-node:first-of-type tspan {
         fill: #ffffff !important;
         color: #ffffff !important;
-        stroke: none !important;
-        font-weight: 800 !important;
-        font-size: 14.5px !important;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,1)) drop-shadow(0 0 2px rgba(0,0,0,1)) !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
       }
 
-      /* Card Node Rounding & Elevation */
+      /* ──────────────────────────────────────────────────────────
+         NODE SHAPES — Rounded cards with subtle elevation
+         ────────────────────────────────────────────────────────── */
       .mindmap-node rect, .node rect {
-        rx: 10px !important;
-        ry: 10px !important;
-        stroke-width: 2px !important;
-        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7)) !important;
+        rx: 8px !important;
+        ry: 8px !important;
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)) !important;
       }
 
-      /* Connection Lines / Curves - Balanced Soft Glow */
+      /* ──────────────────────────────────────────────────────────
+         CONNECTION LINES — Soft, unobtrusive
+         ────────────────────────────────────────────────────────── */
       .edgePath path, .mindmap-edge, path.edge-thickness-normal {
-        stroke: #6366f1 !important;
-        stroke-width: 2px !important;
-        stroke-opacity: 0.8 !important;
+        stroke: #475569 !important;
+        stroke-width: 1.8px !important;
+        stroke-opacity: 0.7 !important;
       }
     </style>
   `;
 
-  // Inject styles right before closing </svg> so they override any earlier internal styles
+  // Inject at the END of SVG so custom styles override Mermaid's internal stylesheet
   if (svg.includes("</svg>")) {
     svg = svg.replace("</svg>", `${premiumStyles}</svg>`);
   } else {
@@ -303,41 +298,41 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
             darkMode: true,
             background: "transparent",
             fontFamily: "Inter, system-ui, sans-serif",
-            fontSize: "14px",
-            // Center Root / Primary: Deep Sapphire Navy with Sky Blue
-            primaryColor: "#132b4f",
-            primaryTextColor: "#ffffff",
-            primaryBorderColor: "#38bdf8",
-            lineColor: "#6366f1",
-            secondaryColor: "#1e1b4b",
-            tertiaryColor: "#0f172a",
-            mainBkg: "#132b4f",
-            nodeBorder: "#38bdf8",
-            clusterBkg: "#09090b",
-            clusterBorder: "#4f46e5",
-            titleColor: "#ffffff",
-            edgeLabelBackground: "#09090b",
-            // Explicit Mindmap Palette
-            mindmapNodeFill: "#132b4f",
-            mindmapNodeBorder: "#38bdf8",
-            mindmapTextColor: "#ffffff",
-            mindmapLineColor: "#6366f1",
-            cScale0: "#1e3a8a",
-            cScaleLabel0: "#ffffff",
-            cScale1: "#4c1d95",
-            cScaleLabel1: "#ffffff",
-            cScale2: "#065f46",
-            cScaleLabel2: "#ffffff",
-            cScale3: "#0e7490",
-            cScaleLabel3: "#ffffff",
-            cScale4: "#78350f",
-            cScaleLabel4: "#ffffff",
-            cScale5: "#831843",
-            cScaleLabel5: "#ffffff",
-            cScale6: "#1e293b",
-            cScaleLabel6: "#ffffff",
-            cScale7: "#312e81",
-            cScaleLabel7: "#ffffff",
+            fontSize: "13px",
+            // Root node: slate-blue
+            primaryColor: "#334155",
+            primaryTextColor: "#f0f0f5",
+            primaryBorderColor: "#94a3b8",
+            lineColor: "#475569",
+            secondaryColor: "#1e293b",
+            tertiaryColor: "#1e293b",
+            mainBkg: "#334155",
+            nodeBorder: "#64748b",
+            clusterBkg: "#0f172a",
+            clusterBorder: "#334155",
+            titleColor: "#f0f0f5",
+            edgeLabelBackground: "#0f172a",
+            // Mindmap palette — muted, professional
+            mindmapNodeFill: "#1e293b",
+            mindmapNodeBorder: "#64748b",
+            mindmapTextColor: "#f0f0f5",
+            mindmapLineColor: "#475569",
+            cScale0: "#1e3a5f",
+            cScaleLabel0: "#f0f0f5",
+            cScale1: "#312e5c",
+            cScaleLabel1: "#f0f0f5",
+            cScale2: "#1a3a2a",
+            cScaleLabel2: "#f0f0f5",
+            cScale3: "#1a3544",
+            cScaleLabel3: "#f0f0f5",
+            cScale4: "#3d2b10",
+            cScaleLabel4: "#f0f0f5",
+            cScale5: "#3d1525",
+            cScaleLabel5: "#f0f0f5",
+            cScale6: "#27303d",
+            cScaleLabel6: "#f0f0f5",
+            cScale7: "#272650",
+            cScaleLabel7: "#f0f0f5",
           },
           securityLevel: "loose",
         });
