@@ -106,6 +106,15 @@ class LLMService:
         if getattr(request, "space_system_prompt", None) and request.space_system_prompt.strip():
             base_prompt += f"\n\n--- WORKSPACE SPECIFIC INSTRUCTIONS ---\n{request.space_system_prompt.strip()}\n---------------------------------------"
 
+        # Explicit diagram formatting rules to ensure 100% valid Mermaid output
+        base_prompt += (
+            "\n\n--- DIAGRAM SYNTAX RULES ---\n"
+            "When generating Mermaid visual diagrams or mindmaps:\n"
+            "1. For mindmaps (`mindmap`), use pure indented tree structure with quoted text: `  root((Title))\n    Section\n      [\"Sub-item text\"]`. NEVER use bullet points (`-`) and NEVER place `%%` comments inside mindmap trees.\n"
+            "2. For flowcharts, quote all node labels containing punctuation or parentheses: `A[\"Label (Details)\"] --> B[\"Next\"]`.\n"
+            "-----------------------------"
+        )
+
         # Ensure context_str does not exceed prompt budget for strict 8k TPM models (e.g. gpt-oss-120b on free tier)
         max_context_chars = 22000
         safe_context = context_str
