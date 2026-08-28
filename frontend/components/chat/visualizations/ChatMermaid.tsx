@@ -71,7 +71,9 @@ export function healMermaidCode(raw: string): string {
       }
 
       // If starts with NodeLabel[...] or NodeLabel(...)
-      const nodeShapeMatch = content.match(/^([a-zA-Z0-9_\u0400-\u04FF]+)\s*(\(\(.*?\)|\(.*?\)|\[.*?\]|\{.*?\})$/);
+      const nodeShapeMatch = content.match(
+        /^([a-zA-Z0-9_\u0400-\u04FF]+)\s*(\(\(.*?\)|\(.*?\)|\[.*?\]|\{.*?\})$/
+      );
       if (nodeShapeMatch) {
         cleanedLines.push(`${indent}${content}`);
         continue;
@@ -102,6 +104,91 @@ export function healMermaidCode(raw: string): string {
   });
 
   return text;
+}
+
+/**
+ * Injects an ultra-premium, modern, high-contrast dark theme into rendered SVG
+ */
+export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string {
+  if (!rawSvg) return "";
+
+  let svg = rawSvg;
+
+  if (isFullscreen) {
+    // Replace ID to avoid duplicate DOM ID collision between inline and modal SVG
+    svg = svg.replace(/id="mermaid-([a-zA-Z0-9_-]+)"/g, 'id="mermaid-fs-$1"');
+    svg = svg.replace(/#mermaid-([a-zA-Z0-9_-]+)/g, '#mermaid-fs-$1');
+  }
+
+  // Ensure SVG has proper responsive attributes
+  if (!/viewBox=/i.test(svg)) {
+    const widthMatch = svg.match(/width="([0-9.]+)"/i);
+    const heightMatch = svg.match(/height="([0-9.]+)"/i);
+    if (widthMatch && heightMatch) {
+      svg = svg.replace(
+        /<svg\b/i,
+        `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}" `
+      );
+    }
+  }
+
+  const premiumStyles = `
+    <style>
+      /* Center Root Node - Dark Sapphire / Royal Navy with Electric Sky Blue Glow */
+      .section-root rect, .section-root circle, .section-root polygon, .section-root path,
+      .mindmap-node.section-root rect, .mindmap-node.section-root circle,
+      g[class*="root"] rect, g[class*="root"] circle, g[class*="root"] path,
+      .mindmap-node:first-of-type circle, .mindmap-node:first-of-type rect {
+        fill: #0c1527 !important;
+        stroke: #38bdf8 !important;
+        stroke-width: 3.5px !important;
+        filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.5)) drop-shadow(0 4px 14px rgba(0,0,0,0.85)) !important;
+      }
+
+      /* Mindmap Branch Categories - Sleek Dark Glass Jewel Tones */
+      .section-0 rect, .section-0 circle, .section-0 path { fill: #0f172a !important; stroke: #3b82f6 !important; stroke-width: 2.2px !important; }
+      .section-1 rect, .section-1 circle, .section-1 path { fill: #1a0f2e !important; stroke: #a855f7 !important; stroke-width: 2.2px !important; }
+      .section-2 rect, .section-2 circle, .section-2 path { fill: #06281e !important; stroke: #10b981 !important; stroke-width: 2.2px !important; }
+      .section-3 rect, .section-3 circle, .section-3 path { fill: #082733 !important; stroke: #06b6d4 !important; stroke-width: 2.2px !important; }
+      .section-4 rect, .section-4 circle, .section-4 path { fill: #2d1604 !important; stroke: #f59e0b !important; stroke-width: 2.2px !important; }
+      .section-5 rect, .section-5 circle, .section-5 path { fill: #2e0918 !important; stroke: #f43f5e !important; stroke-width: 2.2px !important; }
+      .section-6 rect, .section-6 circle, .section-6 path { fill: #0f172a !important; stroke: #64748b !important; stroke-width: 2.2px !important; }
+      .section-7 rect, .section-7 circle, .section-7 path { fill: #13173d !important; stroke: #6366f1 !important; stroke-width: 2.2px !important; }
+
+      /* Crisp High-Contrast Pure White Typography with Deep Shadow */
+      text, .mindmap-node text, .node text, g text {
+        fill: #ffffff !important;
+        font-family: "Inter", system-ui, -apple-system, sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.98)) drop-shadow(0 0 1px rgba(0,0,0,1)) !important;
+        letter-spacing: 0.015em !important;
+      }
+
+      /* Card Node Rounding & Elevation */
+      .mindmap-node rect, .node rect {
+        rx: 10px !important;
+        ry: 10px !important;
+        stroke-width: 2px !important;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7)) !important;
+      }
+
+      /* Connection Lines / Curves */
+      .edgePath path, .mindmap-edge, path.edge-thickness-normal {
+        stroke: #6366f1 !important;
+        stroke-width: 2.2px !important;
+        stroke-opacity: 0.85 !important;
+        filter: drop-shadow(0 1px 4px rgba(99, 102, 241, 0.3)) !important;
+      }
+    </style>
+  `;
+
+  // Inject styles right after opening <svg ...>
+  svg = svg.replace(/<svg\b([^>]*)>/i, (match) => {
+    return `${match}${premiumStyles}`;
+  });
+
+  return svg;
 }
 
 export default function ChatMermaid({ chart }: ChatMermaidProps) {
@@ -154,27 +241,46 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
         mermaid.initialize({
           startOnLoad: false,
           suppressErrorRendering: true,
-          theme: "dark",
+          theme: "base",
           themeVariables: {
             darkMode: true,
-            background: "#09090b",
-            primaryColor: "#4f46e5",
-            primaryTextColor: "#ffffff",
-            primaryBorderColor: "#818cf8",
-            lineColor: "#a1a1aa",
-            secondaryColor: "#10b981",
-            tertiaryColor: "#06b6d4",
-            mainBkg: "#18181b",
-            nodeBorder: "#4f46e5",
-            clusterBkg: "#18181b",
-            clusterBorder: "#3f3f46",
+            background: "transparent",
             fontFamily: "Inter, system-ui, sans-serif",
             fontSize: "14px",
-            // Mindmap high-contrast palette
-            mindmapNodeFill: "#1e1b4b",
-            mindmapNodeBorder: "#6366f1",
+            // Center Root / Primary: Deep Sapphire Navy with Sky Blue
+            primaryColor: "#0c1527",
+            primaryTextColor: "#ffffff",
+            primaryBorderColor: "#38bdf8",
+            lineColor: "#6366f1",
+            secondaryColor: "#1e1b4b",
+            tertiaryColor: "#0f172a",
+            mainBkg: "#0c1527",
+            nodeBorder: "#38bdf8",
+            clusterBkg: "#09090b",
+            clusterBorder: "#4f46e5",
+            titleColor: "#ffffff",
+            edgeLabelBackground: "#09090b",
+            // Explicit Mindmap Palette
+            mindmapNodeFill: "#0c1527",
+            mindmapNodeBorder: "#38bdf8",
             mindmapTextColor: "#ffffff",
-            mindmapLineColor: "#818cf8",
+            mindmapLineColor: "#6366f1",
+            cScale0: "#1e3a8a",
+            cScaleLabel0: "#ffffff",
+            cScale1: "#4c1d95",
+            cScaleLabel1: "#ffffff",
+            cScale2: "#065f46",
+            cScaleLabel2: "#ffffff",
+            cScale3: "#0e7490",
+            cScaleLabel3: "#ffffff",
+            cScale4: "#78350f",
+            cScaleLabel4: "#ffffff",
+            cScale5: "#831843",
+            cScaleLabel5: "#ffffff",
+            cScale6: "#1e293b",
+            cScaleLabel6: "#ffffff",
+            cScale7: "#312e81",
+            cScaleLabel7: "#ffffff",
           },
           securityLevel: "loose",
         });
@@ -182,7 +288,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
         const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const { svg } = await mermaid.render(uniqueId, sanitizedChart);
         if (active) {
-          setSvgContent(svg);
+          setSvgContent(enhanceMermaidSvg(svg, false));
         }
       } catch (err: any) {
         console.warn("Mermaid render error:", err);
@@ -368,7 +474,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
             <code>{sanitizedChart}</code>
           </div>
         ) : (
-          <div className="p-6 flex items-center justify-center overflow-auto bg-zinc-950/60 min-h-[220px] max-h-[520px] relative">
+          <div className="p-6 flex items-center justify-center overflow-auto bg-zinc-950/60 min-h-[240px] max-h-[550px] relative">
             {svgContent ? (
               <div
                 ref={containerRef}
@@ -377,7 +483,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
                   transformOrigin: "center center",
                   transition: "transform 0.15s ease-out",
                 }}
-                className="w-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:drop-shadow-lg [&_svg_text]:fill-white! [&_svg_text]:font-semibold! [&_svg_text]:[filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.95))_drop-shadow(0_0_1px_rgba(0,0,0,1))]! [&_svg_.mindmap-node_rect]:stroke-2! [&_svg_.mindmap-node_path]:stroke-2! [&_svg_.mindmap-node_circle]:stroke-2!"
+                className="w-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:drop-shadow-xl"
                 dangerouslySetInnerHTML={{ __html: svgContent }}
               />
             ) : (
@@ -466,7 +572,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
 
             {/* Modal Diagram Canvas (Pan & Zoom) */}
             <div
-              className={`flex-1 overflow-hidden flex items-center justify-center p-4 relative ${
+              className={`flex-1 w-full h-full overflow-hidden flex items-center justify-center relative p-4 ${
                 isDragging ? "cursor-grabbing" : "cursor-grab"
               }`}
               onMouseDown={handleMouseDown}
@@ -490,8 +596,10 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
                   transformOrigin: "center center",
                   transition: isDragging ? "none" : "transform 0.1s ease-out",
                 }}
-                className="max-w-none flex items-center justify-center [&_svg]:max-w-none [&_svg]:w-auto [&_svg]:h-auto [&_svg]:drop-shadow-2xl [&_svg_text]:fill-white! [&_svg_text]:font-semibold! [&_svg_text]:[filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.95))_drop-shadow(0_0_1px_rgba(0,0,0,1))]! [&_svg_.mindmap-node_rect]:stroke-2! [&_svg_.mindmap-node_path]:stroke-2! [&_svg_.mindmap-node_circle]:stroke-2!"
-                dangerouslySetInnerHTML={{ __html: svgContent }}
+                className="w-full h-full flex items-center justify-center [&_svg]:max-w-[90vw] [&_svg]:max-h-[82vh] [&_svg]:w-auto [&_svg]:h-auto [&_svg]:min-w-[550px] [&_svg]:min-h-[350px] [&_svg]:drop-shadow-2xl"
+                dangerouslySetInnerHTML={{
+                  __html: enhanceMermaidSvg(svgContent, true),
+                }}
               />
             </div>
           </div>,
