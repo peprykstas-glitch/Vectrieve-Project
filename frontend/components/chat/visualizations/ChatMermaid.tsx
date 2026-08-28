@@ -108,7 +108,7 @@ export function healMermaidCode(raw: string): string {
 
 /**
  * Injects an ultra-premium, balanced dark theme into rendered SVG
- * Guarantees crisp white text on root and all nodes, with elegant balanced glows.
+ * Guarantees 100% pure bright white text on root and all child nodes.
  */
 export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string {
   if (!rawSvg) return "";
@@ -121,7 +121,7 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
     svg = svg.replace(/#mermaid-([a-zA-Z0-9_-]+)/g, '#mermaid-fs-$1');
   }
 
-  // Ensure SVG has proper responsive attributes
+  // Ensure SVG has proper responsive viewBox attributes
   if (!/viewBox=/i.test(svg)) {
     const widthMatch = svg.match(/width="([0-9.]+)"/i);
     const heightMatch = svg.match(/height="([0-9.]+)"/i);
@@ -133,21 +133,35 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
     }
   }
 
-  // Clean any hardcoded dark text fills inside <text> or <tspan>
-  svg = svg.replace(/fill="#(?:000000|111827|18181b|000|222222)"/gi, 'fill="#ffffff"');
+  // Directly force fill="#ffffff" and inline style on ALL <text> and <tspan> tags
+  svg = svg.replace(/<text\b([^>]*)>/gi, (m, attrs) => {
+    const cleanAttrs = attrs
+      .replace(/\bfill="[^"]*"/gi, "")
+      .replace(/\bstyle="[^"]*"/gi, "");
+    return `<text ${cleanAttrs} fill="#ffffff" style="fill:#ffffff !important;color:#ffffff !important;">`;
+  });
+  svg = svg.replace(/<tspan\b([^>]*)>/gi, (m, attrs) => {
+    const cleanAttrs = attrs
+      .replace(/\bfill="[^"]*"/gi, "")
+      .replace(/\bstyle="[^"]*"/gi, "");
+    return `<tspan ${cleanAttrs} fill="#ffffff" style="fill:#ffffff !important;color:#ffffff !important;">`;
+  });
+
+  // Clean any remaining hardcoded dark colors
+  svg = svg.replace(/fill="#(?:000000|111827|18181b|000|222222|09090b)"/gi, 'fill="#ffffff"');
   svg = svg.replace(/fill="black"/gi, 'fill="#ffffff"');
 
   const premiumStyles = `
     <style>
-      /* Center Root Node - Balanced Dark Sapphire Core with Soft Sky Blue Stroke */
+      /* Center Root Node - Elegant Dark Sapphire Core with Soft Sky Blue Stroke */
       .section-root rect, .section-root circle, .section-root polygon, .section-root path,
       .mindmap-node.section-root rect, .mindmap-node.section-root circle,
       g[class*="root"] rect, g[class*="root"] circle, g[class*="root"] path,
       .mindmap-node:first-of-type circle, .mindmap-node:first-of-type rect {
-        fill: #0c1527 !important;
+        fill: #132b4f !important;
         stroke: #38bdf8 !important;
         stroke-width: 2.8px !important;
-        filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)) drop-shadow(0 4px 14px rgba(0,0,0,0.85)) !important;
+        filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45)) drop-shadow(0 4px 14px rgba(0,0,0,0.9)) !important;
       }
 
       /* Mindmap Branch Categories - Sleek Dark Glass Jewel Tones */
@@ -161,8 +175,10 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
       .section-7 rect, .section-7 circle, .section-7 path { fill: #13173d !important; stroke: #6366f1 !important; stroke-width: 2px !important; }
 
       /* ALL Text & Tspans - Pure Bright White with Crisp Dark Legibility Shadow */
-      text,
-      tspan,
+      svg text,
+      svg tspan,
+      svg text *,
+      svg tspan *,
       .mindmap-node text,
       .mindmap-node tspan,
       .mindmap-node text *,
@@ -178,6 +194,7 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
       g tspan {
         fill: #ffffff !important;
         color: #ffffff !important;
+        stroke: none !important;
         font-family: "Inter", system-ui, -apple-system, sans-serif !important;
         font-weight: 700 !important;
         font-size: 13.5px !important;
@@ -187,7 +204,7 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
         visibility: visible !important;
       }
 
-      /* Root Node Text Extra Crispness */
+      /* Root Node Text - Pure Bold White */
       .section-root text,
       .section-root tspan,
       .mindmap-node.section-root text,
@@ -197,6 +214,8 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
       .mindmap-node:first-of-type text,
       .mindmap-node:first-of-type tspan {
         fill: #ffffff !important;
+        color: #ffffff !important;
+        stroke: none !important;
         font-weight: 800 !important;
         font-size: 14.5px !important;
         filter: drop-shadow(0 2px 4px rgba(0,0,0,1)) drop-shadow(0 0 2px rgba(0,0,0,1)) !important;
@@ -219,17 +238,19 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
     </style>
   `;
 
-  // Inject styles right after opening <svg ...>
-  svg = svg.replace(/<svg\b([^>]*)>/i, (match) => {
-    return `${match}${premiumStyles}`;
-  });
+  // Inject styles right before closing </svg> so they override any earlier internal styles
+  if (svg.includes("</svg>")) {
+    svg = svg.replace("</svg>", `${premiumStyles}</svg>`);
+  } else {
+    svg = `${svg}${premiumStyles}`;
+  }
 
   return svg;
 }
 
 export default function ChatMermaid({ chart }: ChatMermaidProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [svgContent, setSvgContent] = useState<string>("");
+  const [rawSvgContent, setRawSvgContent] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [viewMode, setViewMode] = useState<"diagram" | "code">("diagram");
@@ -284,20 +305,20 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
             fontFamily: "Inter, system-ui, sans-serif",
             fontSize: "14px",
             // Center Root / Primary: Deep Sapphire Navy with Sky Blue
-            primaryColor: "#0c1527",
+            primaryColor: "#132b4f",
             primaryTextColor: "#ffffff",
             primaryBorderColor: "#38bdf8",
             lineColor: "#6366f1",
             secondaryColor: "#1e1b4b",
             tertiaryColor: "#0f172a",
-            mainBkg: "#0c1527",
+            mainBkg: "#132b4f",
             nodeBorder: "#38bdf8",
             clusterBkg: "#09090b",
             clusterBorder: "#4f46e5",
             titleColor: "#ffffff",
             edgeLabelBackground: "#09090b",
             // Explicit Mindmap Palette
-            mindmapNodeFill: "#0c1527",
+            mindmapNodeFill: "#132b4f",
             mindmapNodeBorder: "#38bdf8",
             mindmapTextColor: "#ffffff",
             mindmapLineColor: "#6366f1",
@@ -324,7 +345,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
         const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const { svg } = await mermaid.render(uniqueId, sanitizedChart);
         if (active) {
-          setSvgContent(enhanceMermaidSvg(svg, false));
+          setRawSvgContent(svg);
         }
       } catch (err: any) {
         console.warn("Mermaid render error:", err);
@@ -378,8 +399,9 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
   };
 
   const handleDownloadSVG = () => {
-    if (!svgContent) return;
-    const blob = new Blob([svgContent], { type: "image/svg+xml" });
+    if (!rawSvgContent) return;
+    const finalSvg = enhanceMermaidSvg(rawSvgContent, false);
+    const blob = new Blob([finalSvg], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -408,6 +430,9 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
     setIsDragging(false);
   };
 
+  const inlineSvgHtml = enhanceMermaidSvg(rawSvgContent, false);
+  const fullscreenSvgHtml = enhanceMermaidSvg(rawSvgContent, true);
+
   return (
     <>
       <div className="my-4 rounded-2xl border border-white/10 bg-zinc-950/90 shadow-2xl overflow-hidden backdrop-blur-xl transition-all">
@@ -422,7 +447,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
 
           <div className="flex items-center gap-1.5">
             {/* Zoom controls (diagram mode only) */}
-            {viewMode === "diagram" && !error && svgContent && (
+            {viewMode === "diagram" && !error && rawSvgContent && (
               <div className="flex items-center gap-0.5 bg-zinc-900 border border-white/5 rounded-lg p-0.5 mr-1">
                 <button
                   onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))}
@@ -449,7 +474,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
             )}
 
             {/* Fullscreen Expand Button */}
-            {svgContent && !error && (
+            {rawSvgContent && !error && (
               <button
                 onClick={() => setIsFullscreen(true)}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-indigo-200 border border-indigo-500/20 transition-all cursor-pointer mr-1"
@@ -511,7 +536,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
           </div>
         ) : (
           <div className="p-6 flex items-center justify-center overflow-auto bg-zinc-950/60 min-h-[240px] max-h-[550px] relative">
-            {svgContent ? (
+            {rawSvgContent ? (
               <div
                 ref={containerRef}
                 style={{
@@ -520,7 +545,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
                   transition: "transform 0.15s ease-out",
                 }}
                 className="w-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:drop-shadow-xl"
-                dangerouslySetInnerHTML={{ __html: svgContent }}
+                dangerouslySetInnerHTML={{ __html: inlineSvgHtml }}
               />
             ) : (
               <div className="flex items-center gap-2 text-xs text-zinc-500 py-8">
@@ -535,7 +560,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
       {/* ── FULLSCREEN EXPANDED MODAL (React Portal directly into document.body) ── */}
       {isMounted &&
         isFullscreen &&
-        svgContent &&
+        rawSvgContent &&
         createPortal(
           <div className="fixed inset-0 z-[99999] bg-zinc-950/98 backdrop-blur-3xl flex flex-col p-4 sm:p-6 select-none animate-in fade-in duration-200">
             {/* Modal Header */}
@@ -634,7 +659,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
                 }}
                 className="w-full h-full flex items-center justify-center [&_svg]:max-w-[90vw] [&_svg]:max-h-[82vh] [&_svg]:w-auto [&_svg]:h-auto [&_svg]:min-w-[550px] [&_svg]:min-h-[350px] [&_svg]:drop-shadow-2xl"
                 dangerouslySetInnerHTML={{
-                  __html: enhanceMermaidSvg(svgContent, true),
+                  __html: fullscreenSvgHtml,
                 }}
               />
             </div>
