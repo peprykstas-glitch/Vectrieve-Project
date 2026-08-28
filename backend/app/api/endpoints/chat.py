@@ -244,14 +244,21 @@ async def _prepare_rag_context(
     search_results = []
     if vector_service:
         try:
-            search_results = await vector_service.search(
+            # When direct in-chat attachments are provided, focus primarily on them.
+            # Only pull background Knowledge Base documents if relevance is high.
+            rag_limit = 2 if direct_attachment_blocks else 8
+            raw_hits = await vector_service.search(
                 user_query,
                 user_id=current_user.id,
-                limit=8,
+                limit=rag_limit,
                 mode=request.mode,
                 filenames=request.attached_filenames,
                 space_id=request.space_id
             )
+            if direct_attachment_blocks:
+                search_results = [h for h in raw_hits if h.get("score", 0) >= 0.60]
+            else:
+                search_results = raw_hits
         except Exception as e:
             print(f"⚠️ Vector search failed (RAG skipped): {e}")
             search_results = []

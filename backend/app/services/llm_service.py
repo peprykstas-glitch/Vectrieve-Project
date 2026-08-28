@@ -333,26 +333,43 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
         client = groq_client or self.groq_client
         if not client:
             raise ValueError("No Groq client available.")
-        model_to_use = model_name if model_name else settings.MODEL_NAME
-        max_tokens_to_use = max_tokens if max_tokens is not None else 4096
         
-        kwargs = {
-            "model": model_to_use,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens_to_use,
-        }
-        if top_p is not None:
-            kwargs["top_p"] = top_p
-            
-        completion = await client.chat.completions.create(**kwargs)
-        return completion.choices[0].message.content, model_to_use
+        models_to_try = [
+            model_name if model_name else settings.MODEL_NAME,
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+        ]
+        unique_models = []
+        for m in models_to_try:
+            if m and m not in unique_models:
+                unique_models.append(m)
+
+        for attempt_idx, current_model in enumerate(unique_models):
+            try:
+                max_tokens_to_use = max_tokens if max_tokens is not None else 4096
+                kwargs = {
+                    "model": current_model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens_to_use,
+                }
+                if top_p is not None:
+                    kwargs["top_p"] = top_p
+                    
+                completion = await client.chat.completions.create(**kwargs)
+                return completion.choices[0].message.content, current_model
+            except Exception as e:
+                err_str = str(e).lower()
+                if ("413" in err_str or "rate_limit" in err_str or "tokens per minute" in err_str) and attempt_idx < len(unique_models) - 1:
+                    print(f"⚠️ Model {current_model} exceeded TPM limit ({e}). Falling back to {unique_models[attempt_idx + 1]}...")
+                    continue
+                raise
 
     async def generate_response_stream(
         self, request, context_str: str, history_messages: list = None,
         groq_api_key: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
-        """Yield response text as chunks for SSE streaming."""
+        """Yield response text as chunks for SSE streaming with automatic model fallback."""
         system_prompt, temperature = self._build_system_prompt(request, context_str)
 
         messages = [{"role": "system", "content": system_prompt}]
@@ -374,27 +391,42 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
             effective_client = self.groq_client
         else:
             raise ValueError("No Groq API key available. Please add your key in Settings.")
-        try:
-            model_to_use = request.model if request.model else settings.MODEL_NAME
-            max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 4096
-            
-            kwargs = {
-                "model": model_to_use,
-                "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens_to_use,
-                "stream": True,
-            }
-            if request.top_p is not None:
-                kwargs["top_p"] = request.top_p
-                
-            stream = await effective_client.chat.completions.create(**kwargs)
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content
-                if delta:
-                    yield delta
-        except Exception as e:
-            raise ValueError(f"Cloud LLM streaming failed: {e}")
+
+        models_to_try = [
+            request.model if request.model else settings.MODEL_NAME,
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+        ]
+        unique_models = []
+        for m in models_to_try:
+            if m and m not in unique_models:
+                unique_models.append(m)
+
+        for attempt_idx, current_model in enumerate(unique_models):
+            try:
+                max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 4096
+                kwargs = {
+                    "model": current_model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens_to_use,
+                    "stream": True,
+                }
+                if request.top_p is not None:
+                    kwargs["top_p"] = request.top_p
+                    
+                stream = await effective_client.chat.completions.create(**kwargs)
+                async for chunk in stream:
+                    delta = chunk.choices[0].delta.content
+                    if delta:
+                        yield delta
+                return
+            except Exception as e:
+                err_str = str(e).lower()
+                if ("413" in err_str or "rate_limit" in err_str or "tokens per minute" in err_str) and attempt_idx < len(unique_models) - 1:
+                    print(f"⚠️ Stream model {current_model} exceeded TPM limit ({e}). Falling back to {unique_models[attempt_idx + 1]}...")
+                    continue
+                raise ValueError(f"Cloud LLM streaming failed: {e}")
 
     async def _run_local(
         self,

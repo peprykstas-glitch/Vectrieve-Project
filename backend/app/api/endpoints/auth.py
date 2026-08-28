@@ -423,7 +423,7 @@ async def guest_demo_login(session: AsyncSession = Depends(get_session)):
         name="Vectrieve Enterprise Showcase",
         description="Preloaded enterprise knowledge base with sample architectural blueprints, audits, and performance benchmarks.",
         user_id=demo_user.id,
-        llm_model="openai/gpt-oss-120b",
+        llm_model="llama-3.3-70b-versatile",
     )
     session.add(demo_space)
     await session.commit()
