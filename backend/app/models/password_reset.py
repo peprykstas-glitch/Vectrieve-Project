@@ -15,6 +15,6 @@ class PasswordResetToken(SQLModel, table=True):
         index=True,
     )
     expires_at: datetime
-    used: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    tenant_id: str = Field(default="", index=True)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )

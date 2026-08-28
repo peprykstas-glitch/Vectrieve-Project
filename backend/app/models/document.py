@@ -19,7 +19,9 @@ class Document(SQLModel, table=True):
     filename: str
     file_size: Optional[int] = Field(default=None)
     chunk_count: Optional[int] = Field(default=None)
-    upload_timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    upload_timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     status: str = Field(default=DocumentStatus.PENDING.value)
     error_log: Optional[str] = Field(default=None)
     summary: Optional[str] = Field(default=None)

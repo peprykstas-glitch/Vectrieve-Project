@@ -312,7 +312,7 @@ async def forgot_password(
         reset_token = PasswordResetToken(
             user_id=user.id,
             token=str(uuid.uuid4()),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=(datetime.now(timezone.utc) + timedelta(hours=1)).replace(tzinfo=None),
         )
         session.add(reset_token)
         await session.commit()

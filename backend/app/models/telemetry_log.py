@@ -13,4 +13,6 @@ class TelemetryLog(SQLModel, table=True):
     total_latency: float
     tokens_generated: int
     tokens_per_second: float
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
