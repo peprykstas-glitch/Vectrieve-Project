@@ -14,10 +14,12 @@ from models.schemas import QueryRequest
 # ---------------------------------------------------------------------------
 # Token budget guard — sliding window history trimmer
 # ---------------------------------------------------------------------------
-# Rough heuristic: 1 token ≈ 4 characters (works for English and Ukrainian).
+# Rough heuristic: 1 token ≈ 3.5 characters (works for English and Ukrainian).
 # We do NOT add tiktoken as a dependency to keep the footprint minimal.
-_CHARS_PER_TOKEN = 4
-_MAX_CONTEXT_TOKENS = 6000  # safe for all common local models (4K–8K window)
+_CHARS_PER_TOKEN = 3.5
+# Budget must account for: system prompt (~800 tok) + context (~3000 tok) +
+# history + user message + requested output (2048 tok) ≤ 8000 TPM.
+_MAX_CONTEXT_TOKENS = 2500
 
 
 def _trim_history(history_messages: list, system_prompt: str, max_tokens: int = _MAX_CONTEXT_TOKENS) -> list:
@@ -29,7 +31,7 @@ def _trim_history(history_messages: list, system_prompt: str, max_tokens: int = 
     if not history_messages:
         return []
 
-    budget_chars = max_tokens * _CHARS_PER_TOKEN
+    budget_chars = int(max_tokens * _CHARS_PER_TOKEN)
     # Account for system prompt overhead
     used_chars = len(system_prompt)
     # Always keep the last user message
@@ -116,7 +118,8 @@ class LLMService:
         )
 
         # Ensure context_str does not exceed prompt budget for strict 8k TPM models (e.g. gpt-oss-120b on free tier)
-        max_context_chars = 22000
+        # 12000 chars ≈ 3400 tokens, leaving ~4600 tokens for system prompt, history, user msg + output
+        max_context_chars = 12000
         safe_context = context_str
         if safe_context and len(safe_context) > max_context_chars:
             safe_context = safe_context[:max_context_chars] + "\n\n[... Remaining context condensed to stay within token budget ...]"
@@ -351,7 +354,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
         
         models_to_try = [
             model_name if model_name else settings.MODEL_NAME,
-            "llama-3.3-70b-versatile",
+            "llama3-70b-8192",
             "llama-3.1-8b-instant",
         ]
         unique_models = []
@@ -361,7 +364,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
 
         for attempt_idx, current_model in enumerate(unique_models):
             try:
-                max_tokens_to_use = max_tokens if max_tokens is not None else 4096
+                max_tokens_to_use = max_tokens if max_tokens is not None else 2048
                 kwargs = {
                     "model": current_model,
                     "messages": messages,
@@ -375,8 +378,13 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
                 return completion.choices[0].message.content, current_model
             except Exception as e:
                 err_str = str(e).lower()
-                if ("413" in err_str or "rate_limit" in err_str or "tokens per minute" in err_str) and attempt_idx < len(unique_models) - 1:
-                    print(f"⚠️ Model {current_model} exceeded TPM limit ({e}). Falling back to {unique_models[attempt_idx + 1]}...")
+                is_recoverable = any(k in err_str for k in [
+                    "413", "429", "404", "rate_limit", "tokens per minute",
+                    "model_not_found", "does not exist", "do not have access",
+                    "overloaded", "503",
+                ])
+                if is_recoverable and attempt_idx < len(unique_models) - 1:
+                    print(f"⚠️ Model {current_model} failed ({e}). Falling back to {unique_models[attempt_idx + 1]}...")
                     continue
                 raise
 
@@ -409,7 +417,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
 
         models_to_try = [
             request.model if request.model else settings.MODEL_NAME,
-            "llama-3.3-70b-versatile",
+            "llama3-70b-8192",
             "llama-3.1-8b-instant",
         ]
         unique_models = []
@@ -419,7 +427,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
 
         for attempt_idx, current_model in enumerate(unique_models):
             try:
-                max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 4096
+                max_tokens_to_use = request.max_tokens if request.max_tokens is not None else 2048
                 kwargs = {
                     "model": current_model,
                     "messages": messages,
@@ -438,8 +446,13 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
                 return
             except Exception as e:
                 err_str = str(e).lower()
-                if ("413" in err_str or "rate_limit" in err_str or "tokens per minute" in err_str) and attempt_idx < len(unique_models) - 1:
-                    print(f"⚠️ Stream model {current_model} exceeded TPM limit ({e}). Falling back to {unique_models[attempt_idx + 1]}...")
+                is_recoverable = any(k in err_str for k in [
+                    "413", "429", "404", "rate_limit", "tokens per minute",
+                    "model_not_found", "does not exist", "do not have access",
+                    "overloaded", "503",
+                ])
+                if is_recoverable and attempt_idx < len(unique_models) - 1:
+                    print(f"⚠️ Stream model {current_model} failed ({e}). Falling back to {unique_models[attempt_idx + 1]}...")
                     continue
                 raise ValueError(f"Cloud LLM streaming failed: {e}")
 
