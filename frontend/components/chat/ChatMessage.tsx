@@ -263,21 +263,11 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
             /* Assistant Message: Clean, open, transparent page flow */
             <div className="w-full text-zinc-200 leading-relaxed">
               {isThinking ? (
-                /* Bouncing Dots Thinking State */
+                /* Bouncing Dots Thinking State (GPU-Accelerated CSS — Starts Instantly on 1st Query) */
                 <div className="flex gap-2 items-center justify-start py-2.5 px-0.5">
-                  {[0, 1, 2].map((idx) => (
-                    <motion.div
-                      key={idx}
-                      className="w-2.5 h-2.5 rounded-full bg-zinc-400/80 shadow-[0_0_8px_rgba(255,255,255,0.15)]"
-                      animate={{ y: ["0px", "-6px", "0px"], opacity: [0.3, 1, 0.3] }}
-                      transition={{
-                        duration: 0.75,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: idx * 0.18,
-                      }}
-                    />
-                  ))}
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400/90 shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-typing-dot-1" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400/90 shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-typing-dot-2" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400/90 shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-typing-dot-3" />
                 </div>
               ) : (
                 <>

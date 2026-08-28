@@ -377,4 +377,31 @@ html.text-default {
 
 html.text-large {
   font-size: 16px;
+}
+
+/* ── Native Typing / Thinking Indicator Keyframes ── */
+@keyframes typing-dot-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.animate-typing-dot-1 {
+  animation: typing-dot-bounce 1.05s infinite ease-in-out;
+  animation-delay: 0s;
+}
+
+.animate-typing-dot-2 {
+  animation: typing-dot-bounce 1.05s infinite ease-in-out;
+  animation-delay: 0.18s;
+}
+
+.animate-typing-dot-3 {
+  animation: typing-dot-bounce 1.05s infinite ease-in-out;
+  animation-delay: 0.36s;
 }
