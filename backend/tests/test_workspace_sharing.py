@@ -5,7 +5,7 @@ from models.sql_models import Space, SpaceMember, SpaceRole
 from models.document import Document
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_spacemember_alembic_migration_exists():
     """Verifies that the Alembic migration for SpaceMember exists and has
     both upgrade() and downgrade() functions."""
@@ -27,7 +27,7 @@ async def test_spacemember_alembic_migration_exists():
     assert migration_mod.down_revision == '31dcc69db8de'
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_spacemember_orm_creation(test_session, test_user):
     """Verifies SpaceMember can be created via ORM (the unit-level check
     that init_db scan-and-seed was replaced with Alembic data migration)."""
@@ -50,7 +50,7 @@ async def test_spacemember_orm_creation(test_session, test_user):
     assert loaded.role == SpaceRole.OWNER
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_spaces_endpoints_rbac(client: AsyncClient, test_session, test_user, test_user_2):
     """Tests CRUD operations and role-based access control for spaces endpoints."""
     # Setup: Create a space and users
@@ -114,7 +114,7 @@ async def test_spaces_endpoints_rbac(client: AsyncClient, test_session, test_use
     assert r_del_owner.status_code == 204
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_document_ingestion_and_deletion_rbac(client: AsyncClient, test_session, test_user, test_user_2):
     """Tests file upload, listing, retrieval, and deletion RBAC policies."""
     # Setup Space
@@ -177,7 +177,7 @@ async def test_document_ingestion_and_deletion_rbac(client: AsyncClient, test_se
     assert r_del_editor.status_code == 204
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_space_member_management_api(client: AsyncClient, test_session, test_user, test_user_2):
     """Verifies list, invite, update role, and delete member endpoints on space."""
     # 1. Setup space with test_user as OWNER

@@ -116,4 +116,26 @@ def mock_vector_service():
         yield mock_vs
 
     if get_vector_service in app.dependency_overrides:
-        del app.dependency_overrides[get_vector_service]
+        del app.dependency_overrides[get_vector_service]
+
+
+_pytest_exit_code = 0
+
+
+def pytest_sessionfinish(session, exitstatus):
+    global _pytest_exit_code
+    _pytest_exit_code = int(exitstatus)
+
+
+def pytest_unconfigure(config):
+    """
+    Forces clean and immediate process exit when the test session completes.
+    Prevents lingering native/C++ worker threads (ONNX Runtime, Langsmith, gRPC)
+    from hanging Python interpreter shutdown in CI environments.
+    """
+    import os
+    import sys
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(_pytest_exit_code)
+
