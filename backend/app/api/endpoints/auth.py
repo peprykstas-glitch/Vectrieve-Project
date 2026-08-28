@@ -312,7 +312,7 @@ async def forgot_password(
         reset_token = PasswordResetToken(
             user_id=user.id,
             token=str(uuid.uuid4()),
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         session.add(reset_token)
         await session.commit()
@@ -350,8 +350,13 @@ async def reset_password(
             detail="Invalid or expired reset link. Please request a new one.",
         )
 
-    # Check expiry
-    if datetime.utcnow() > reset_token.expires_at:
+    # Check expiry (handle both tz-aware and tz-naive stored timestamps)
+    now = datetime.now(timezone.utc)
+    token_expiry = reset_token.expires_at
+    if token_expiry.tzinfo is None:
+        token_expiry = token_expiry.replace(tzinfo=timezone.utc)
+
+    if now > token_expiry:
         reset_token.used = True
         await session.commit()
         raise HTTPException(

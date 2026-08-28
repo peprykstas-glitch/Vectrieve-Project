@@ -5,11 +5,13 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   backend-tests:
     name: Backend Tests (Pytest)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     defaults:
       run:
@@ -42,6 +44,7 @@ jobs:
   frontend-check:
     name: Frontend Typecheck (TypeScript)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     defaults:
       run:

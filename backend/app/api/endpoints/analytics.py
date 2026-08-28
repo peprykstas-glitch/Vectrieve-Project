@@ -10,17 +10,18 @@ from api.deps import require_admin, get_current_user
 from collections import defaultdict
 import calendar
 import datetime
+from datetime import timezone
 from typing import Optional
 
 router = APIRouter()
 
 # Track server startup time for uptime reporting
-_SERVER_START_TIME = datetime.datetime.utcnow()
+_SERVER_START_TIME = datetime.datetime.now(timezone.utc)
 
 
 def _period_cutoff(period: str) -> Optional[datetime.datetime]:
     """Return the UTC cutoff datetime for the given period string."""
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(timezone.utc)
     if period == "7d":
         return now - datetime.timedelta(days=7)
     elif period == "30d":
@@ -33,7 +34,7 @@ def _period_cutoff(period: str) -> Optional[datetime.datetime]:
 
 @router.get("/stats")
 async def get_analytics_stats(
-    period: str = Query(default="30d", regex="^(7d|30d|90d|all)$"),
+    period: str = Query(default="30d", pattern="^(7d|30d|90d|all)$"),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_admin),
 ):
@@ -122,7 +123,7 @@ async def get_analytics_stats(
             daily[day_key]["docs"] += 1
 
     # Ensure today always appears even if zero
-    today_key = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    today_key = datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if today_key not in daily:
         daily[today_key] = {"queries": 0, "docs": 0}
 
@@ -141,7 +142,7 @@ async def get_analytics_stats(
     }
 
     # ── 11. Server uptime ─────────────────────────────────────────────────
-    uptime_seconds = int((datetime.datetime.utcnow() - _SERVER_START_TIME).total_seconds())
+    uptime_seconds = int((datetime.datetime.now(timezone.utc) - _SERVER_START_TIME).total_seconds())
 
     return {
         "period": period,

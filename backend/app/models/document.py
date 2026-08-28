@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -19,7 +19,7 @@ class Document(SQLModel, table=True):
     filename: str
     file_size: Optional[int] = Field(default=None)
     chunk_count: Optional[int] = Field(default=None)
-    upload_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    upload_timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: str = Field(default=DocumentStatus.PENDING.value)
     error_log: Optional[str] = Field(default=None)
     summary: Optional[str] = Field(default=None)

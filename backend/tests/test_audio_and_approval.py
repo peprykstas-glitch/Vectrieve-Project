@@ -8,9 +8,6 @@ from sqlmodel import select
 from models.user import User
 from services.audio_parser import is_media_file, is_video_file, MEDIA_EXTENSIONS, extract_audio_track
 
-pytestmark = pytest.mark.asyncio
-
-
 def test_audio_video_extension_detection():
     """Verify detection of media file formats."""
     assert is_media_file("recording.mp3") is True
@@ -31,6 +28,7 @@ def test_video_detection():
     assert is_video_file("audio.wav") is False
 
 
+@pytest.mark.asyncio
 async def test_admin_user_approval_flow(client: AsyncClient, test_session):
     """Verify admin listing, approval, active-toggle, and deletion of users."""
     from main import app

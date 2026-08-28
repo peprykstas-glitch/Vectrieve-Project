@@ -207,7 +207,10 @@ async def delete_file(
         
     # Delete vectors from Qdrant using the actual document author's user_id
     if vs:
-        vs.delete_file(doc.filename, doc.user_id, space_id=doc.space_id)
+        try:
+            vs.delete_file(doc.filename, doc.user_id, space_id=doc.space_id)
+        except Exception as e:
+            print(f"⚠️ Vector deletion error: {e}")
     else:
         print(f"⚠️ VectorService unavailable — skipping vector deletion for '{doc.filename}'")
     

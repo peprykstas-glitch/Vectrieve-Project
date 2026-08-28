@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field
 
 class TelemetryLog(SQLModel, table=True):
@@ -13,4 +13,4 @@ class TelemetryLog(SQLModel, table=True):
     total_latency: float
     tokens_generated: int
     tokens_per_second: float
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -93,3 +93,27 @@ async def client(test_session: AsyncSession):
         yield c
         
     app.dependency_overrides.clear()
+
+
+from unittest.mock import MagicMock, AsyncMock, patch
+
+@pytest_asyncio.fixture(autouse=True)
+def mock_vector_service():
+    """
+    Globally mock VectorService across all tests to prevent connecting to real Qdrant.
+    """
+    from services.vector_service import get_vector_service, SearchResult
+    mock_vs = MagicMock()
+    mock_vs.search = AsyncMock(return_value=[
+        SearchResult(filename="test.txt", text="Mocked context from document", score=0.9)
+    ])
+    mock_vs.delete_file = MagicMock()
+    mock_vs.upsert_batch = AsyncMock()
+
+    app.dependency_overrides[get_vector_service] = lambda: mock_vs
+
+    with patch("services.vector_service.get_vector_service", return_value=mock_vs):
+        yield mock_vs
+
+    if get_vector_service in app.dependency_overrides:
+        del app.dependency_overrides[get_vector_service]

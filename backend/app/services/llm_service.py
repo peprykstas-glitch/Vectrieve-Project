@@ -77,6 +77,16 @@ class LLMService:
         except ImportError:
             print("⚠️ Ollama package not installed. Local mode disabled.")
 
+    def _get_groq_client(self, groq_api_key: Optional[str] = None):
+        """Returns custom Groq client if key provided, otherwise defaults to server groq_client."""
+        if groq_api_key:
+            try:
+                from groq import AsyncGroq
+                return AsyncGroq(api_key=groq_api_key)
+            except Exception as e:
+                print(f"⚠️ Error creating custom Groq client: {e}")
+        return self.groq_client
+
     def _build_system_prompt(self, request: QueryRequest, context_str: str) -> tuple[str, float]:
         mode_key = (
             request.thinking_mode.lower() if request.thinking_mode else "mentor"

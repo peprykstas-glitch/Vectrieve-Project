@@ -28,12 +28,12 @@ class VectorService:
 
         logger.info("🔌 Connecting to Qdrant...")
         
-        self.local_client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
+        self.local_client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT, check_compatibility=False)
         logger.info("🏠 Local Qdrant connected.")
 
         self.cloud_client = None
         if settings.QDRANT_URL and settings.QDRANT_API_KEY:
-            self.cloud_client = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
+            self.cloud_client = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY, check_compatibility=False)
             logger.info("☁️ Cloud Qdrant connected.")
         else:
             logger.warning("⚠️ Cloud Qdrant not configured in .env")
@@ -175,18 +175,21 @@ class VectorService:
             filter=models.Filter(must=must_conditions)
         )
         
-        self.local_client.delete(
-            collection_name=self.collection_name,
-            points_selector=selector,
-            wait=True,
-        )
-        if self.cloud_client:
-            self.cloud_client.delete(
+        try:
+            self.local_client.delete(
                 collection_name=self.collection_name,
                 points_selector=selector,
                 wait=True,
             )
-        logger.info(f"🗑️ Deleted vectors for file: {filename} of user: {user_id}, space: {space_id}")
+            if self.cloud_client:
+                self.cloud_client.delete(
+                    collection_name=self.collection_name,
+                    points_selector=selector,
+                    wait=True,
+                )
+            logger.info(f"🗑️ Deleted vectors for file: {filename} of user: {user_id}, space: {space_id}")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to delete vectors from Qdrant for '{filename}': {e}")
 
     async def search(self, query: str, user_id: int, limit: int = 5, mode: str = "local", filenames: Optional[List[str]] = None, space_id: Optional[str] = None) -> List[SearchResult]:
         dense_latency = 0.0

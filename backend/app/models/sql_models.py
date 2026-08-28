@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field
 from enum import Enum
 
@@ -23,7 +23,7 @@ class Space(SQLModel, table=True):
     name: str
     system_prompt: Optional[str] = Field(default=None)
     user_id: int = Field(foreign_key="user.id", index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # --- Phase 1: Per-Space LLM Configuration ---
     llm_provider: Optional[str] = Field(default=None)
@@ -38,7 +38,7 @@ class ChatSession(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     space_id: Optional[str] = Field(default=None, foreign_key="space.id", index=True)
     title: Optional[str] = Field(default="New Chat")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ChatHistory(SQLModel, table=True):
@@ -47,7 +47,7 @@ class ChatHistory(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     role: str  # user / assistant
     content: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     sources: Optional[str] = Field(default=None)
     attached_filenames: Optional[str] = Field(default=None)
 
@@ -78,8 +78,8 @@ class Feedback(SQLModel, table=True):
     type: FeedbackType = Field(default=FeedbackType.IDEA)
     message: str
     status: FeedbackStatus = Field(default=FeedbackStatus.NEW)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     comment: Optional[str] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

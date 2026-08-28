@@ -19,7 +19,9 @@ async def test_google_auth_smart_account_unification(client, test_session):
     mock_http_client.__aenter__.return_value = mock_http_client
     mock_http_client.__aexit__.return_value = None
 
-    with patch("api.endpoints.auth.httpx.AsyncClient", return_value=mock_http_client):
+    with patch("api.endpoints.auth.httpx.AsyncClient", return_value=mock_http_client), \
+         patch("api.endpoints.auth.settings.GOOGLE_CLIENT_ID", "mock_google_client_id"), \
+         patch("api.endpoints.auth.settings.GOOGLE_CLIENT_SECRET", "mock_google_client_secret"):
         # 1. First-time Google user creation (non-admin -> pending approval)
         res = await client.post("/auth/google", json={
             "code": "4/0AeanS0...",

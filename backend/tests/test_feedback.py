@@ -30,6 +30,7 @@ async def test_feedback_submission_and_lifecycle():
     app.dependency_overrides[require_admin] = lambda: MockAdminUser()
 
     mock_db = AsyncMock()
+    mock_db.add = MagicMock()
     app.dependency_overrides[get_session] = lambda: mock_db
 
     transport = ASGITransport(app=app)
