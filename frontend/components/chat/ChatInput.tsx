@@ -1,5 +1,5 @@
 import React, { useRef, useState, KeyboardEvent } from "react";
-import { Plus, ArrowUp, FileText, X, Loader2 } from "lucide-react";
+import { Plus, ArrowUp, FileText, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
@@ -34,8 +34,19 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      const pastedFiles = Array.from(e.clipboardData.files);
+      setFiles((prev) => [...prev, ...pastedFiles]);
+    }
+  };
+
   const removeFile = (indexToRemove: number) => {
     setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const isImageFile = (file: File) => {
+    return file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name);
   };
 
   const submit = () => {
@@ -65,36 +76,41 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
       {/* File Upload Attachment Chips */}
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2 px-3 mb-2 w-full justify-start">
-          {files.map((file, idx) => (
-            <div
-              key={idx}
-              className={`flex items-center gap-2 border rounded-xl py-1 pl-3 pr-2 text-xs shadow-lg transition-all duration-200 ${
-                isProcessingFiles
-                  ? "bg-amber-950/40 border-amber-500/30 text-amber-300"
-                  : "bg-zinc-900/90 border-white/10 text-zinc-300 backdrop-blur-md"
-              }`}
-            >
-              {isProcessingFiles ? (
-                <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
-              ) : (
-                <FileText className="w-3 h-3 text-indigo-400" />
-              )}
-              <span className="truncate max-w-[140px] font-medium text-[11px]">{file.name}</span>
-              {isProcessingFiles ? (
-                <span className="text-[9px] text-amber-400 font-semibold uppercase tracking-wide">
-                  {t.files.statusProcessing}
-                </span>
-              ) : (
-                <button
-                  onClick={() => removeFile(idx)}
-                  className="p-0.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-colors border-0 bg-transparent cursor-pointer"
-                  disabled={isDisabled}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          ))}
+          {files.map((file, idx) => {
+            const isImg = isImageFile(file);
+            return (
+              <div
+                key={idx}
+                className={`flex items-center gap-2 border rounded-xl py-1 pl-3 pr-2 text-xs shadow-lg transition-all duration-200 ${
+                  isProcessingFiles
+                    ? "bg-amber-950/40 border-amber-500/30 text-amber-300"
+                    : "bg-zinc-900/90 border-white/10 text-zinc-300 backdrop-blur-md"
+                }`}
+              >
+                {isProcessingFiles ? (
+                  <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
+                ) : isImg ? (
+                  <ImageIcon className="w-3 h-3 text-emerald-400" />
+                ) : (
+                  <FileText className="w-3 h-3 text-indigo-400" />
+                )}
+                <span className="truncate max-w-[140px] font-medium text-[11px]">{file.name}</span>
+                {isProcessingFiles ? (
+                  <span className="text-[9px] text-amber-400 font-semibold uppercase tracking-wide">
+                    {t.files.statusProcessing}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => removeFile(idx)}
+                    className="p-0.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-colors border-0 bg-transparent cursor-pointer"
+                    disabled={isDisabled}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -129,6 +145,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
           value={inputValue}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder={isProcessingFiles ? t.files.statusProcessing : t.chat.inputPlaceholder}
           className="w-full max-h-[180px] min-h-[36px] bg-transparent border-0 resize-none py-2 px-2.5 text-sm sm:text-[14.5px] text-zinc-100 placeholder:text-zinc-500 focus:ring-0 focus:outline-none overflow-y-auto custom-scrollbar leading-relaxed"
           rows={1}
@@ -157,7 +174,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
       {/* Subtle Micro-Disclaimer */}
       <div className="text-center mt-1.5 text-[10px] text-zinc-500/80 tracking-wide select-none">
         {isProcessingFiles
-          ? "⚡ Indexing files — query will fire automatically when ready."
+          ? "⚡ Processing in-memory attachments..."
           : "Vectrieve Core may produce inaccurate intelligence. Verify critical assertions."}
       </div>
     </div>

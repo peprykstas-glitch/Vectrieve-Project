@@ -454,6 +454,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
             "Describe all visible text, tables, diagrams, charts, and key visual "
             "elements in this image in detail. If there is text, transcribe it exactly."
         ),
+        groq_api_key: Optional[str] = None,
     ) -> str:
         """
         Send a single image to a vision-capable LLM and return a textual description.
@@ -478,17 +479,21 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
         if mode == "local":
             return await self._run_local_vision(messages, model_name)
         else:
-            if not self.groq_client:
+            client = self._get_groq_client(groq_api_key)
+            if not client:
                 raise ValueError("Cloud mode selected but GROQ_API_KEY is missing.")
-            return await self._run_cloud_vision(messages, model_name)
+            return await self._run_cloud_vision(messages, model_name, groq_client=client)
 
     async def _run_cloud_vision(
-        self, messages: list, model_name: Optional[str] = None
+        self, messages: list, model_name: Optional[str] = None, groq_client=None
     ) -> str:
         # Default: Groq's flagship 90B multimodal vision model
+        client = groq_client or self.groq_client
+        if not client:
+            raise ValueError("No Groq client available for vision.")
         model = model_name or "llama-3.2-90b-vision-preview"
         try:
-            completion = await self.groq_client.chat.completions.create(
+            completion = await client.chat.completions.create(
                 model=model,
                 messages=messages,
                 max_tokens=1024,
@@ -497,7 +502,7 @@ Respond ONLY with a raw JSON list of strings or a JSON object with a "questions"
         except Exception as e:
             # Fallback to 11B vision model if 90B encounters temporary rate limit or outage
             if model == "llama-3.2-90b-vision-preview":
-                completion = await self.groq_client.chat.completions.create(
+                completion = await client.chat.completions.create(
                     model="llama-3.2-11b-vision-preview",
                     messages=messages,
                     max_tokens=1024,

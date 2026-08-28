@@ -17,8 +17,9 @@ from core.database import get_session, engine
 from api.deps import get_current_user
 from services.llm_service import llm_service
 from services.vector_service import get_vector_service, VectorService, SearchResult
-from core.telemetry import rag_telemetry
 from core.rate_limiter import limiter
+from core.telemetry import rag_telemetry
+from core.config import settings
 from services.llm_config_resolver import resolve_llm_config
 from api.endpoints.settings_endpoint import TRIAL_QUERY_LIMIT
 
@@ -130,18 +131,71 @@ async def _prepare_rag_context(
 
     user_query = request.messages[-1].content
 
-    # 2. Persist user message
+    # 2. Persist user message with attachment metadata
+    attached_names_str = None
+    if getattr(request, "chat_attachments", None):
+        attached_names_str = ", ".join(att.filename for att in request.chat_attachments)
+    elif request.attached_filenames:
+        attached_names_str = ", ".join(request.attached_filenames)
+
     user_msg_db = ChatHistory(
         session_id=session_id,
         user_id=current_user.id,
         role="user",
         content=user_query,
+        attached_filenames=attached_names_str,
     )
     session.add(user_msg_db)
     await session.commit()
 
-    # 3. Pre-flight check: verify attached files are fully indexed before RAG search
-    # Wrapped in try/except — any failure here should degrade gracefully, NOT cause a 500.
+    # ── Groq key resolution (trial mode) ──────────────────────────────────────
+    user_cfg_stmt = select(UserSettings).where(UserSettings.user_id == current_user.id)
+    user_cfg_result = await session.execute(user_cfg_stmt)
+    user_cfg = user_cfg_result.scalar_one_or_none()
+
+    own_groq_key = (user_cfg.groq_api_key if user_cfg else None) or ""
+    trial_used = user_cfg.trial_queries_used if user_cfg else 0
+
+    if own_groq_key:
+        resolved_groq_key = own_groq_key
+        trial_remaining = None
+    else:
+        if trial_used >= TRIAL_QUERY_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Trial limit reached ({TRIAL_QUERY_LIMIT} queries). Please configure your own Groq API key in Settings to continue.",
+            )
+        resolved_groq_key = settings.GROQ_API_KEY
+        trial_remaining = TRIAL_QUERY_LIMIT - trial_used
+        if user_cfg:
+            user_cfg.trial_queries_used = trial_used + 1
+        else:
+            session.add(UserSettings(user_id=current_user.id, trial_queries_used=1))
+        await session.commit()
+
+    sources_data = []
+
+    # 3. Process Ephemeral In-Chat Attachments (In-Memory / Vision OCR, 0 Qdrant pollution)
+    direct_attachment_blocks = []
+    if getattr(request, "chat_attachments", None):
+        from services.attachment_service import process_ephemeral_attachment
+        for att in request.chat_attachments:
+            block, src_label = await process_ephemeral_attachment(
+                att,
+                llm_service=llm_service,
+                groq_api_key=resolved_groq_key,
+                mode=request.mode or "cloud",
+            )
+            if block:
+                direct_attachment_blocks.append(block)
+                sources_data.append({
+                    "content": block[:400],
+                    "score": 1.0,
+                    "filename": att.filename,
+                    "is_direct_attachment": True,
+                })
+
+    # 4. Pre-flight check: verify attached files are fully indexed before RAG search (only for permanent indexed files)
     if request.attached_filenames:
         print(f"🔗 Attached filenames for RAG filter: {request.attached_filenames}")
         try:
@@ -165,11 +219,9 @@ async def _prepare_rag_context(
                         )
                     res_doc = await check_session.execute(stmt_doc)
                     doc_rows = res_doc.scalars().all()
-                    # Pick the most recently uploaded one
                     if not doc_rows:
                         not_ready.append(f"'{fname}' (not found in database)")
                     else:
-                        # Find the latest by upload_timestamp
                         latest = max(doc_rows, key=lambda d: d.upload_timestamp)
                         if latest.status != DocStatus.COMPLETED.value:
                             not_ready.append(f"'{fname}' (status: {latest.status})")
@@ -184,13 +236,11 @@ async def _prepare_rag_context(
                     )
                 )
         except HTTPException:
-            raise  # Re-raise 422 so the client gets the proper error
+            raise
         except Exception as preflight_err:
-            # Any other error (SQL, import, etc.) — log and continue rather than 500
             print(f"⚠️ Pre-flight file status check failed (skipping): {preflight_err}")
 
-
-    # 4. RAG vector search
+    # 5. RAG vector search on permanent Knowledge Base
     search_results = []
     if vector_service:
         try:
@@ -209,12 +259,7 @@ async def _prepare_rag_context(
         print("⚠️ VectorService unavailable — skipping vector search")
 
     rag_context = ""
-    sources_data = []
-    if not search_results and request.attached_filenames:
-        print(f"⚠️ RAG search returned 0 results for attached files: {request.attached_filenames}. "
-              f"Check that vectors were upserted to Qdrant successfully.")
     if search_results:
-        # Group sources by filename for clarity
         file_groups: dict[str, list[str]] = {}
         for hit in search_results:
             filename = hit.get("filename", "Unknown")
@@ -227,6 +272,7 @@ async def _prepare_rag_context(
                 "content": content,
                 "score": score,
                 "filename": filename,
+                "is_direct_attachment": False,
             })
         
         parts = []
@@ -248,7 +294,22 @@ async def _prepare_rag_context(
             "If the user's question is relevant to multiple files, compare and contrast information across them."
         )
 
-    full_context = f"--- DOCUMENT CONTEXT ---\n{rag_context}{multi_source_instruction}"
+    # 6. Context synthesis (Direct Attachments + Knowledge Base)
+    direct_attachments_text = "\n\n".join(direct_attachment_blocks)
+    if direct_attachments_text and rag_context:
+        full_context = (
+            f"--- DIRECT IN-CHAT ATTACHMENTS (PRIMARY CONTEXT) ---\n"
+            f"{direct_attachments_text}\n\n"
+            f"--- KNOWLEDGE BASE BACKGROUND CONTEXT ---\n"
+            f"{rag_context}{multi_source_instruction}"
+        )
+    elif direct_attachments_text:
+        full_context = (
+            f"--- DIRECT IN-CHAT ATTACHMENTS (PRIMARY CONTEXT) ---\n"
+            f"{direct_attachments_text}"
+        )
+    else:
+        full_context = f"--- DOCUMENT CONTEXT ---\n{rag_context}{multi_source_instruction}"
 
     # 5. Fetch recent conversation history (last 6 turns for optimal token budget)
     stmt = (
@@ -262,43 +323,6 @@ async def _prepare_rag_context(
     history_messages = [
         {"role": m.role, "content": m.content} for m in reversed(history_records)
     ]
-
-    # ── Groq key resolution (trial mode) ──────────────────────────────────────
-    # 1. Load user's settings row.
-    user_cfg_stmt = select(UserSettings).where(UserSettings.user_id == current_user.id)
-    user_cfg_result = await session.execute(user_cfg_stmt)
-    user_cfg = user_cfg_result.scalar_one_or_none()
-
-    own_groq_key = (user_cfg.groq_api_key if user_cfg else None) or ""
-    trial_used = user_cfg.trial_queries_used if user_cfg else 0
-
-    if own_groq_key:
-        # User supplied their own key — use it, no trial tracking needed.
-        resolved_groq_key = own_groq_key
-        trial_remaining = None  # N/A
-    elif trial_used < TRIAL_QUERY_LIMIT:
-        # Still within free trial — use server key and increment counter.
-        resolved_groq_key = None  # llm_service will use its global client (server key)
-        trial_remaining = TRIAL_QUERY_LIMIT - trial_used - 1  # after this query
-        # Increment in DB
-        if user_cfg is None:
-            user_cfg = UserSettings(user_id=current_user.id, trial_queries_used=1)
-            session.add(user_cfg)
-        else:
-            user_cfg.trial_queries_used = trial_used + 1
-        await session.commit()
-    else:
-        # Trial exhausted and no own key — block with 402
-        raise HTTPException(
-            status_code=402,
-            detail=json.dumps({
-                "trial_expired": True,
-                "message": (
-                    "Your free trial of 20 queries has been used. "
-                    "Please add your own Groq API key in Settings to continue."
-                )
-            })
-        )
 
     return session_id, is_new_session, user_query, full_context, sources_data, history_messages, resolved_groq_key, trial_remaining
 

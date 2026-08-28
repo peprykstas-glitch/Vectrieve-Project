@@ -8,6 +8,12 @@ class ChatMessage(BaseModel):
     role: str = Field(..., pattern="^(user|assistant|system)$")
     content: str
 
+class ChatAttachment(BaseModel):
+    filename: str
+    content_type: str = "application/octet-stream"
+    base64_data: Optional[str] = None  # Base64 data (e.g. data:image/png;base64,... or raw base64)
+    extracted_text: Optional[str] = None  # Optional pre-extracted text
+
 class QueryRequest(BaseModel):
     messages: List[ChatMessage]
     temperature: Optional[float] = None
@@ -24,8 +30,12 @@ class QueryRequest(BaseModel):
     # 👇 НОВЕ ПОЛЕ: Дозволяє фронтенду вказати ID чату
     session_id: Optional[str] = None
 
-    # 👇 НОВЕ ПОЛЕ: Обмежує RAG пошук тільки прикріпленими файлами
+    # 👇 НОВЕ ПОЛЕ: Обмежує RAG пошук тільки прикріпленими файлами (якщо використовується)
     attached_filenames: Optional[List[str]] = None 
+
+    # 👇 ЕФЕМЕРНІ ВКЛАДЕННЯ: Прямі вкладення файлів та зображень без запису у векторну БД
+    chat_attachments: Optional[List[ChatAttachment]] = None
+
     space_id: Optional[str] = None
     space_system_prompt: Optional[str] = None
 
