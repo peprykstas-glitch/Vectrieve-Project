@@ -20,8 +20,8 @@ _SERVER_START_TIME = datetime.datetime.now(timezone.utc)
 
 
 def _period_cutoff(period: str) -> Optional[datetime.datetime]:
-    """Return the UTC cutoff datetime for the given period string."""
-    now = datetime.datetime.now(timezone.utc)
+    """Return the UTC cutoff datetime for the given period string (offset-naive for asyncpg)."""
+    now = datetime.datetime.now(timezone.utc).replace(tzinfo=None)
     if period == "7d":
         return now - datetime.timedelta(days=7)
     elif period == "30d":
