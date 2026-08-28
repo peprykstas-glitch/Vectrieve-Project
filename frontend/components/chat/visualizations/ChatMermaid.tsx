@@ -107,7 +107,8 @@ export function healMermaidCode(raw: string): string {
 }
 
 /**
- * Injects an ultra-premium, modern, high-contrast dark theme into rendered SVG
+ * Injects an ultra-premium, balanced dark theme into rendered SVG
+ * Guarantees crisp white text on root and all nodes, with elegant balanced glows.
  */
 export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string {
   if (!rawSvg) return "";
@@ -132,37 +133,73 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
     }
   }
 
+  // Clean any hardcoded dark text fills inside <text> or <tspan>
+  svg = svg.replace(/fill="#(?:000000|111827|18181b|000|222222)"/gi, 'fill="#ffffff"');
+  svg = svg.replace(/fill="black"/gi, 'fill="#ffffff"');
+
   const premiumStyles = `
     <style>
-      /* Center Root Node - Dark Sapphire / Royal Navy with Electric Sky Blue Glow */
+      /* Center Root Node - Balanced Dark Sapphire Core with Soft Sky Blue Stroke */
       .section-root rect, .section-root circle, .section-root polygon, .section-root path,
       .mindmap-node.section-root rect, .mindmap-node.section-root circle,
       g[class*="root"] rect, g[class*="root"] circle, g[class*="root"] path,
       .mindmap-node:first-of-type circle, .mindmap-node:first-of-type rect {
         fill: #0c1527 !important;
         stroke: #38bdf8 !important;
-        stroke-width: 3.5px !important;
-        filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.5)) drop-shadow(0 4px 14px rgba(0,0,0,0.85)) !important;
+        stroke-width: 2.8px !important;
+        filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)) drop-shadow(0 4px 14px rgba(0,0,0,0.85)) !important;
       }
 
       /* Mindmap Branch Categories - Sleek Dark Glass Jewel Tones */
-      .section-0 rect, .section-0 circle, .section-0 path { fill: #0f172a !important; stroke: #3b82f6 !important; stroke-width: 2.2px !important; }
-      .section-1 rect, .section-1 circle, .section-1 path { fill: #1a0f2e !important; stroke: #a855f7 !important; stroke-width: 2.2px !important; }
-      .section-2 rect, .section-2 circle, .section-2 path { fill: #06281e !important; stroke: #10b981 !important; stroke-width: 2.2px !important; }
-      .section-3 rect, .section-3 circle, .section-3 path { fill: #082733 !important; stroke: #06b6d4 !important; stroke-width: 2.2px !important; }
-      .section-4 rect, .section-4 circle, .section-4 path { fill: #2d1604 !important; stroke: #f59e0b !important; stroke-width: 2.2px !important; }
-      .section-5 rect, .section-5 circle, .section-5 path { fill: #2e0918 !important; stroke: #f43f5e !important; stroke-width: 2.2px !important; }
-      .section-6 rect, .section-6 circle, .section-6 path { fill: #0f172a !important; stroke: #64748b !important; stroke-width: 2.2px !important; }
-      .section-7 rect, .section-7 circle, .section-7 path { fill: #13173d !important; stroke: #6366f1 !important; stroke-width: 2.2px !important; }
+      .section-0 rect, .section-0 circle, .section-0 path { fill: #0f172a !important; stroke: #3b82f6 !important; stroke-width: 2px !important; }
+      .section-1 rect, .section-1 circle, .section-1 path { fill: #1a0f2e !important; stroke: #a855f7 !important; stroke-width: 2px !important; }
+      .section-2 rect, .section-2 circle, .section-2 path { fill: #06281e !important; stroke: #10b981 !important; stroke-width: 2px !important; }
+      .section-3 rect, .section-3 circle, .section-3 path { fill: #082733 !important; stroke: #06b6d4 !important; stroke-width: 2px !important; }
+      .section-4 rect, .section-4 circle, .section-4 path { fill: #2d1604 !important; stroke: #f59e0b !important; stroke-width: 2px !important; }
+      .section-5 rect, .section-5 circle, .section-5 path { fill: #2e0918 !important; stroke: #f43f5e !important; stroke-width: 2px !important; }
+      .section-6 rect, .section-6 circle, .section-6 path { fill: #0f172a !important; stroke: #64748b !important; stroke-width: 2px !important; }
+      .section-7 rect, .section-7 circle, .section-7 path { fill: #13173d !important; stroke: #6366f1 !important; stroke-width: 2px !important; }
 
-      /* Crisp High-Contrast Pure White Typography with Deep Shadow */
-      text, .mindmap-node text, .node text, g text {
+      /* ALL Text & Tspans - Pure Bright White with Crisp Dark Legibility Shadow */
+      text,
+      tspan,
+      .mindmap-node text,
+      .mindmap-node tspan,
+      .mindmap-node text *,
+      .node text,
+      .node tspan,
+      .section-root text,
+      .section-root tspan,
+      .section-root text *,
+      g[class*="root"] text,
+      g[class*="root"] tspan,
+      g[class*="root"] text *,
+      g text,
+      g tspan {
         fill: #ffffff !important;
+        color: #ffffff !important;
         font-family: "Inter", system-ui, -apple-system, sans-serif !important;
         font-weight: 700 !important;
         font-size: 13.5px !important;
         filter: drop-shadow(0 1px 3px rgba(0,0,0,0.98)) drop-shadow(0 0 1px rgba(0,0,0,1)) !important;
         letter-spacing: 0.015em !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+
+      /* Root Node Text Extra Crispness */
+      .section-root text,
+      .section-root tspan,
+      .mindmap-node.section-root text,
+      .mindmap-node.section-root tspan,
+      g[class*="root"] text,
+      g[class*="root"] tspan,
+      .mindmap-node:first-of-type text,
+      .mindmap-node:first-of-type tspan {
+        fill: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 14.5px !important;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,1)) drop-shadow(0 0 2px rgba(0,0,0,1)) !important;
       }
 
       /* Card Node Rounding & Elevation */
@@ -173,12 +210,11 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7)) !important;
       }
 
-      /* Connection Lines / Curves */
+      /* Connection Lines / Curves - Balanced Soft Glow */
       .edgePath path, .mindmap-edge, path.edge-thickness-normal {
         stroke: #6366f1 !important;
-        stroke-width: 2.2px !important;
-        stroke-opacity: 0.85 !important;
-        filter: drop-shadow(0 1px 4px rgba(99, 102, 241, 0.3)) !important;
+        stroke-width: 2px !important;
+        stroke-opacity: 0.8 !important;
       }
     </style>
   `;
@@ -527,7 +563,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
                   >
                     <ZoomIn className="w-4 h-4" />
                   </button>
-                  <span className="text-[11px] font-mono text-zinc-300 px-2 min-w-[50px] text-center font-bold">
+                  <span className="text-[12px] font-mono text-zinc-200 px-2 min-w-[52px] text-center font-bold">
                     {Math.round(fullscreenZoom * 100)}%
                   </span>
                   <button
