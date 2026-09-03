@@ -312,6 +312,15 @@ function SpaceSwitcher() {
   
   const currentSpaceId = searchParams.get('space')
   
+  // Auto-redirect to first space if user has spaces but no space is selected
+  React.useEffect(() => {
+    if (!currentSpaceId && spaces.length > 0) {
+      const params = new URLSearchParams(window.location.search)
+      params.set('space', spaces[0].id)
+      window.location.href = `${pathname}?${params.toString()}`
+    }
+  }, [currentSpaceId, spaces, pathname])
+
   const handleSelectSpace = (id: string | null) => {
     setIsOpen(false)
     const params = new URLSearchParams(window.location.search)
