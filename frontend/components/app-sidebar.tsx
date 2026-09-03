@@ -312,14 +312,15 @@ function SpaceSwitcher() {
   
   const currentSpaceId = searchParams.get('space')
   
-  // Auto-redirect to first space if user has spaces but no space is selected
+  // Auto-redirect to first space ONLY on initial load (when URL has no space param at all)
+  // If user explicitly selects Global Workspace, we set space=global to prevent re-redirect
   React.useEffect(() => {
-    if (!currentSpaceId && spaces.length > 0) {
+    if (spaces.length > 0 && !searchParams.has('space')) {
       const params = new URLSearchParams(window.location.search)
       params.set('space', spaces[0].id)
       window.location.href = `${pathname}?${params.toString()}`
     }
-  }, [currentSpaceId, spaces, pathname])
+  }, [spaces, pathname, searchParams])
 
   const handleSelectSpace = (id: string | null) => {
     setIsOpen(false)
@@ -327,7 +328,8 @@ function SpaceSwitcher() {
     if (id) {
       params.set('space', id)
     } else {
-      params.delete('space')
+      // Set explicit 'global' value so auto-redirect doesn't re-fire
+      params.set('space', 'global')
     }
     params.delete('session') // Always clear active chat session when switching space
     window.location.href = `${pathname}?${params.toString()}`
