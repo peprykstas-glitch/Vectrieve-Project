@@ -75,7 +75,7 @@ function exportMarkdown(data: AnalyticsData, period: Period) {
   const now = new Date().toLocaleString();
   const label = period === "all" ? "All time" : period.toUpperCase();
   const lines = [
-    `# Vectrieve Analytics Report`,
+    `# Neurach Analytics Report`,
     `**Generated:** ${now}  |  **Period:** ${label}`,
     `**Server uptime:** ${fmtUptime(data.server.uptime_seconds)}`,
     ``,
@@ -111,7 +111,7 @@ function exportMarkdown(data: AnalyticsData, period: Period) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `vectrieve-analytics-${period}-${new Date().toISOString().split("T")[0]}.md`;
+  a.download = `neurach-analytics-${period}-${new Date().toISOString().split("T")[0]}.md`;
   a.click();
   URL.revokeObjectURL(url);
 }

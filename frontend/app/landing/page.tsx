@@ -97,7 +97,7 @@ const STEPS = [
   {
     num: "02",
     title: "Hybrid Vector Indexing",
-    desc: "Vectrieve chunks text, vectorizes content using FastEmbed BGE ONNX models, and indexes vectors into Qdrant in milliseconds.",
+    desc: "Neurach chunks text, vectorizes content using FastEmbed BGE ONNX models, and indexes vectors into Qdrant in milliseconds.",
     icon: Cpu,
   },
   {
@@ -150,11 +150,11 @@ export default function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/logo-icon.png" 
-              alt="Vectrieve" 
+              alt="Neurach" 
               className="h-8 w-8 object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] transition-transform duration-200 group-hover:scale-105" 
             />
             <div className="flex items-center gap-1.5 font-bold tracking-tight">
-              <span className="text-white text-lg tracking-tight">Vectrieve</span>
+              <span className="text-white text-lg tracking-tight">Neurach</span>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">CORE</span>
             </div>
           </Link>
@@ -202,7 +202,7 @@ export default function LandingPage() {
           {/* Keynote Pill */}
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-950/40 px-4 py-1.5 text-xs text-indigo-300 shadow-inner">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-            <span className="font-semibold tracking-wide">VECTRIEVE CORE · ENTERPRISE HYBRID RAG 2.4</span>
+            <span className="font-semibold tracking-wide">NEURACH CORE · ENTERPRISE HYBRID RAG 2.4</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.1]">
@@ -214,7 +214,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="max-w-3xl mx-auto text-base sm:text-lg text-zinc-400 leading-relaxed font-normal">
-            Stop pasting sensitive documents into generic AI. Vectrieve establishes cryptographically isolated{" "}
+            Stop pasting sensitive documents into generic AI. Neurach establishes cryptographically isolated{" "}
             <span className="text-white font-medium">Knowledge Spaces</span>, indexes documents and meeting recordings, and synthesizes answers with{" "}
             <span className="text-cyan-300 font-medium">verifiable source citations</span> powered by Groq LPU inference.
           </p>
@@ -263,7 +263,7 @@ export default function LandingPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
                 <span className="ml-2 text-xs text-zinc-400 font-mono">
-                  Vectrieve Enterprise Workspace · Space: <span className="text-indigo-400 font-semibold">Q3_Executive_Audits</span>
+                  Neurach Enterprise Workspace · Space: <span className="text-indigo-400 font-semibold">Q3_Executive_Audits</span>
                 </span>
               </div>
 
@@ -315,7 +315,7 @@ export default function LandingPage() {
                   <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-icon.png" alt="Vectrieve" className="w-4 h-4 object-contain" />
+                      <img src="/logo-icon.png" alt="Neurach" className="w-4 h-4 object-contain" />
                     </div>
                     <div className="flex-1 space-y-3">
                       <div className="rounded-2xl rounded-tl-sm border border-white/5 bg-zinc-900/80 p-4 text-zinc-200 leading-relaxed">
@@ -444,7 +444,7 @@ export default function LandingPage() {
             <p className="text-xs font-bold text-cyan-400 tracking-widest uppercase">System Design</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold">Engineered for Enterprise Truth</h2>
             <p className="text-zinc-400 text-sm max-w-2xl mx-auto">
-              How Vectrieve transforms unstructured documents into verifiable intelligence in three automated stages.
+              How Neurach transforms unstructured documents into verifiable intelligence in three automated stages.
             </p>
           </div>
 
@@ -506,7 +506,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-4xl">
           <div className="text-center space-y-3 mb-14">
             <p className="text-xs font-bold text-purple-400 tracking-widest uppercase">Competitive Matrix</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold">Vectrieve Core vs Generic AI</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Neurach Core vs Generic AI</h2>
           </div>
 
           <div className="rounded-2xl border border-white/10 overflow-hidden bg-zinc-900/40 shadow-xl">
@@ -516,7 +516,7 @@ export default function LandingPage() {
                   <div className="col-span-1">Feature</div>
                   <div className="text-center">ChatGPT</div>
                   <div className="text-center">Gemini</div>
-                  <div className="text-center text-cyan-300 font-extrabold">Vectrieve Core</div>
+                  <div className="text-center text-cyan-300 font-extrabold">Neurach Core</div>
                 </div>
 
                 {COMPARISON.map((row, i) => (
@@ -585,8 +585,8 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-icon.png" alt="Vectrieve" className="h-5 w-5 object-contain" />
-            <span className="text-zinc-400 font-semibold">Vectrieve Core</span>
+            <img src="/logo-icon.png" alt="Neurach" className="h-5 w-5 object-contain" />
+            <span className="text-zinc-400 font-semibold">Neurach Core</span>
             <span>· Built by Stanislav Pepryk</span>
           </div>
 

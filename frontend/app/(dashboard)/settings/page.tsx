@@ -138,7 +138,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-[12px] font-semibold text-amber-300">Guest Demo Sandbox Mode</p>
               <p className="text-[11px] text-amber-400/80 mt-0.5 leading-relaxed">
-                You are exploring Vectrieve in a private, isolated guest session. Interface language, font scaling, and persona modes are fully customizable. Custom API key storage and persistent server infrastructure settings are reserved for registered workspace accounts.
+                You are exploring Neurach in a private, isolated guest session. Interface language, font scaling, and persona modes are fully customizable. Custom API key storage and persistent server infrastructure settings are reserved for registered workspace accounts.
               </p>
             </div>
           </div>

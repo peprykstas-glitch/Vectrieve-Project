@@ -22,6 +22,10 @@ htmlcov/
 .env
 *.env
 *.env.local
+.env.*
+.env.backup
+!.env.example
+!.env.backup.example
 
 # IDE / Editor Settings
 .vscode/

@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/auth/TurnstileWidget';
 
 import { useRouter } from 'next/navigation';
 
@@ -31,6 +32,16 @@ export function ForgotPasswordForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [globalError, setGlobalError] = React.useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = React.useState<string>('');
+  const turnstileRef = React.useRef<TurnstileWidgetRef>(null);
+
+  const handleVerify = React.useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleExpire = React.useCallback(() => {
+    setTurnstileToken('');
+  }, []);
 
   const form = useForm<ForgotFormValues>({
     resolver: zodResolver(forgotSchema),
@@ -45,18 +56,25 @@ export function ForgotPasswordForm() {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email }),
+        body: JSON.stringify({
+          email: data.email,
+          'cf-turnstile-response': turnstileToken,
+        }),
       });
 
       if (response.ok || response.status === 404) {
         setIsSuccess(true);
       } else {
+        turnstileRef.current?.reset();
+        setTurnstileToken('');
         const errorData = await response.json().catch(() => ({}));
         setGlobalError(
           errorData.detail || errorData.message || 'An error occurred. Please try again.'
         );
       }
     } catch {
+      turnstileRef.current?.reset();
+      setTurnstileToken('');
       setGlobalError('Cannot connect to server. Please check your connection.');
     } finally {
       setIsSubmitting(false);
@@ -136,13 +154,26 @@ export function ForgotPasswordForm() {
                 )}
               />
 
+              {/* Cloudflare Turnstile bot verification */}
+              <TurnstileWidget
+                ref={turnstileRef}
+                action="forgot_password"
+                onVerify={handleVerify}
+                onExpire={handleExpire}
+              />
+
               <Button
                 type="submit"
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium"
-                disabled={isSubmitting}
+                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting || !turnstileToken}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : !turnstileToken ? (
+                  <span className="flex items-center text-zinc-500 text-sm">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-500" />
+                    Verifying security...
+                  </span>
                 ) : (
                   'Send Reset Link'
                 )}

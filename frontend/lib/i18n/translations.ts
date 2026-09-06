@@ -272,7 +272,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       exportMarkdown: "Export as Markdown",
       exportPdf: "Export as PDF",
       trialExhaustedTitle: "Free Trial Complete",
-      trialExhaustedDesc: "You have used all 20 free trial queries. To continue using Vectrieve, add your personal Groq API key.",
+      trialExhaustedDesc: "You have used all 20 free trial queries. To continue using Neurach, add your personal Groq API key.",
       setupApiKeyTitle: "How to get your free key (30 seconds)",
       goToSettings: "Go to Settings",
     },
@@ -344,7 +344,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     },
     feedback: {
       modalTitle: "Feedback & Suggestions",
-      modalSubtitle: "Help shape the future of Vectrieve. Every message is reviewed by our engineering team.",
+      modalSubtitle: "Help shape the future of Neurach. Every message is reviewed by our engineering team.",
       tabIdea: "Feature Suggestion",
       tabBug: "Report a Bug",
       ideaPlaceholder: "Describe the feature or improvement you would like to see...",
@@ -548,7 +548,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     },
     feedback: {
       modalTitle: "Зворотний зв'язок та ідеї",
-      modalSubtitle: "Допоможіть зробити Vectrieve досконалішим. Ми читаємо кожне повідомлення.",
+      modalSubtitle: "Допоможіть зробити Neurach досконалішим. Ми читаємо кожне повідомлення.",
       tabIdea: "Ідея чи пропозиція",
       tabBug: "Повідомити про баг",
       ideaPlaceholder: "Опишіть, якої функції вам не вистачає або що можна покращити...",
@@ -752,7 +752,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     },
     feedback: {
       modalTitle: "Opinie i propozycje",
-      modalSubtitle: "Pomóż rozwijać Vectrieve. Wszystkie zgłoszenia trafiają bezpośrednio do inżynierów.",
+      modalSubtitle: "Pomóż rozwijać Neurach. Wszystkie zgłoszenia trafiają bezpośrednio do inżynierów.",
       tabIdea: "Pomysł / Usprawnienie",
       tabBug: "Zgłoś błąd",
       ideaPlaceholder: "Opisz funkcję, której brakuje lub co można ulepszyć...",
@@ -956,7 +956,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     },
     feedback: {
       modalTitle: "Comentarios y sugerencias",
-      modalSubtitle: "Ayúdenos a mejorar Vectrieve. Revisamos cada mensaje.",
+      modalSubtitle: "Ayúdenos a mejorar Neurach. Revisamos cada mensaje.",
       tabIdea: "Sugerencia de función",
       tabBug: "Reportar un error",
       ideaPlaceholder: "Describa la función o mejora que le gustaría ver...",

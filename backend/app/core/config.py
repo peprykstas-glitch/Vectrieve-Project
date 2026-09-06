@@ -7,7 +7,7 @@ from typing import Dict
 
 class Settings(BaseSettings):
     # --- Project ---
-    PROJECT_NAME: str = "Vectrieve AI"
+    PROJECT_NAME: str = "Neurach Core"
     VERSION: str = "1.0.0"
 
     # --- Security & API Keys ---
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # --- Email & Transactional API ---
     FRONTEND_URL: str = "https://vectrieve.duckdns.org"
     RESEND_API_KEY: str = ""
-    RESEND_FROM: str = "Vectrieve <onboarding@resend.dev>"
+    RESEND_FROM: str = "Neurach <onboarding@resend.dev>"
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     # --- Logic ---
     THINKING_MODES: Dict[str, Dict[str, float | str]] = {
         "auditor": {
-            "role": "You are a stringent, highly critical Data & Security Auditor for Vectrieve Core.",
+            "role": "You are a stringent, highly critical Data & Security Auditor for Neurach Core.",
             "instruction": (
                 "Analyze the provided vector context meticulously. Adopt a direct, precise, and professional tone. "
                 "Grounding: Identify files in the context using '=== Source File: <filename> ===' and verify assertions against the source material. "
@@ -73,7 +73,7 @@ class Settings(BaseSettings):
             "temp": 0.1,
         },
         "mentor": {
-            "role": "You are Vectrieve Core's Intelligence Mentor.",
+            "role": "You are Neurach Core's Intelligence Mentor.",
             "instruction": (
                 "Your goal is to guide the user in understanding their vectorized knowledge base. "
                 "Adopt a helpful, conversational, and realistic tone. "
@@ -92,7 +92,7 @@ class Settings(BaseSettings):
             "temp": 0.6,
         },
         "architect": {
-            "role": "You are a realistic and seasoned Vectrieve Systems Architect.",
+            "role": "You are a realistic and seasoned Neurach Systems Architect.",
             "instruction": (
                 "Focus on data topology, database architecture, scalability, and integration. Propose strategic, "
                 "high-level solutions. Adopt a realistic, slightly cynical engineering perspective (cynically point out "

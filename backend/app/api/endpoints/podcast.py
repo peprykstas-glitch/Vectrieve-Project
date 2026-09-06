@@ -94,7 +94,7 @@ Do not add any markdown formatting, backticks, commentary, or extra text outside
 
 def _build_chat_prompt(context_str: str, lang_name: str) -> str:
     return f"""\
-You are a professional Podcast Producer for Vectrieve Core.
+You are a professional Podcast Producer for Neurach Core.
 Based on the conversation transcript between the User and the AI Assistant below, generate a highly engaging, natural, and entertaining dialogue transcript between two podcast hosts:
 - Max (a realistic, seasoned, and slightly cynical male host)
 - Julia (a warm, smart, and detail-oriented female host)
@@ -123,7 +123,7 @@ Conversation transcript to discuss:
 
 def _build_document_prompt(context_str: str, lang_name: str) -> str:
     return f"""\
-You are a professional Podcast Producer for Vectrieve Core.
+You are a professional Podcast Producer for Neurach Core.
 Based on the text content of the uploaded document segments below, generate a highly engaging, natural, and entertaining dialogue transcript between two podcast hosts:
 - Max (a realistic, seasoned, and slightly cynical male host)
 - Julia (a warm, smart, and detail-oriented female host)
@@ -153,11 +153,11 @@ Context document content:
 def _fallback_transcript(language: str) -> List[dict]:
     if language == "en":
         return [
-            {"host": "Max", "text": "Welcome to Vectrieve Audio Briefing. It seems we had an error generating the live transcript."},
+            {"host": "Max", "text": "Welcome to Neurach Audio Briefing. It seems we had an error generating the live transcript."},
             {"host": "Julia", "text": "That's correct, Max. Please make sure the service is online and try again in a moment."},
         ]
     return [
-        {"host": "Max", "text": "Вітаємо в аудіо-брифінгу Vectrieve. Схоже, сталася помилка генерації транскрипту."},
+        {"host": "Max", "text": "Вітаємо в аудіо-брифінгу Neurach. Схоже, сталася помилка генерації транскрипту."},
         {"host": "Julia", "text": "Саме так, Максе. Будь ласка, переконайтеся, що сервіс працює, та спробуйте ще раз через мить."},
     ]
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getInternalBackendUrl } from '@/lib/server-backend';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 /**
  * POST /api/auth/forgot-password
@@ -12,10 +13,37 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    // Client IP detection for Turnstile
+    const clientIp =
+      request.headers.get('cf-connecting-ip') ||
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      null;
+
+    // Canonical Turnstile bot verification
+    const turnstileToken =
+      body['cf-turnstile-response'] ?? body.turnstileToken ?? body.turnstile_token;
+    const turnstileResult = await verifyTurnstile(turnstileToken, 'forgot_password', clientIp);
+
+    if (!turnstileResult.success) {
+      return NextResponse.json(
+        { message: turnstileResult.error || 'Security verification failed.' },
+        { status: 403 }
+      );
+    }
+
+    // Clean payload for backend
+    const {
+      'cf-turnstile-response': _cf,
+      turnstileToken: _tt,
+      turnstile_token: _tk,
+      ...backendPayload
+    } = body;
+
     const response = await fetch(`${getInternalBackendUrl()}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(backendPayload),
     });
 
     // If backend doesn't implement this yet — return success anyway

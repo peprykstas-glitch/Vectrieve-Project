@@ -59,5 +59,8 @@ services:
       - NEXT_PUBLIC_API_URL=https://vectrieve.duckdns.org
       - INTERNAL_BACKEND_URL=http://backend:8000
       - NEXT_PUBLIC_GOOGLE_CLIENT_ID=1077219353292-43iph4lcgf8fouradbi9esuo4tov1s2m.apps.googleusercontent.com
+      - NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAEqe-YZWwm_kx0Bs
+      - TURNSTILE_SECRET=0x4AAAAAAEqe-a_C_9o9VrCPfKpNlK5Ux0Q
+      - TURNSTILE_HOSTNAMES=neurach.tech,www.neurach.tech,vectrieve.duckdns.org,localhost,127.0.0.1
     ports:
       - "127.0.0.1:3000:3000"

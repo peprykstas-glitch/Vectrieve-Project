@@ -636,7 +636,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
           </div>
           <div>
             <h4 className="text-sm font-semibold text-white tracking-tight flex items-center gap-1.5">
-              <span>Vectrieve Audio Briefing Studio</span>
+              <span>Neurach Audio Briefing Studio</span>
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-widest">
                 Neural
               </span>
@@ -862,7 +862,7 @@ export default function AudioBrief({ documentId, sessionId, filename, onClose }:
                   <rect x="5" y="5" width="150" height="90" rx="6" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
                   <rect x="15" y="15" width="130" height="40" rx="3" fill="#2d1b4e" stroke="#6366f1" strokeWidth="1" />
                   <text x="80" y="27" textAnchor="middle" fill="#818cf8" fontSize="6" fontWeight="bold" fontFamily="monospace">
-                    VECTRIEVE OVERVIEW
+                    NEURACH OVERVIEW
                   </text>
                   <text x="80" y="38" textAnchor="middle" fill="#c084fc" fontSize="5" fontWeight="bold" fontFamily="monospace" opacity="0.8">
                     {lang === "uk" ? "🇺🇦 УКР.ОГЛЯД" : "🇺🇸 ENG.BRIEF"}

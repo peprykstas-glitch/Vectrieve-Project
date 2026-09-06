@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { ArrowLeft, Hexagon } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Reset Password | Vectrieve AI',
-  description: 'Request a password reset link for your Vectrieve workspace.',
+  title: 'Reset Password | Neurach AI',
+  description: 'Request a password reset link for your Neurach workspace.',
 };
 
 export default function ForgotPasswordPage() {
@@ -29,8 +29,12 @@ export default function ForgotPasswordPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Vectrieve AI" className="h-9 w-auto object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.25)]" />
+          <span className="text-2xl font-bold tracking-tight text-white font-sans">
+            Neurach
+          </span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 tracking-widest uppercase">
+            AI
+          </span>
         </div>
 
         <ForgotPasswordForm />

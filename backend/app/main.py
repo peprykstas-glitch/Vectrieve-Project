@@ -60,6 +60,10 @@ app.add_middleware(
         "http://192.168.1.26:3000",  # LAN access — office network
         "http://vectrieve.duckdns.org",
         "https://vectrieve.duckdns.org",
+        "http://neurach.tech",
+        "https://neurach.tech",
+        "http://www.neurach.tech",
+        "https://www.neurach.tech",
     ],
     allow_credentials=True,
     allow_methods=["*"],

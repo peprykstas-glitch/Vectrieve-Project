@@ -1,11 +1,31 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getInternalBackendUrl } from '@/lib/server-backend';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { email, password } = body;
+
+    // Client IP detection for Turnstile
+    const clientIp =
+      request.headers.get('cf-connecting-ip') ||
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      null;
+
+    // Canonical Turnstile bot verification
+    const turnstileToken =
+      body['cf-turnstile-response'] ?? body.turnstileToken ?? body.turnstile_token;
+    const turnstileResult = await verifyTurnstile(turnstileToken, 'login', clientIp);
+
+    if (!turnstileResult.success) {
+      return NextResponse.json(
+        { detail: turnstileResult.error || 'Security verification failed.' },
+        { status: 403 }
+      );
+    }
 
     // FastAPI OAuth2 expects form-encoded data
     const formData = new URLSearchParams();

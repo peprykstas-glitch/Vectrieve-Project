@@ -4,7 +4,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { Hexagon } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Sign In | Vectrieve AI',
+  title: 'Sign In | Neurach AI',
   description: 'Securely authenticate to access your advanced RAG environment.',
 };
 
@@ -20,8 +20,12 @@ export default function LoginPage() {
       
       <div className="z-10 w-full max-w-md px-6 flex flex-col items-center">
         <div className="flex items-center gap-2 mb-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Vectrieve AI" className="h-9 w-auto object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.25)]" />
+          <span className="text-2xl font-bold tracking-tight text-white font-sans">
+            Neurach
+          </span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 tracking-widest uppercase">
+            AI
+          </span>
         </div>
         
         {/* Isolation of complex state logic into the Client Component */}

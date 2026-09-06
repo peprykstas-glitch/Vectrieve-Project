@@ -1,14 +1,14 @@
-# Vectrieve AI — Project State & Technical Factsheet
+# Neurach Core — Project State & Technical Factsheet
 
-**Document Version:** 1.0.0  
-**Last Full Verification Pass:** 16 August 2026  
-**Host Target:** DigitalOcean VPS (`159.89.110.69`), Ubuntu 24.04 LTS
+**Document Version:** 1.1.0  
+**Domain:** `https://neurach.tech`  
+**Host Target:** Azure VM (`74.248.17.192`), Ubuntu 24.04 LTS  
 
 ---
 
 ## 1. Architecture Summary
 
-Vectrieve AI is a multi-tenant, Retrieval-Augmented Generation (RAG) platform designed for private enterprise knowledge bases. The application runs as an isolated, containerized stack composed of four independent services orchestrated via Docker Compose:
+Neurach Core is a multi-tenant, Retrieval-Augmented Generation (RAG) platform designed for private enterprise knowledge bases. The application runs as an isolated, containerized stack composed of four independent services orchestrated via Docker Compose:
 
 1. **Frontend Presentation Tier:** Next.js 16 (Turbopack, React 19, Tailwind CSS) deployed in standalone mode, providing a single-page chat interface, space management, document explorer, telemetry dashboard, and audio synthesis controls.
 2. **Application & Ingestion Tier:** FastAPI application server (Python 3.12, AsyncSQLAlchemy, Pydantic v2) handling authentication, multi-format file parsing, vectorization, prompt assembly, and SSE (Server-Sent Events) streaming.

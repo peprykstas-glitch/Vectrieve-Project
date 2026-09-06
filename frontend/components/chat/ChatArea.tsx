@@ -107,11 +107,11 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
   // Helper to safely export the session transcript as a Markdown file
   const exportAsMarkdown = useCallback(() => {
     if (!messages.length) return;
-    let md = `# Vectrieve Chat Session: ${sessionId || "Export"}\n`;
+    let md = `# Neurach Chat Session: ${sessionId || "Export"}\n`;
     md += `*Exported on: ${new Date().toLocaleString()}*\n\n---\n\n`;
     
     messages.forEach((msg) => {
-      const roleName = msg.role === "user" ? "### User" : "### Vectrieve Core";
+      const roleName = msg.role === "user" ? "### User" : "### Neurach Core";
       md += `${roleName}\n\n${msg.content}\n\n`;
       if (msg.sources && msg.sources.length > 0) {
         md += `**Sources Cited:**\n`;
@@ -127,7 +127,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `vectrieve-chat-${sessionId ? sessionId.slice(0, 8) : "export"}.md`;
+    link.download = `neurach-chat-${sessionId ? sessionId.slice(0, 8) : "export"}.md`;
     link.click();
     URL.revokeObjectURL(url);
   }, [messages, sessionId]);
@@ -154,7 +154,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Vectrieve Intelligence Report</title>
+          <title>Neurach Intelligence Report</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111; padding: 40px; line-height: 1.6; }
             h1 { font-size: 24px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-bottom: 4px; }
@@ -172,7 +172,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
           </style>
         </head>
         <body>
-          <h1>Vectrieve Intelligence Report</h1>
+          <h1>Neurach Intelligence Report</h1>
           <div class="meta">Session ID: ${escapeHtml(sessionId || "Ad-hoc")} &bull; Generated: ${new Date().toLocaleString()}</div>
     `;
     
@@ -180,7 +180,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       const isUser = msg.role === "user";
       html += `
         <div class="msg ${isUser ? 'user' : 'assistant'}">
-          <div class="role">${isUser ? 'User Query' : 'Vectrieve Core Analysis'}</div>
+          <div class="role">${isUser ? 'User Query' : 'Neurach Core Analysis'}</div>
           <div class="content">${escapeHtml(msg.content)}</div>
       `;
       
@@ -346,7 +346,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="flex flex-col items-center justify-center text-center my-auto py-8"
               >
-                {/* Floating Vectrieve Brand Mark with Ambient Glow (no box/tile) */}
+                {/* Floating Neurach Brand Mark with Ambient Glow (no box/tile) */}
                 <div className="relative mb-6 group flex items-center justify-center">
                   {/* Soft radial glow aura */}
                   <div className="absolute w-28 h-28 bg-gradient-to-tr from-cyan-500/25 via-violet-500/30 to-indigo-500/20 rounded-full blur-2xl pointer-events-none transition-all duration-700 group-hover:scale-125 group-hover:opacity-100" />
@@ -355,7 +355,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/logo-icon.png"
-                    alt="Vectrieve Core"
+                    alt="Neurach Core"
                     className="relative w-14 h-14 object-contain drop-shadow-[0_0_20px_rgba(0,212,255,0.45)] transition-transform duration-300 group-hover:scale-110 select-none pointer-events-none"
                   />
                 </div>

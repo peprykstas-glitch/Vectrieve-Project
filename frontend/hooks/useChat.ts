@@ -74,7 +74,7 @@ export function useChat(
           id: "welcome",
           role: "assistant",
           content:
-            "Hello. I am Vectrieve Core. How can I assist with your data analysis today?",
+            "Hello. I am Neurach Core. How can I assist with your data analysis today?",
         },
       ]);
     }

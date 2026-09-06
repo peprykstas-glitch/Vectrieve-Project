@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Lock, EyeOff, Server, HardDrive, CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy & Data Security | Vectrieve Core',
-  description: 'Enterprise Privacy Policy, GDPR Compliance, and Zero-Training Guarantees for Vectrieve AI.',
+  title: 'Privacy Policy & Data Security | Neurach Core',
+  description: 'Enterprise Privacy Policy, GDPR Compliance, and Zero-Training Guarantees for Neurach AI.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -25,9 +25,9 @@ export default function PrivacyPolicyPage() {
 
         <div className="flex items-center gap-3 mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-icon.png" alt="Vectrieve" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.4)]" />
+          <img src="/logo-icon.png" alt="Neurach" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.4)]" />
           <div className="flex items-center gap-2 font-bold tracking-tight">
-            <span className="text-2xl font-bold tracking-tight text-white">Vectrieve</span>
+            <span className="text-2xl font-bold tracking-tight text-white">Neurach</span>
             <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">PRIVACY</span>
           </div>
         </div>
@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
               1. Fundamental Privacy Philosophy
             </h2>
             <p>
-              Vectrieve Core is engineered from the ground up for strict confidentiality. We operate on a zero-knowledge principle: your documents, financial reports, legal contracts, and audio transcripts are processed exclusively within isolated tenant boundaries.
+              Neurach Core is engineered from the ground up for strict confidentiality. We operate on a zero-knowledge principle: your documents, financial reports, legal contracts, and audio transcripts are processed exclusively within isolated tenant boundaries.
             </p>
           </section>
 
@@ -58,7 +58,7 @@ export default function PrivacyPolicyPage() {
                   No Public AI Training
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Neither Vectrieve nor upstream LLM providers (e.g. Groq Cloud LPU) store or use your queries, document chunks, or responses for model training.
+                  Neither Neurach nor upstream LLM providers (e.g. Groq Cloud LPU) store or use your queries, document chunks, or responses for model training.
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-zinc-900/60 border border-white/5 space-y-2">

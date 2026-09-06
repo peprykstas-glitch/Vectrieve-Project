@@ -1,7 +1,7 @@
 import { ChatArea } from "@/components/chat/ChatArea";
 
 export const metadata = {
-  title: "Workspace | Vectrieve",
+  title: "Workspace | Neurach",
   description: "Secure RAG environment",
 };
 

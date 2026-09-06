@@ -7,6 +7,9 @@ const GOOGLE_CLIENT_ID =
 
 function getOrigin(request: Request): string {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  if (host.includes('neurach.tech')) {
+    return 'https://neurach.tech';
+  }
   if (host.includes('vectrieve.duckdns.org')) {
     return 'https://vectrieve.duckdns.org';
   }

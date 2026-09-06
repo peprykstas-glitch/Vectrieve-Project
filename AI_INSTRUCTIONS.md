@@ -435,6 +435,76 @@ A raw volume copy may be used as an additional emergency safeguard only when it 
 
 ---
 
+## 7.1 Decentralized "Backup Triangle" Architecture & Disaster Recovery Protocol
+
+### Historical Incident & Context
+In an earlier production deployment, DigitalOcean suddenly locked account and droplet access due to a billing issue, permanently wiping out all customer accounts, chat histories, uploaded knowledge documents, and telemetry logs. To guarantee that no single point of failure (SPOF) can ever destroy project data again, **Vectrieve operates under a decentralized 3-vertex backup topology**.
+
+A single cloud provider (whether Azure, AWS, or DigitalOcean) can experience account suspensions, billing lockouts, or regional disasters. The system state must be fully restorable on a clean server within 15 minutes using independent, off-site data.
+
+```
+                  ┌───────────────────────────────┐
+                  │   Vertex 1: Production Host   │
+                  │         (Azure VM)            │
+                  │   • Daily pg_dump & snapshots │
+                  │   • Local 7-day retention     │
+                  └──────────────┬────────────────┘
+                                 │
+                 Push Daily Dumps│(Automated S3/R2 API)
+                                 ▼
+                  ┌───────────────────────────────┐
+                  │ Vertex 2: Independent Cloud   │
+                  │   (Cloudflare R2 / AWS S3)    │
+                  │   • Zero Azure dependency     │
+                  │   • 30-day rolling archive    │
+                  └──────────────┬────────────────┘
+                                 │
+               Weekly Sync / Pull│(scripts/sync_backups.py)
+                                 ▼
+                  ┌───────────────────────────────┐
+                  │ Vertex 3: Local Workstation   │
+                  │     (Stas's Laptop / PC)      │
+                  │   • Offline physical storage  │
+                  │   • 4 weekly snapshots        │
+                  └───────────────────────────────┘
+```
+
+### The Three Vertices Specification
+
+1. **Vertex 1: Production Host (Azure VM)**
+   - **Path:** `/opt/vectrieve/backups/` (or `./backups/`).
+   - **Trigger:** Daily cron job (`0 3 * * *`) executing `scripts/backup_production.sh`.
+   - **Payload:**
+     - PostgreSQL custom format dump (`pg_dump -F c -b -v -d vectrievedb`).
+     - Qdrant collection snapshots (via REST API `POST /collections/{name}/snapshots`).
+     - Compressed archive of user files and knowledge manuals (`backend_data/`).
+     - Generated `SHA256SUMS` file.
+   - **Retention:** Last 7 daily backups retained locally; older archives auto-pruned.
+
+2. **Vertex 2: Independent Off-site Cloud Storage (Cloudflare R2 / AWS S3)**
+   - **Rule:** Must **never** share billing, credentials, or organizational accounts with primary host Azure.
+   - **Recommended:** Cloudflare R2 (S3-compatible API, $0 egress fees, 10GB free tier).
+   - **Trigger:** Auto-uploaded immediately after creation by `scripts/backup_production.sh`.
+   - **Retention:** 30 daily archives + monthly historical milestones.
+   - **Security:** Encrypted at rest (AES-256) and in transit (TLS 1.3).
+
+3. **Vertex 3: Local Workstation (Stas's PC / Laptop)**
+   - **Path:** `c:\Projects\Vectrieve\backups\` (ignored by git in `.gitignore`).
+   - **Trigger:** Weekly cron/scheduled task or single-command manual execution (`python scripts/sync_backups.py`).
+   - **Function:** Pulls the newest verified bundle from Vertex 1 (via SSH/SCP) or Vertex 2 (via S3/R2 fallback).
+   - **Retention:** Keeps the 4 most recent weekly snapshots locally on physical drive.
+   - **Guarantee:** Air-gapped physical copy immune to any cloud vendor action.
+
+### Disaster Recovery Time & Objectives
+- **RPO (Recovery Point Objective):** $\le$ 24 hours in a worst-case complete provider destruction scenario; $\le$ 1 hour during operational server incidents.
+- **RTO (Recovery Time Objective):** $\le$ 15 minutes to spin up a complete replacement stack on a new VPS using `docker-compose.prod.yml` and `scripts/restore_production.sh`.
+
+### Verification Standard
+A backup is invalid until verified:
+1. File size must be non-zero and within expected ranges (> 100KB for DB dump).
+2. SHA256 checksums must validate successfully.
+3. Logical integrity must be validated periodically by performing a dry-run test restore into a disposable PostgreSQL test container.
+
 # 8. Docker / Persistent Storage Safety
 
 When persistent volumes are involved, determine whether the relevant service is actively writing data.

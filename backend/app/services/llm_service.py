@@ -222,7 +222,7 @@ Query: "{user_query[:200]}"
         self, user_query: str, ai_response: str, request_mode: str = "cloud", model_name: str = None,
         groq_api_key: Optional[str] = None
     ) -> List[str]:
-        prompt = f"""You are Vectrieve Core, an advanced RAG assistant.
+        prompt = f"""You are Neurach Core, an advanced RAG assistant.
 Based on the user's query and your intelligence response below, generate exactly 3 engaging, short (max 8-10 words each) follow-up questions tailored specifically to the topics and documents discussed.
 
 CRITICAL: Detect the language of the user query and response (e.g., Ukrainian, Polish, English, Spanish) and write the follow-up questions in the SAME language.

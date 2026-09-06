@@ -565,13 +565,13 @@ export function AppSidebar() {
                 <PanelLeft className="h-5 w-5 text-indigo-400 drop-shadow-md animate-in fade-in duration-200" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src="/logo-icon.png" alt="Vectrieve" className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                <img src="/logo-icon.png" alt="Neurach" className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
               )}
             </div>
             {/* Brand text beside icon — hidden when sidebar is collapsed */}
             <div className="flex items-center group-data-[collapsible=icon]:hidden transition-opacity duration-200">
               <span className="text-[16px] font-bold tracking-tight bg-gradient-to-r from-white via-zinc-100 to-indigo-300 bg-clip-text text-transparent font-sans">
-                Vectrieve
+                Neurach
               </span>
             </div>
           </button>

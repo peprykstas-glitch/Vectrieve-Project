@@ -92,7 +92,7 @@ export default function DashboardLayout({
 }) {
   return (
     <GlobalSettingsProvider>
-      <Suspense fallback={<div className="h-screen w-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading Vectrieve...</div>}>
+      <Suspense fallback={<div className="h-screen w-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading Neurach...</div>}>
         <SidebarProvider>
           {/* The Sidebar component automatically handles its own width transitions */}
           <AppSidebar />

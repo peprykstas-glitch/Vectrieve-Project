@@ -22,11 +22,22 @@ import {
   FormDescription,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/auth/TurnstileWidget';
 
 export function RegisterForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [globalError, setGlobalError] = React.useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = React.useState<string>('');
+  const turnstileRef = React.useRef<TurnstileWidgetRef>(null);
+
+  const handleVerify = React.useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleExpire = React.useCallback(() => {
+    setTurnstileToken('');
+  }, []);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -45,13 +56,19 @@ export function RegisterForm() {
     try {
       await apiClient('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          'cf-turnstile-response': turnstileToken,
+        }),
       });
 
       // Post-registration routing strategy: Redirect to login with a success parameter
       router.push('/login?registered=true');
       
     } catch (error: any) {
+      // Reset Turnstile token on registration failure
+      turnstileRef.current?.reset();
+      setTurnstileToken('');
       // Extensive mapping of backend validation constraints to the frontend UI
       if (error.status === 422 && error.details) {
         error.details.forEach((err: any) => {
@@ -193,13 +210,26 @@ export function RegisterForm() {
                 )}
               />
 
+              {/* Cloudflare Turnstile bot verification */}
+              <TurnstileWidget
+                ref={turnstileRef}
+                action="signup"
+                onVerify={handleVerify}
+                onExpire={handleExpire}
+              />
+
               <Button 
                 type="submit" 
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-4 rounded-xl font-medium"
-                disabled={isSubmitting}
+                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting || !turnstileToken}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : !turnstileToken ? (
+                  <span className="flex items-center text-zinc-500 text-sm">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-500" />
+                    Verifying security...
+                  </span>
                 ) : (
                   'Provision Workspace'
                 )}

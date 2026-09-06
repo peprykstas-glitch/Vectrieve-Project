@@ -175,7 +175,7 @@ export function ChatInput({ isLoading, isProcessingFiles = false, onSubmit }: Ch
       <div className="text-center mt-1.5 text-[10px] text-zinc-500/80 tracking-wide select-none">
         {isProcessingFiles
           ? "⚡ Processing in-memory attachments..."
-          : "Vectrieve Core may produce inaccurate intelligence. Verify critical assertions."}
+          : "Neurach Core may produce inaccurate intelligence. Verify critical assertions."}
       </div>
     </div>
   );

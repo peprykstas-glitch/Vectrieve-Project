@@ -25,7 +25,7 @@ export function exportExecutiveDossierPdf(data: DossierData) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Vectrieve Executive Dossier - ${data.filename}</title>
+  <title>Neurach Executive Dossier - ${data.filename}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
@@ -197,7 +197,7 @@ export function exportExecutiveDossierPdf(data: DossierData) {
 <body>
   <div class="header">
     <div class="brand">
-      <span class="brand-title">Vectrieve Core</span>
+      <span class="brand-title">Neurach Core</span>
       <span class="brand-badge">Executive Dossier</span>
     </div>
     <div class="meta-date">
@@ -247,7 +247,7 @@ ${data.summary || 'Summary briefing pending generation.'}
   ` : ''}
 
   <div class="footer">
-    <span>Vectrieve Core Knowledge Intelligence Platform</span>
+    <span>Neurach Core Knowledge Intelligence Platform</span>
     <span>Confidential & Proprietary</span>
   </div>
 

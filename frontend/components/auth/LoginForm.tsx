@@ -21,12 +21,23 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/auth/TurnstileWidget';
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [globalError, setGlobalError] = React.useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = React.useState<string>('');
+  const turnstileRef = React.useRef<TurnstileWidgetRef>(null);
+
+  const handleVerify = React.useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleExpire = React.useCallback(() => {
+    setTurnstileToken('');
+  }, []);
 
   const justRegistered = searchParams.get('registered') === 'true';
   const sessionExpired = searchParams.get('session_expired') === 'true';
@@ -54,7 +65,10 @@ export function LoginForm() {
       // The server will securely establish the HttpOnly session cookie upon success.
       await apiClient('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          'cf-turnstile-response': turnstileToken,
+        }),
       });
 
       // Execute a hard router push to the protected application workspace
@@ -63,6 +77,9 @@ export function LoginForm() {
       router.refresh(); 
       
     } catch (error: any) {
+      // Reset Turnstile token on authentication failure
+      turnstileRef.current?.reset();
+      setTurnstileToken('');
       // Algorithmic mapping of FastAPI 422 Validation Errors directly to the React Hook Form state
       if (error.status === 422 && error.details) {
         error.details.forEach((err: any) => {
@@ -187,14 +204,27 @@ export function LoginForm() {
                 )}
               />
 
+              {/* Cloudflare Turnstile bot verification */}
+              <TurnstileWidget
+                ref={turnstileRef}
+                action="login"
+                onVerify={handleVerify}
+                onExpire={handleExpire}
+              />
+
               {/* High contrast primary button with loading state micro-interactions */}
               <Button 
                 type="submit" 
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium cursor-pointer"
-                disabled={isSubmitting}
+                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting || !turnstileToken}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : !turnstileToken ? (
+                  <span className="flex items-center text-zinc-500 text-sm">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-500" />
+                    Verifying security...
+                  </span>
                 ) : (
                   <>Sign In <ArrowRight className="ml-2 h-4 w-4" /></>
                 )}

@@ -178,7 +178,7 @@ async def process_ephemeral_attachment(
             try:
                 logger.info(f"🖼️ Running Multimodal Vision on direct chat attachment: '{filename}'...")
                 vision_prompt = (
-                    "You are Vectrieve Vision AI. Carefully analyze this image/screenshot. "
+                    "You are Neurach Vision AI. Carefully analyze this image/screenshot. "
                     "Transcribe all text, numbers, dates, error messages, client requests, "
                     "or tabular items visible in the image exactly. Describe key visual details."
                 )

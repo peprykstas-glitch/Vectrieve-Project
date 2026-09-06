@@ -78,7 +78,7 @@ async def _dispatch_email(to_email: str, subject: str, html_body: str, text_body
 async def send_password_reset_email(to_email: str, reset_token: str) -> bool:
     """Send a password reset email with a one-time link."""
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
-    subject = "Vectrieve AI — Password Reset Request"
+    subject = "Neurach AI — Password Reset Request"
 
     html_body = f"""
     <div style="background-color: #050505; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; margin: 0;">
@@ -86,7 +86,7 @@ async def send_password_reset_email(to_email: str, reset_token: str) -> bool:
             <tr>
                 <td style="padding: 36px 36px 20px 36px; text-align: center;">
                     <div style="display: inline-block; padding: 10px 18px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #06b6d4); margin-bottom: 12px;">
-                        <span style="color: #ffffff; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">Vectrieve AI</span>
+                        <span style="color: #ffffff; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">Neurach AI</span>
                     </div>
                 </td>
             </tr>
@@ -94,7 +94,7 @@ async def send_password_reset_email(to_email: str, reset_token: str) -> bool:
                 <td style="padding: 10px 36px 36px 36px;">
                     <h2 style="color: #ffffff; font-size: 20px; font-weight: 600; margin: 0 0 14px 0;">Reset your master password</h2>
                     <p style="color: #a1a1aa; font-size: 14px; line-height: 1.6; margin: 0 0 26px 0;">
-                        We received a request to reset the password for your Vectrieve workspace account. Click the secure button below to choose a new password.
+                        We received a request to reset the password for your Neurach workspace account. Click the secure button below to choose a new password.
                     </p>
                     
                     <div style="text-align: center; margin: 28px 0;">
@@ -118,7 +118,7 @@ async def send_password_reset_email(to_email: str, reset_token: str) -> bool:
     """
 
     text_body = f"""
-Vectrieve AI — Password Reset Request
+Neurach AI — Password Reset Request
 
 We received a request to reset the password for your account.
 Click the link below to choose a new password:
@@ -134,7 +134,7 @@ This link expires in 1 hour. If you did not request this, ignore this email.
 async def send_user_approved_email(to_email: str) -> bool:
     """Send an account approved notification to the user."""
     login_url = f"{settings.FRONTEND_URL}/login"
-    subject = "Vectrieve AI — Workspace Access Approved"
+    subject = "Neurach AI — Workspace Access Approved"
 
     html_body = f"""
     <div style="background-color: #050505; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; margin: 0;">
@@ -150,7 +150,7 @@ async def send_user_approved_email(to_email: str) -> bool:
                 <td style="padding: 10px 36px 36px 36px;">
                     <h2 style="color: #ffffff; font-size: 20px; font-weight: 600; margin: 0 0 14px 0;">Your account is ready</h2>
                     <p style="color: #a1a1aa; font-size: 14px; line-height: 1.6; margin: 0 0 26px 0;">
-                        An administrator has approved your Vectrieve workspace access. You can now sign in with your corporate email and password.
+                        An administrator has approved your Neurach workspace access. You can now sign in with your corporate email and password.
                     </p>
                     
                     <div style="text-align: center; margin: 28px 0;">
@@ -158,7 +158,7 @@ async def send_user_approved_email(to_email: str) -> bool:
                            style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; 
                                   padding: 13px 36px; border-radius: 10px; font-size: 14px; font-weight: 700; 
                                   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
-                            Sign In to Vectrieve →
+                            Sign In to Neurach →
                         </a>
                     </div>
                 </td>
@@ -168,7 +168,7 @@ async def send_user_approved_email(to_email: str) -> bool:
     """
 
     text_body = f"""
-Vectrieve AI — Workspace Access Approved
+Neurach AI — Workspace Access Approved
 
 Your account has been approved by the workspace administrator.
 You can now sign in at:
@@ -186,7 +186,7 @@ async def send_admin_new_user_alert(new_user_email: str) -> bool:
         return False
 
     admin_url = f"{settings.FRONTEND_URL}/analytics"
-    subject = f"Vectrieve AI — New User Approval Request ({new_user_email})"
+    subject = f"Neurach AI — New User Approval Request ({new_user_email})"
 
     html_body = f"""
     <div style="background-color: #050505; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -210,7 +210,7 @@ async def send_admin_new_user_alert(new_user_email: str) -> bool:
     """
 
     text_body = f"""
-New user registered on Vectrieve AI:
+New user registered on Neurach AI:
 Email: {new_user_email}
 
 Review and approve in the Admin Panel:
