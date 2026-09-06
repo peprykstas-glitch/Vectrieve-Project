@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import os
 from pathlib import Path
@@ -34,13 +35,32 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("[OK] Database ready!")
     yield
-    print("[INFO] Shutting down...")
+    # --- Graceful Shutdown ---
+    # Cancel all pending background tasks before disposing the engine.
+    # Without this, tasks that attempt to resume after the engine is disposed
+    # will throw RuntimeError: Event loop is closed.
+    print("[INFO] Cancelling background tasks...")
+    current_task = asyncio.current_task()
+    pending = [
+        t for t in asyncio.all_tasks()
+        if t is not current_task and not t.done()
+    ]
+    if pending:
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+        print(f"[OK] Cancelled {len(pending)} background task(s).")
+    print("[INFO] Closing database connections...")
     await engine.dispose()
     print("[OK] Database connection closed.")
 
 
 # --- Sentry Error Tracking ---
-if settings.SENTRY_DSN:
+# Skip Sentry initialization entirely when running under pytest to prevent
+# test fixtures (e.g. intentional corrupted-base64 tests) from polluting
+# the production Sentry project with false-positive events.
+_is_pytest = "PYTEST_CURRENT_TEST" in os.environ or "pytest" in sys.modules
+if settings.SENTRY_DSN and not _is_pytest:
     import sentry_sdk
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,

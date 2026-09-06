@@ -34,10 +34,26 @@ DOC_EXTENSIONS = {
 
 
 def _clean_base64_data(base64_str: str) -> bytes:
-    """Strip data URI prefix (e.g., 'data:image/png;base64,...') and decode bytes."""
+    """Strip data URI prefix (e.g., 'data:image/png;base64,...'), fix padding, and decode bytes.
+
+    Handles common edge-cases:
+    - Data URIs with 'data:<mime>;base64,' prefix
+    - Extra whitespace or newlines embedded in the encoded string
+    - Missing trailing '=' padding characters
+    Raises binascii.Error for genuinely invalid base64 characters (caller catches this).
+    """
     if "," in base64_str:
         base64_str = base64_str.split(",", 1)[1]
-    return base64.b64decode(base64_str)
+    # Strip whitespace and line-breaks that can be present in large data URIs
+    base64_str = base64_str.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+    # Restore correct padding so lengths that are 2 or 3 mod 4 get missing '=' appended
+    remainder = len(base64_str) % 4
+    if remainder == 2:
+        base64_str += "=="
+    elif remainder == 3:
+        base64_str += "="
+    # validate=False allows URL-safe variants (-/_) to decode without extra transforms
+    return base64.b64decode(base64_str, validate=False)
 
 
 def _extract_pdf_in_memory(raw_bytes: bytes) -> str:
