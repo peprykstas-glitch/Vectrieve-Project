@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Lock, EyeOff, Server, HardDrive, CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy & Data Security | Neurach Core',
+  title: 'Privacy Policy & Data Security | Neurach',
   description: 'Enterprise Privacy Policy, GDPR Compliance, and Zero-Training Guarantees for Neurach AI.',
 };
 
@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
               1. Fundamental Privacy Philosophy
             </h2>
             <p>
-              Neurach Core is engineered from the ground up for strict confidentiality. We operate on a zero-knowledge principle: your documents, financial reports, legal contracts, and audio transcripts are processed exclusively within isolated tenant boundaries.
+              Neurach is engineered from the ground up for strict confidentiality. We operate on a zero-knowledge principle: your documents, financial reports, legal contracts, and audio transcripts are processed exclusively within isolated tenant boundaries.
             </p>
           </section>
 

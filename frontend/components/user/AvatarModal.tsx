@@ -15,7 +15,7 @@ const PRESET_AVATARS = [
   { id: "pro", name: "Corporate Pro", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" },
   { id: "exec", name: "Executive", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
   { id: "tech", name: "Lead Engineer", url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80" },
-  { id: "ai-synth", name: "Neurach Core", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80" },
+  { id: "ai-synth", name: "Neurach", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80" },
   { id: "bot-1", name: "Neural Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Neurach" },
   { id: "bot-2", name: "Cyber Avatar", url: "https://api.dicebear.com/7.x/shapes/svg?seed=Enterprise" },
 ]

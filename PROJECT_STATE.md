@@ -1,4 +1,4 @@
-# Neurach Core — Project State & Technical Factsheet
+# Neurach — Project State & Technical Factsheet
 
 **Document Version:** 1.1.0  
 **Domain:** `https://neurach.tech`  
@@ -8,7 +8,7 @@
 
 ## 1. Architecture Summary
 
-Neurach Core is a multi-tenant, Retrieval-Augmented Generation (RAG) platform designed for private enterprise knowledge bases. The application runs as an isolated, containerized stack composed of four independent services orchestrated via Docker Compose:
+Neurach is a multi-tenant, Retrieval-Augmented Generation (RAG) platform designed for private enterprise knowledge bases. The application runs as an isolated, containerized stack composed of four independent services orchestrated via Docker Compose:
 
 1. **Frontend Presentation Tier:** Next.js 16 (Turbopack, React 19, Tailwind CSS) deployed in standalone mode, providing a single-page chat interface, space management, document explorer, telemetry dashboard, and audio synthesis controls.
 2. **Application & Ingestion Tier:** FastAPI application server (Python 3.12, AsyncSQLAlchemy, Pydantic v2) handling authentication, multi-format file parsing, vectorization, prompt assembly, and SSE (Server-Sent Events) streaming.

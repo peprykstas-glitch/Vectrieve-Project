@@ -197,7 +197,7 @@ export function exportExecutiveDossierPdf(data: DossierData) {
 <body>
   <div class="header">
     <div class="brand">
-      <span class="brand-title">Neurach Core</span>
+      <span class="brand-title">Neurach</span>
       <span class="brand-badge">Executive Dossier</span>
     </div>
     <div class="meta-date">
@@ -247,7 +247,7 @@ ${data.summary || 'Summary briefing pending generation.'}
   ` : ''}
 
   <div class="footer">
-    <span>Neurach Core Knowledge Intelligence Platform</span>
+    <span>Neurach Knowledge Intelligence Platform</span>
     <span>Confidential & Proprietary</span>
   </div>
 

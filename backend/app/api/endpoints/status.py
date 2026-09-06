@@ -228,7 +228,7 @@ async def generate_document_summary(
             sampled = _sample_chunks(chunk_texts, n=8, max_chars=6000)
             summary_input = "\n\n".join(sampled)
             summary_prompt = f"""
-You are Neurach Core, a premium business document intelligence analyzer.
+You are Neurach, a premium business document intelligence analyzer.
 Provide a highly structured, polished, and extremely concise Executive Briefing for this document in English.
 Outline:
 1. Document Category (e.g. Resume/CV, SLA, NDA, Corporate Guideline, FAQ, Research)

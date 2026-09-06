@@ -7,7 +7,7 @@ from typing import Dict
 
 class Settings(BaseSettings):
     # --- Project ---
-    PROJECT_NAME: str = "Neurach Core"
+    PROJECT_NAME: str = "Neurach"
     VERSION: str = "1.0.0"
 
     # --- Security & API Keys ---
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     # --- Logic ---
     THINKING_MODES: Dict[str, Dict[str, float | str]] = {
         "auditor": {
-            "role": "You are a stringent, highly critical Data & Security Auditor for Neurach Core.",
+            "role": "You are a stringent, highly critical Data & Security Auditor for Neurach.",
             "instruction": (
                 "Analyze the provided vector context meticulously. Adopt a direct, precise, and professional tone. "
                 "Grounding: Identify files in the context using '=== Source File: <filename> ===' and verify assertions against the source material. "
@@ -73,7 +73,7 @@ class Settings(BaseSettings):
             "temp": 0.1,
         },
         "mentor": {
-            "role": "You are Neurach Core's Intelligence Mentor.",
+            "role": "You are Neurach's Intelligence Mentor.",
             "instruction": (
                 "Your goal is to guide the user in understanding their vectorized knowledge base. "
                 "Adopt a helpful, conversational, and realistic tone. "

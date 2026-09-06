@@ -94,7 +94,7 @@ Do not add any markdown formatting, backticks, commentary, or extra text outside
 
 def _build_chat_prompt(context_str: str, lang_name: str) -> str:
     return f"""\
-You are a professional Podcast Producer for Neurach Core.
+You are a professional Podcast Producer for Neurach.
 Based on the conversation transcript between the User and the AI Assistant below, generate a highly engaging, natural, and entertaining dialogue transcript between two podcast hosts:
 - Max (a realistic, seasoned, and slightly cynical male host)
 - Julia (a warm, smart, and detail-oriented female host)
@@ -123,7 +123,7 @@ Conversation transcript to discuss:
 
 def _build_document_prompt(context_str: str, lang_name: str) -> str:
     return f"""\
-You are a professional Podcast Producer for Neurach Core.
+You are a professional Podcast Producer for Neurach.
 Based on the text content of the uploaded document segments below, generate a highly engaging, natural, and entertaining dialogue transcript between two podcast hosts:
 - Max (a realistic, seasoned, and slightly cynical male host)
 - Julia (a warm, smart, and detail-oriented female host)

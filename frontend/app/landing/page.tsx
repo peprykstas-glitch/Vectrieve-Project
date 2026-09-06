@@ -148,10 +148,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/logo-icon.png" 
-              alt="Neurach" 
-              className="h-8 w-8 object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] transition-transform duration-200 group-hover:scale-105" 
+            <img
+              src="/logo-icon.png"
+              alt="Neurach"
+              className="h-8 w-8 object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] transition-transform duration-200 group-hover:scale-105"
             />
             <div className="flex items-center gap-1.5 font-bold tracking-tight">
               <span className="text-white text-lg tracking-tight">Neurach</span>
@@ -202,7 +202,7 @@ export default function LandingPage() {
           {/* Keynote Pill */}
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-950/40 px-4 py-1.5 text-xs text-indigo-300 shadow-inner">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-            <span className="font-semibold tracking-wide">NEURACH CORE · ENTERPRISE HYBRID RAG 2.4</span>
+            <span className="font-semibold tracking-wide">NEURACH · ENTERPRISE HYBRID RAG 2.4</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.1]">
@@ -271,31 +271,28 @@ export default function LandingPage() {
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setActiveDemoTab("auditor")}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                    activeDemoTab === "auditor" 
-                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" 
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${activeDemoTab === "auditor"
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
                       : "text-zinc-500 hover:text-zinc-300"
-                  }`}
+                    }`}
                 >
                   Auditor Mode
                 </button>
                 <button
                   onClick={() => setActiveDemoTab("meeting")}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                    activeDemoTab === "meeting" 
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${activeDemoTab === "meeting"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                       : "text-zinc-500 hover:text-zinc-300"
-                  }`}
+                    }`}
                 >
                   Meeting Audio
                 </button>
                 <button
                   onClick={() => setActiveDemoTab("architect")}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                    activeDemoTab === "architect" 
-                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/40" 
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${activeDemoTab === "architect"
+                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
                       : "text-zinc-500 hover:text-zinc-300"
-                  }`}
+                    }`}
                 >
                   Architect Mode
                 </button>
@@ -506,7 +503,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-4xl">
           <div className="text-center space-y-3 mb-14">
             <p className="text-xs font-bold text-purple-400 tracking-widest uppercase">Competitive Matrix</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold">Neurach Core vs Generic AI</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Neurach vs Generic AI</h2>
           </div>
 
           <div className="rounded-2xl border border-white/10 overflow-hidden bg-zinc-900/40 shadow-xl">
@@ -516,7 +513,7 @@ export default function LandingPage() {
                   <div className="col-span-1">Feature</div>
                   <div className="text-center">ChatGPT</div>
                   <div className="text-center">Gemini</div>
-                  <div className="text-center text-cyan-300 font-extrabold">Neurach Core</div>
+                  <div className="text-center text-cyan-300 font-extrabold">Neurach</div>
                 </div>
 
                 {COMPARISON.map((row, i) => (
@@ -586,7 +583,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-icon.png" alt="Neurach" className="h-5 w-5 object-contain" />
-            <span className="text-zinc-400 font-semibold">Neurach Core</span>
+            <span className="text-zinc-400 font-semibold">Neurach</span>
             <span>· Built by Stanislav Pepryk</span>
           </div>
 

@@ -4,7 +4,7 @@
 
 ## 0. Project Overview & Architectural Standards
 
-**Project:** Neurach Core (Private AI Knowledge & Hybrid RAG Assistant) [formerly Vectrieve Core]
+**Project:** Neurach (Private AI Knowledge & Hybrid RAG Assistant) [formerly Vectrieve]
 - **Domain:** `https://neurach.tech` (primary) / `https://vectrieve.duckdns.org` (legacy fallback)
 - **Frontend:** Next.js 16 (Turbopack, TypeScript, Tailwind CSS, Lucide Icons, i18n Context).
 - **Backend:** FastAPI (Python 3.12, SQLModel, Alembic, PostgreSQL, Qdrant Vector DB).

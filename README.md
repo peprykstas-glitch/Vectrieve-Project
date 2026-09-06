@@ -1,9 +1,9 @@
-# Neurach Core — Enterprise Hybrid RAG & Knowledge Intelligence Platform
+# Neurach — Enterprise Hybrid RAG & Knowledge Intelligence Platform
 
 **Domain:** `https://neurach.tech` (production)  
 **Host Target:** Azure VM `74.248.17.192`
 
-Neurach Core is a high-throughput, multi-tenant Retrieval-Augmented Generation (RAG) platform and Private Knowledge Intelligence Assistant engineered for enterprise teams. It provides sub-second semantic retrieval across documents, audio meetings, and tabular data with strict workspace isolation and zero data leakage.
+Neurach is a high-throughput, multi-tenant Retrieval-Augmented Generation (RAG) platform and Private Knowledge Intelligence Assistant engineered for enterprise teams. It provides sub-second semantic retrieval across documents, audio meetings, and tabular data with strict workspace isolation and zero data leakage.
 
 ---
 

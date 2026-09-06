@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, FileText, Lock, Globe2, Database } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Neurach Core',
+  title: 'Terms of Service | Neurach',
   description: 'Enterprise Terms of Service for using the Neurach Knowledge Intelligence Platform.',
 };
 
@@ -42,7 +42,7 @@ export default function TermsOfServicePage() {
               1. Agreement to Terms
             </h2>
             <p>
-              By accessing, deploying, or utilizing Neurach Core ("Service"), you agree to be legally bound by these Enterprise Terms of Service ("Terms"). These Terms govern all interactions with our hybrid retrieval-augmented generation engine, Knowledge Spaces, and API endpoints.
+              By accessing, deploying, or utilizing Neurach ("Service"), you agree to be legally bound by these Enterprise Terms of Service ("Terms"). These Terms govern all interactions with our hybrid retrieval-augmented generation engine, Knowledge Spaces, and API endpoints.
             </p>
           </section>
 

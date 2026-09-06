@@ -466,7 +466,7 @@ async def test_resolve_llm_config():
     # Test prompt blending in LLMService
     from services.llm_service import llm_service
     sys_prompt, temp = llm_service._build_system_prompt(req3, "Some context")
-    assert "You are Neurach Core's Intelligence Mentor." in sys_prompt
+    assert "You are Neurach's Intelligence Mentor." in sys_prompt
     assert "--- WORKSPACE SPECIFIC INSTRUCTIONS ---" in sys_prompt
     assert "You are a legal tax advisor." in sys_prompt
     assert "Some context" in sys_prompt

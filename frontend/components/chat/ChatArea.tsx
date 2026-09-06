@@ -18,7 +18,7 @@ interface ChatAreaProps {
 
 function getFollowUpPrompts(lastMessageText: string, persona: string): string[] {
   const text = lastMessageText.toLowerCase();
-  
+
   if (persona === "auditor" || text.includes("audit") || text.includes("risk") || text.includes("legal")) {
     return [
       "What are the most critical legal risks in these documents?",
@@ -26,7 +26,7 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
       "Are there any hidden penalties or liabilities in the contracts?"
     ];
   }
-  
+
   if (persona === "architect" || text.includes("database") || text.includes("schema") || text.includes("code")) {
     return [
       "How is the Qdrant database structured in this project?",
@@ -42,7 +42,7 @@ function getFollowUpPrompts(lastMessageText: string, persona: string): string[] 
       "Explain the differences between extension in same vs different hotel."
     ];
   }
-  
+
   return [
     "What are the key conclusions in these documents?",
     "Summarize the main action items and next steps.",
@@ -109,9 +109,9 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
     if (!messages.length) return;
     let md = `# Neurach Chat Session: ${sessionId || "Export"}\n`;
     md += `*Exported on: ${new Date().toLocaleString()}*\n\n---\n\n`;
-    
+
     messages.forEach((msg) => {
-      const roleName = msg.role === "user" ? "### User" : "### Neurach Core";
+      const roleName = msg.role === "user" ? "### User" : "### Neurach";
       md += `${roleName}\n\n${msg.content}\n\n`;
       if (msg.sources && msg.sources.length > 0) {
         md += `**Sources Cited:**\n`;
@@ -175,15 +175,15 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
           <h1>Neurach Intelligence Report</h1>
           <div class="meta">Session ID: ${escapeHtml(sessionId || "Ad-hoc")} &bull; Generated: ${new Date().toLocaleString()}</div>
     `;
-    
+
     messages.forEach((msg) => {
       const isUser = msg.role === "user";
       html += `
         <div class="msg ${isUser ? 'user' : 'assistant'}">
-          <div class="role">${isUser ? 'User Query' : 'Neurach Core Analysis'}</div>
+          <div class="role">${isUser ? 'User Query' : 'Neurach Analysis'}</div>
           <div class="content">${escapeHtml(msg.content)}</div>
       `;
-      
+
       if (msg.sources && msg.sources.length > 0) {
         html += `<div class="citations"><div class="citation-title">Sources Cited:</div>`;
         msg.sources.forEach((src) => {
@@ -196,15 +196,15 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
         });
         html += `</div>`;
       }
-      
+
       html += `</div>`;
     });
-    
+
     html += `
         </body>
       </html>
     `;
-    
+
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
@@ -224,19 +224,18 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
     setHeaderRightAction(
       <div className="flex items-center gap-2 animate-in fade-in duration-200">
         {trialRemaining !== null && (
-          <div className={`hidden sm:flex items-center gap-1.5 h-7.5 px-3 rounded-full text-[11px] font-medium tracking-wide backdrop-blur-xl border shadow-sm transition-all ${
-            trialRemaining <= 3
-              ? "bg-red-500/10 text-red-400 border-red-500/25 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
-              : trialRemaining <= 8
+          <div className={`hidden sm:flex items-center gap-1.5 h-7.5 px-3 rounded-full text-[11px] font-medium tracking-wide backdrop-blur-xl border shadow-sm transition-all ${trialRemaining <= 3
+            ? "bg-red-500/10 text-red-400 border-red-500/25 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+            : trialRemaining <= 8
               ? "bg-amber-500/10 text-amber-400 border-amber-500/25 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
               : "bg-zinc-900/40 text-zinc-400 border-white/10"
-          }`}>
+            }`}>
             <Zap className="w-3 h-3 text-amber-400" />
             <span>{trialRemaining} trial left</span>
           </div>
         )}
 
-        <button 
+        <button
           onClick={exportAsMarkdown}
           className="h-7.5 px-3 bg-zinc-900/40 hover:bg-zinc-800/60 backdrop-blur-xl border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
           title="Export as Markdown"
@@ -245,7 +244,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
           <span>MD</span>
         </button>
 
-        <button 
+        <button
           onClick={exportAsPDF}
           className="h-7.5 px-3 bg-indigo-500/10 hover:bg-indigo-500/20 backdrop-blur-xl border border-indigo-500/25 text-indigo-400 hover:text-indigo-300 text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_12px_rgba(99,102,241,0.15)] active:scale-95"
           title="Export / Print PDF"
@@ -340,7 +339,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
         <div className="flex flex-col items-center w-full min-h-full">
           <div className="w-full max-w-4xl flex flex-col gap-6 pb-6 flex-1 justify-center">
             {showWelcomeHero ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
@@ -350,12 +349,12 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 <div className="relative mb-6 group flex items-center justify-center">
                   {/* Soft radial glow aura */}
                   <div className="absolute w-28 h-28 bg-gradient-to-tr from-cyan-500/25 via-violet-500/30 to-indigo-500/20 rounded-full blur-2xl pointer-events-none transition-all duration-700 group-hover:scale-125 group-hover:opacity-100" />
-                  
+
                   {/* Floating Logo Icon */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/logo-icon.png"
-                    alt="Neurach Core"
+                    alt="Neurach"
                     className="relative w-14 h-14 object-contain drop-shadow-[0_0_20px_rgba(0,212,255,0.45)] transition-transform duration-300 group-hover:scale-110 select-none pointer-events-none"
                   />
                 </div>
@@ -393,9 +392,9 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
               <div className="flex flex-col gap-6 mt-auto">
                 <AnimatePresence initial={false}>
                   {messages.map((msg, idx) => (
-                    <ChatMessage 
-                      key={msg.id} 
-                      msg={msg} 
+                    <ChatMessage
+                      key={msg.id}
+                      msg={msg}
                       ref={idx === messages.length - 1 ? lastMessageRef : undefined}
                     />
                   ))}
@@ -403,7 +402,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
                 {/* Context-aware suggestions */}
                 {!isLoading && messages.length > 1 && messages[messages.length - 1].role === "assistant" && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-6 flex flex-col gap-3 w-full"
