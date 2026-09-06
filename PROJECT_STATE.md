@@ -96,21 +96,27 @@ All metrics in this section were directly measured on the production deployment 
   * `127.0.0.1:6333` (Qdrant vector engine).
   * `127.0.0.1:8000` (FastAPI backend service).
 
-### 3.8 Production Deployment & VPS Infrastructure
-* **Host Server:** Ubuntu 24.04 LTS on DigitalOcean VPS `159.89.110.69`
-* **Public Domain:** [https://vectrieve.duckdns.org](https://vectrieve.duckdns.org) (Live, HTTPS SSL encrypted via Let's Encrypt)
+### 3.8 Production Deployment & Cloud Infrastructure
+* **Host Server:** Ubuntu 24.04 LTS on Microsoft Azure VM `74.248.17.192` (sponsored via GitHub Student Developer Pack Azure credits).
+* **Public Domain:** [https://neurach.tech](https://neurach.tech) (Primary, Caddy TLS 1.3 / HTTP/3), with fallback [https://vectrieve.duckdns.org](https://vectrieve.duckdns.org).
 * **Docker Compose Stack:** 4 healthy production containers (`vectrieve-frontend`, `vectrieve-backend`, `vectrieve-postgres`, `vectrieve-qdrant`).
 * **Internationalization:** 100% full-surface i18n support across English (`en` default), Ukrainian (`uk`), Polish (`pl`), and Spanish (`es`).
 * **Active Admin User:** `pepryk.stas@gmail.com` (`user_id = 1`, `is_admin = true`, `is_approved = true`).
 
 ---
 
-## 4. Operational Context & Student Pack Application
+## 4. Active Ecosystem Services & GitHub Student Pack Directory
 
-* **GitHub Student Developer Pack ($200 DigitalOcean Credits):**
-  - Application submitted on 18 August 2026.
-  - Geolocation verification in Spain explained via active **Erasmus+ mobility internship** (`Wzór umowy między beneficjarem i uczestnikiem mobilności programu Erasmus+` attached).
-  - Awaiting approval to apply $200 DO credit balance to production droplet.
+| Service | Provider / Tier | Dashboard / Endpoint | Status & Purpose |
+| :--- | :--- | :--- | :--- |
+| **Domain & DNS** | .TECH Domains (Student Pack) | `https://neurach.tech` | Primary enterprise domain, TLS certificates via Caddy. |
+| **Cloud Hosting** | Microsoft Azure ($100 Student Credits) | Azure VM `74.248.17.192` | Production host for all 4 containerized services. |
+| **Error & Perf Tracking** | Sentry Developer (`neurach`) | `https://neurach.sentry.io` | Full-stack monitoring for `python-fastapi` & `javascript-nextjs`. |
+| **Privacy Analytics** | SimpleAnalytics (Starter, 100k/mo) | `https://simpleanalytics.com/neurach.tech` | Cookie-free, privacy-first visitor analytics for `neurach.tech`. |
+| **Transactional Email** | Gmail SMTP (Port 587) | `smtp.gmail.com` | Automated password reset emails and workspace admin alerts. |
+| **Disaster Recovery** | Decentralized Backup Triangle (3-2-1) | `scripts/backup_production.sh` | Azure local dumps (7d) + Cloudflare R2 / S3 (30d) + Local offline snapshots (weekly). |
+| **Developer IDE** | JetBrains (Student Pack) | JetBrains Account | DataGrip (PostgreSQL visual management), PyCharm Pro, WebStorm. |
+| **Brand Identity** | Neurach Design System | `frontend/public/logo-icon.png` | 3D isometric folded ribbon 'N' monogram in cyan (#00d4ff) and violet (#7c3aed). |
 
 ---
 
@@ -124,13 +130,15 @@ All ongoing work strictly adheres to [GEMINI.md](file:///c:/Projects/Project%20X
 
 ---
 
-## 6. Completed Milestones & Active System Features (Updated 18 August 2026)
+## 6. Completed Milestones & Active System Features (Updated 7 September 2026)
 
 1. ✅ **Google OAuth 2.0 & Smart Account Unification:** 1-click Google authentication, automatic linking to existing email accounts, secure HttpOnly cookie session management.
-2. ✅ **Audio & Meeting Intelligence:** Groq Whisper (`whisper-large-v3`) transcription with timestamps `[00:15]`, automated meeting action items & key decisions extractor.
-3. ✅ **Flagship Model Infrastructure:** `openai/gpt-oss-120b` (120B parameters, 500 tps, 131k context window) + `llama-3.2-90b-vision-preview` (90B multimodal OCR) + 4096 max completion token capacity.
-4. ✅ **BFF Gateway & Proxy Infrastructure:** Robust Next.js 16 to FastAPI internal Docker networking with hop-by-hop header sanitization.
-5. ✅ **100% Automated Test Suite:** 92/92 tests passing in ~14 seconds.
+2. ✅ **Enterprise Rebranding to Neurach:** Domain migrated to `neurach.tech`, brand copy updated, and new 3D isometric 'N' monogram logo deployed.
+3. ✅ **Full-Stack Sentry Telemetry:** Both backend and frontend instrumented under organization `neurach` with performance traces, session replay, and test-suite noise isolation.
+4. ✅ **SimpleAnalytics Visitor Tracking:** 100% cookie-free analytics active on all client routes.
+5. ✅ **Resilient Password Reset Flow:** Database schema migration `password_reset_tokens.used`, case-insensitive email lookup, SMTP email dispatch, and 100/100 passing test suite.
+6. ✅ **Flagship Model Infrastructure:** `openai/gpt-oss-120b` (120B parameters, 500 tps, 131k context window) + `llama-3.2-90b-vision-preview` (90B multimodal OCR) + 4096 max completion token capacity.
+7. ✅ **Decentralized Backup Triangle (3-2-1 Invariant):** Automated daily PostgreSQL and Qdrant backups with multi-cloud replication.
 
 ---
 
@@ -159,6 +167,6 @@ All ongoing work strictly adheres to [GEMINI.md](file:///c:/Projects/Project%20X
 ## 8. Verification Audit Sign-Off
 
 * **Auditor / Lead Architect:** Antigravity AI & Stas Pepryk.
-* **Verification Date:** 18 August 2026.
-* **Verification Environment:** DigitalOcean Droplet `159.89.110.69`, Ubuntu 24.04, Docker 27.x.
-* **Codebase Commit Reference:** `c5ac96fb` (branch `main`)
+* **Verification Date:** 7 September 2026.
+* **Verification Environment:** Azure VM `74.248.17.192`, Ubuntu 24.04 LTS, Docker Compose.
+* **Codebase Commit Reference:** Branch `main`
