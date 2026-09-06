@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 import path from "path";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {
-    // Explicitly set workspace root to this frontend directory,
-    // preventing Next.js from being confused by the root-level package-lock.json
     root: path.resolve(__dirname),
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "neurach",
+  project: "javascript-nextjs",
+  silent: true,
+  widenClientFileUpload: true,
+});

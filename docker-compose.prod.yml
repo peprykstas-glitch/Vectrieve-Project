@@ -62,5 +62,6 @@ services:
       - NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAEqe-YZWwm_kx0Bs
       - TURNSTILE_SECRET=0x4AAAAAAEqe-a_C_9o9VrCPfKpNlK5Ux0Q
       - TURNSTILE_HOSTNAMES=neurach.tech,www.neurach.tech,vectrieve.duckdns.org,localhost,127.0.0.1
+      - NEXT_PUBLIC_SENTRY_DSN=https://d45689acc6b574c5260ebf378c8269b0@o4510608367747072.ingest.de.sentry.io/4512041535537232
     ports:
       - "127.0.0.1:3000:3000"
