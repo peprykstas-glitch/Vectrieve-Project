@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from pydantic import BaseModel, EmailStr
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 import httpx
 
@@ -292,8 +293,9 @@ async def forgot_password(
     Always returns 200 regardless of whether the email exists.
     This prevents email enumeration attacks.
     """
-    # Find user by email
-    statement = select(User).where(User.username == body.email)
+    # Find user by email (case-insensitive)
+    email_clean = body.email.strip().lower()
+    statement = select(User).where(func.lower(User.username) == email_clean)
     result = await session.execute(statement)
     user = result.scalar_one_or_none()
 
@@ -313,13 +315,14 @@ async def forgot_password(
             user_id=user.id,
             token=str(uuid.uuid4()),
             expires_at=(datetime.now(timezone.utc) + timedelta(hours=1)).replace(tzinfo=None),
+            used=False,
         )
         session.add(reset_token)
         await session.commit()
 
         # Send email (async, non-blocking)
         try:
-            await send_password_reset_email(body.email, reset_token.token)
+            await send_password_reset_email(user.username, reset_token.token)
         except Exception as e:
             print(f"⚠️ Email send exception: {e}")
 

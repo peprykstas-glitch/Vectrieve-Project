@@ -1,8 +1,8 @@
-// app/(auth)/reset-password/page.tsx
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 import Link from 'next/link';
-import { ArrowLeft, Hexagon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Set New Password | Neurach AI',
@@ -35,7 +35,9 @@ export default function ResetPasswordPage() {
           </span>
         </div>
 
-        <ResetPasswordForm />
+        <Suspense fallback={<div className="text-zinc-500 text-sm">Loading...</div>}>
+          <ResetPasswordForm />
+        </Suspense>
       </div>
     </div>
   );
