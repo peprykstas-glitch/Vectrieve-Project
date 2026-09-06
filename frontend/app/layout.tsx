@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { AuthGuard } from "@/components/auth-guard";
 
@@ -29,6 +30,10 @@ export default function RootLayout({
             {children}
           </AuthGuard>
         </LanguageProvider>
+        <Script
+          src="https://scripts.simpleanalyticscdn.com/latest.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
