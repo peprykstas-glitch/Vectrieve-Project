@@ -39,6 +39,17 @@ async def lifespan(app: FastAPI):
     print("[OK] Database connection closed.")
 
 
+# --- Sentry Error Tracking ---
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment="production" if ("neurach.tech" in settings.FRONTEND_URL or "duckdns.org" in settings.FRONTEND_URL) else "development",
+        release=f"neurach-backend@{settings.VERSION}",
+    )
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
@@ -75,7 +86,16 @@ app.include_router(api_router)
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "version": settings.VERSION, "mode": "Refactored 🚀"}
+    return {"status": "ok", "version": settings.VERSION, "mode": "healthy"}
+
+
+@app.get("/sentry-debug")
+def sentry_debug():
+    if not settings.SENTRY_DSN:
+        return {"status": "sentry_not_configured"}
+    import sentry_sdk
+    sentry_sdk.capture_message("Neurach Backend Sentry Verification Test Event", level="info")
+    return {"status": "ok", "message": "Sentry verification event dispatched"}
 
 
 if __name__ == "__main__":
