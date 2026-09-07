@@ -15,10 +15,12 @@ import {
   X,
   Download,
   Move,
+  Loader2,
 } from "lucide-react";
 
 interface ChatMermaidProps {
   chart: string;
+  isStreaming?: boolean;
 }
 
 /**
@@ -37,6 +39,13 @@ export function healMermaidCode(raw: string): string {
 
   if (!text) return "";
 
+  // 1. Normalize typographic quotes, apostrophes, non-breaking characters
+  text = text
+    .replace(/[«»“”„]/g, '"')
+    .replace(/[‘’ʼ`]/g, "'")
+    .replace(/\u2011/g, "-")
+    .replace(/[\u00A0\u2002\u2003\u2009]/g, " ");
+
   const lines = text.split("\n");
   const firstNonEmpty = lines.find((l) => l.trim().length > 0) || "";
   const isMindmap = /^mindmap\b/i.test(firstNonEmpty.trim());
@@ -45,7 +54,6 @@ export function healMermaidCode(raw: string): string {
     const cleanedLines: string[] = [];
 
     for (const rawLine of lines) {
-      // 1. Skip comments that break mindmap hierarchy
       if (/^\s*%%/i.test(rawLine)) continue;
       if (!rawLine.trim()) continue;
 
@@ -54,23 +62,19 @@ export function healMermaidCode(raw: string): string {
         continue;
       }
 
-      // Preserve indentation level
       const indentMatch = rawLine.match(/^(\s*)/);
       const indent = indentMatch ? indentMatch[1] : "  ";
       let content = rawLine.trim();
 
-      // Remove markdown bullets `- `
       if (content.startsWith("- ")) {
         content = content.substring(2).trim();
       }
 
-      // If already well-formed root syntax like `root((Label))` or `root["Label"]`
       if (/^root\s*(\(\(.*?\)|\(.*?\)|\[.*?\]|\{.*?\})/i.test(content)) {
         cleanedLines.push(`${indent}${content}`);
         continue;
       }
 
-      // If starts with NodeLabel[...] or NodeLabel(...)
       const nodeShapeMatch = content.match(
         /^([a-zA-Z0-9_\u0400-\u04FF]+)\s*(\(\(.*?\)|\(.*?\)|\[.*?\]|\{.*?\})$/
       );
@@ -79,12 +83,10 @@ export function healMermaidCode(raw: string): string {
         continue;
       }
 
-      // Strip outer quotes if already present
       if (content.startsWith('"') && content.endsWith('"') && content.length > 2) {
         content = content.substring(1, content.length - 1);
       }
 
-      // Clean inside text of markdown bold/italic and quotes
       const cleanLabel = content
         .replace(/\*\*/g, "")
         .replace(/__/g, "")
@@ -96,14 +98,111 @@ export function healMermaidCode(raw: string): string {
     return cleanedLines.join("\n");
   }
 
-  // Flowchart & graph healer:
-  // Quote unquoted labels containing parentheses or colons: A[Some text (details)] -> A["Some text (details)"]
-  text = text.replace(/\[([^[\]\n]*?\([^)\n]+?\)[^[\]\n]*?)\]/g, (match, p1) => {
-    if (p1.startsWith('"') && p1.endsWith('"')) return match;
-    return `["${p1.replace(/"/g, "'")}"]`;
+  // 2. Flowchart & Architecture Diagram Healer
+  const isDeclared = /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|mindmap|quadrantChart|xychart-beta|timeline|architecture-beta)\b/i.test(firstNonEmpty.trim());
+  
+  if (!isDeclared) {
+    text = `flowchart TD\n${text}`;
+  }
+
+  // Edge link labels: -->|Label text (with: colon)| -> -->|"Label text (with: colon)"|
+  text = text.replace(/(-->|---|==>|-\.->)\s*\|([^|\n]+)\|\s*/g, (match, arrow, label) => {
+    let clean = label.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return `${arrow}|${clean}| `;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `${arrow}|"${clean}"| `;
+  });
+
+  // Stadium node shape: ([ ... ])
+  text = text.replace(/\(\[\s*([^\]\n]+?)\s*\]\)/g, (match, p1) => {
+    let clean = p1.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return match;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `(["${clean}"])`;
+  });
+
+  // Cylinder node shape: [( ... )]
+  text = text.replace(/\[\(\s*([^)\n]+?)\s*\)\]/g, (match, p1) => {
+    let clean = p1.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return match;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `[("${clean}")]`;
+  });
+
+  // Circle node shape: (( ... ))
+  text = text.replace(/\(\(\s*([^)\n]+?)\s*\)\)/g, (match, p1) => {
+    let clean = p1.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return match;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `(("${clean}"))`;
+  });
+
+  // Rhombus / Decision node shape: { ... }
+  text = text.replace(/\{\s*([^}\n]+?)\s*\}/g, (match, p1) => {
+    let clean = p1.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return match;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `{"${clean}"}`;
+  });
+
+  // Square node shape: [ ... ] (ignoring [[ or [( or [/)
+  text = text.replace(/(?<!\[)\[\s*([^\[\]\n]+?)\s*\](?!\])/g, (match, p1) => {
+    let clean = p1.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return match;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `["${clean}"]`;
+  });
+
+  // Round node shape: ( ... ) (ignoring (( or ([)
+  text = text.replace(/(?<!\()\(\s*([^()\n]+?)\s*\)(?!\))/g, (match, p1) => {
+    let clean = p1.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) return match;
+    clean = clean.replace(/"/g, "'").replace(/\*\*/g, "").replace(/__/g, "");
+    return `("${clean}")`;
   });
 
   return text;
+}
+
+export function healMermaidCodeFallback(text: string): string {
+  let cleaned = text
+    .replace(/<[^>]*>/g, "")
+    .replace(/[«»“”„]/g, '"')
+    .replace(/[‘’ʼ`]/g, "'");
+
+  const lines = cleaned.split("\n");
+  const processed: string[] = [];
+  let hasHeader = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (!hasHeader) {
+      if (/^(graph|flowchart|sequenceDiagram|classDiagram|mindmap|erDiagram)\b/i.test(trimmed)) {
+        hasHeader = true;
+        processed.push(trimmed);
+        continue;
+      } else {
+        hasHeader = true;
+        processed.push("flowchart TD");
+      }
+    }
+
+    if (/^(classDef|style|linkStyle|click)\b/i.test(trimmed)) {
+      continue;
+    }
+
+    const safeLine = trimmed
+      .replace(/\[\((.+?)\)\]/g, '["$1"]')
+      .replace(/\(\[(.+?)\]\)/g, '["$1"]')
+      .replace(/\(\((.+?)\)\)/g, '["$1"]')
+      .replace(/\{(.+?)\}/g, '["$1"]')
+      .replace(/\((.+?)\)/g, '["$1"]');
+
+    processed.push(safeLine);
+  }
+
+  return processed.join("\n");
 }
 
 /**
@@ -243,10 +342,11 @@ export function enhanceMermaidSvg(rawSvg: string, isFullscreen = false): string 
   return svg;
 }
 
-export default function ChatMermaid({ chart }: ChatMermaidProps) {
+export default function ChatMermaid({ chart, isStreaming }: ChatMermaidProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [rawSvgContent, setRawSvgContent] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
   const [viewMode, setViewMode] = useState<"diagram" | "code">("diagram");
   const [zoom, setZoom] = useState(1);
@@ -286,7 +386,12 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
     let active = true;
 
     async function renderChart() {
+      // While streaming tokens, do not render broken partial syntax
+      if (isStreaming) {
+        return;
+      }
       if (!sanitizedChart) return;
+
       try {
         setError(null);
         const mermaid = (await import("mermaid")).default;
@@ -338,12 +443,27 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
         });
 
         const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
-        const { svg } = await mermaid.render(uniqueId, sanitizedChart);
+        let svgResult = "";
+
+        try {
+          // Pass 1: Standard healed code render
+          const res = await mermaid.render(uniqueId, sanitizedChart);
+          svgResult = res.svg;
+        } catch (firstErr: any) {
+          console.warn("Mermaid pass 1 render failed, trying aggressive fallback heal...", firstErr);
+          cleanupMermaidErrorDOM();
+          // Pass 2: Aggressive fallback healing (strip rogue HTML and exotic shapes)
+          const fallbackChart = healMermaidCodeFallback(sanitizedChart);
+          const retryId = `mermaid-retry-${Math.random().toString(36).substring(2, 9)}`;
+          const res = await mermaid.render(retryId, fallbackChart);
+          svgResult = res.svg;
+        }
+
         if (active) {
-          setRawSvgContent(svg);
+          setRawSvgContent(svgResult);
         }
       } catch (err: any) {
-        console.warn("Mermaid render error:", err);
+        console.warn("Mermaid render error after fallback:", err);
         cleanupMermaidErrorDOM();
         if (active) {
           setError(err?.message || "Failed to render diagram");
@@ -359,7 +479,7 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
       active = false;
       cleanupMermaidErrorDOM();
     };
-  }, [sanitizedChart, cleanupMermaidErrorDOM]);
+  }, [sanitizedChart, isStreaming, retryCount, cleanupMermaidErrorDOM]);
 
   // Handle ESC key and lock body scroll during fullscreen
   useEffect(() => {
@@ -522,16 +642,40 @@ export default function ChatMermaid({ chart }: ChatMermaidProps) {
         {viewMode === "code" || error ? (
           <div className="p-4 bg-zinc-950 font-mono text-xs text-zinc-300 overflow-x-auto whitespace-pre leading-relaxed">
             {error && (
-              <div className="flex items-center gap-2 p-2.5 mb-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Diagram preview unavailable — showing raw definition.</span>
+              <div className="flex items-center justify-between gap-3 p-3 mb-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>Diagram preview unavailable — showing raw definition.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRetryCount((c) => c + 1)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 transition-all cursor-pointer text-xs font-sans font-medium"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
               </div>
             )}
             <code>{sanitizedChart}</code>
           </div>
         ) : (
           <div className="p-6 flex items-center justify-center overflow-auto bg-zinc-950/60 min-h-[240px] max-h-[550px] relative">
-            {rawSvgContent ? (
+            {isStreaming ? (
+              <div className="w-full my-2 flex flex-col items-center justify-center gap-3 text-muted-foreground animate-pulse">
+                <div className="flex items-center gap-2 text-xs font-medium text-foreground/80">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span>Generating diagram...</span>
+                </div>
+                <div className="w-full max-w-sm h-14 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-around px-4">
+                  <div className="w-16 h-6 rounded-md bg-muted/80" />
+                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
+                  <div className="w-20 h-6 rounded-md bg-muted/80" />
+                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
+                  <div className="w-16 h-6 rounded-md bg-muted/80" />
+                </div>
+              </div>
+            ) : rawSvgContent ? (
               <div
                 ref={containerRef}
                 style={{

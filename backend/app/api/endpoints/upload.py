@@ -50,7 +50,7 @@ async def _validate_space_membership(
     response_model=DocumentRead,
     status_code=status.HTTP_202_ACCEPTED,
 )
-@limiter.limit("10/minute")
+@limiter.limit("60/minute")
 async def upload_file(
     request: Request,
     file: UploadFile,

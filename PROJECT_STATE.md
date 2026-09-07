@@ -164,6 +164,19 @@ All ongoing work strictly adheres to [GEMINI.md](file:///c:/Projects/Project%20X
 
 ---
 
+## 7.1 User Feedback Log & Quality Resolution Track
+
+| ID | Category | Reporter / Context | User Feedback Summary | Status & Implemented Resolution |
+| :--- | :--- | :--- | :--- | :--- |
+| **FB-01** | 🔐 **Security / Privacy** | User Feedback Modal (`public.feedback` #3) | Browser password managers offered to save personal Groq API key on logout from `/settings`. | **RESOLVED:** Replaced `type="password"` with `type="text"` masked via `-webkit-text-security: disc`, added `data-1p-ignore="true"` / `data-lpignore="true"` / `data-bwignore="true"`, and sanitized DOM input values on `handleSignOut`. |
+| **FB-02** | 📊 **Visualizations** | User Feedback Modal (`public.feedback` #2) | Mermaid architecture flowcharts failed with *"Diagram preview unavailable"* on Ukrainian text with guillemets `«»`, special apostrophes `’`, and during streaming. | **RESOLVED:** Added `isStreaming` skeleton guard (waits until generation finishes), expanded `healMermaidCode` to normalize quotes/apostrophes/labels, and added multi-pass fallback with manual Retry. |
+| **FB-03** | 🎨 **UX / Space Config** | User Feedback Modal (`public.feedback` #1) | Space System Prompt editor was too narrow (`max-w-md`) and cramped (`rows={7}`, `resize-none`). | **RESOLVED:** Expanded modal to `max-w-3xl`, increased textarea to `min-h-[220px]`, enabled vertical dragging (`resize-y`), and added a real-time character counter. |
+| **FB-04** | 🤝 **Strategic Partner** | University Partner (`animafestexperience@gmail.com`) | Ingestion partner testing high-volume document ingestion (hundreds of PPTX, PDF, XLSX, audio). | **IN PROGRESS:** Increased `/upload` rate limit from `10/min` to `60/min`; verifying queue scaling and chunking concurrency. |
+| **FB-05** | 🚀 **Technical SEO & Trust** | User Feedback Modal (`public.feedback` #5) | Need JSON-LD structured schema and enterprise security badges to build CTO trust. | **RESOLVED:** Added `SoftwareApplication` JSON-LD schema, OpenGraph metadata, and GitHub CodeQL automated security analysis workflow. |
+| **FB-06** | 🛡️ **BYOD / Storage Privacy** | User Feedback Modal (`public.feedback` #6) | Ensure external vector database override is clear and verified for zero-data-retention compliance. | **RESOLVED:** External Qdrant Cloud cluster override is verified and active in `/settings`. |
+
+---
+
 ## 8. Verification Audit Sign-Off
 
 * **Auditor / Lead Architect:** Antigravity AI & Stas Pepryk.

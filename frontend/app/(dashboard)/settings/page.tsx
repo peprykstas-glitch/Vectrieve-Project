@@ -203,21 +203,32 @@ export default function SettingsPage() {
 
               {/* Personal Groq API Key Input */}
               <div>
-                <label htmlFor="groq-api-key" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                <label htmlFor="groq-api-token-field" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                   {t.settings.groqApiKey}
                 </label>
                 <div className="relative">
                   <Key className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    id="groq-api-key"
+                    id="groq-api-token-field"
+                    name="groq_service_token"
                     aria-label="Groq API Key"
-                    type={showGroqKey ? "text" : "password"}
+                    type="text"
+                    style={!showGroqKey ? ({ WebkitTextSecurity: "disc" } as any) : undefined}
                     value={groqApiKey}
                     onChange={(e) => setGroqApiKey(e.target.value)}
                     placeholder={t.settings.groqPlaceholder}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-1p-ignore="true"
+                    data-lpignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     className="w-full bg-background border border-border rounded-lg py-2 pl-9 pr-10 text-sm text-foreground focus:border-primary/50 focus:outline-none transition-colors font-mono placeholder:text-muted-foreground/50"
                   />
                   <button
+                    type="button"
                     onClick={() => setShowGroqKey(!showGroqKey)}
                     aria-label={showGroqKey ? "Hide key" : "Show key"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors border-0 bg-transparent cursor-pointer"
@@ -421,21 +432,32 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="qdrant-api-key" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                    <label htmlFor="qdrant-api-token-field" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                       {t.settings.qdrantApiKey}
                     </label>
                     <div className="relative">
                       <Key className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
-                        id="qdrant-api-key"
+                        id="qdrant-api-token-field"
+                        name="qdrant_service_token"
                         aria-label="Qdrant API Key"
-                        type={showQdrantKey ? "text" : "password"}
+                        type="text"
+                        style={!showQdrantKey ? ({ WebkitTextSecurity: "disc" } as any) : undefined}
                         value={qdrantApiKey}
                         onChange={(e) => setQdrantApiKey(e.target.value)}
                         placeholder="qd_sk_…"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-1p-ignore="true"
+                        data-lpignore="true"
+                        data-bwignore="true"
+                        data-form-type="other"
                         className="w-full bg-background border border-border rounded-lg py-2 pl-9 pr-10 text-sm text-foreground focus:border-primary/50 focus:outline-none transition-colors font-mono placeholder:text-muted-foreground/50"
                       />
                       <button
+                        type="button"
                         onClick={() => setShowQdrantKey(!showQdrantKey)}
                         aria-label={showQdrantKey ? "Hide Qdrant API Key" : "Show Qdrant API Key"}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors border-0 bg-transparent cursor-pointer"

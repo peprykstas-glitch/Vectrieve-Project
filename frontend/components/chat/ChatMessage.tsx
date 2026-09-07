@@ -14,7 +14,7 @@ interface ChatMessageProps {
   msg: Message;
 }
 
-function CodeBlock({ node, inline, className, children, ...props }: any) {
+function CodeBlock({ node, inline, className, children, isStreaming, ...props }: any) {
   const match = /language-(\w+)/.exec(className || "");
   const lang = match ? match[1].toLowerCase() : "";
   const textContent = String(children).replace(/\n$/, "");
@@ -30,7 +30,7 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
 
   // --- 1. Interactive Mermaid Diagrams & Architecture Flowcharts ---
   if (lang === "mermaid") {
-    return <ChatMermaid chart={textContent} />;
+    return <ChatMermaid chart={textContent} isStreaming={isStreaming} />;
   }
 
   // --- 2. Interactive Recharts (Bar, Line, Area, Pie) ---
@@ -288,7 +288,7 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        code: CodeBlock,
+                        code: (codeProps: any) => <CodeBlock {...codeProps} isStreaming={msg.isStreaming} />,
                         a: ({ href, children, ...props }: any) => {
                           if (href && href.startsWith("#seek-ts-")) {
                             const ts = href.replace("#seek-ts-", "");

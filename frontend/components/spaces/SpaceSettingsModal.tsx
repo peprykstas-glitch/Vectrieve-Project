@@ -73,7 +73,7 @@ export function SpaceSettingsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10"
+        className="relative w-full max-w-2xl sm:max-w-3xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10"
         role="dialog"
         aria-modal="true"
       >
@@ -138,13 +138,16 @@ export function SpaceSettingsModal({
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
                 {t.spaces.promptTitle}
               </label>
+              <span className="text-[11px] font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/50">
+                {systemPrompt.length} chars
+              </span>
             </div>
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder={t.spaces.promptPlaceholder}
-              rows={7}
-              className="w-full bg-background border border-border rounded-xl p-3.5 text-xs text-foreground/90 focus:outline-none focus:border-primary leading-relaxed custom-scrollbar resize-none font-mono"
+              rows={10}
+              className="w-full min-h-[220px] bg-background border border-border rounded-xl p-4 text-xs text-foreground/90 focus:outline-none focus:border-primary leading-relaxed custom-scrollbar resize-y font-mono"
             />
             <p className="text-[11px] text-muted-foreground leading-normal">
               {t.spaces.promptTip}

@@ -225,6 +225,14 @@ function UserCard() {
   const handleSignOut = async () => {
     setIsLoggingOut(true)
     try {
+      // Clear all sensitive input values from DOM to prevent password managers from capturing tokens as passwords
+      if (typeof document !== 'undefined') {
+        document.querySelectorAll('input').forEach((input) => {
+          if (input.type === 'password' || input.name?.includes('token') || input.id?.includes('token') || input.id?.includes('key')) {
+            input.value = ''
+          }
+        })
+      }
       await apiClient('/api/auth/logout', { method: 'POST' })
     } catch (e) {
       console.error("Failed to sign out on backend, proceeding with local logout", e)
