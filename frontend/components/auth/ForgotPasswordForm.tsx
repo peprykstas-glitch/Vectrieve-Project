@@ -83,28 +83,28 @@ export function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+      <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
         <Card className="bg-transparent border-none shadow-none">
           <CardContent className="pt-8 pb-6 flex flex-col items-center gap-4 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+              <CheckCircle2 className="h-7 w-7 text-emerald-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Check your inbox</h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                If an account exists for <span className="text-zinc-200 font-medium">{form.getValues('email')}</span>,
+              <h3 className="text-lg font-semibold text-foreground mb-2">Check your inbox</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                If an account exists for <span className="text-foreground font-medium">{form.getValues('email')}</span>,
                 we have sent a secure password reset link.
               </p>
             </div>
 
-            <p className="text-xs text-zinc-500 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               Don&apos;t see it? Check your spam folder or contact your workspace administrator.
             </p>
 
-            <div className="w-full mt-4 pt-4 border-t border-white/5">
+            <div className="w-full mt-4 pt-4 border-t border-border">
               <a
                 href="/login"
-                className="text-xs text-zinc-400 hover:text-white transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 ← Return to Sign In
               </a>
@@ -116,11 +116,11 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+    <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="space-y-2 pb-6">
-          <CardTitle className="text-xl text-white tracking-tight">Reset your password</CardTitle>
-          <CardDescription className="text-zinc-400 text-sm">
+          <CardTitle className="text-xl text-foreground tracking-tight">Reset your password</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
             Enter your corporate email and we&apos;ll send you a secure reset link.
           </CardDescription>
         </CardHeader>
@@ -128,7 +128,7 @@ export function ForgotPasswordForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               {globalError && (
-                <div className="p-3 text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg">
+                <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                   {globalError}
                 </div>
               )}
@@ -138,18 +138,18 @@ export function ForgotPasswordForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Work Email</FormLabel>
+                    <FormLabel className="text-foreground text-xs font-medium">Work Email</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                        <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="name@company.com"
-                          className="pl-9 bg-[#121212] border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                          className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                           {...field}
                         />
                       </div>
                     </FormControl>
-                    <FormMessage className="text-red-400 opacity-90 text-xs" />
+                    <FormMessage className="text-destructive opacity-90 text-xs" />
                   </FormItem>
                 )}
               />
@@ -164,14 +164,14 @@ export function ForgotPasswordForm() {
 
               <Button
                 type="submit"
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-all h-11 mt-2 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 disabled={isSubmitting || !turnstileToken}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : !turnstileToken ? (
-                  <span className="flex items-center text-zinc-500 text-sm">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-500" />
+                  <span className="flex items-center text-muted-foreground text-sm">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
                     Verifying security...
                   </span>
                 ) : (

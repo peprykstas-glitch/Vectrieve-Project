@@ -121,6 +121,10 @@ export interface TranslationDictionary {
     qdrantUrl: string;
     qdrantApiKey: string;
     preferences: string;
+    theme: string;
+    themeDesc: string;
+    themeDark: string;
+    themeLight: string;
     language: string;
     languageDesc: string;
     fontSize: string;
@@ -327,7 +331,11 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       qdrantUrl: "Qdrant Cloud URL (optional override)",
       qdrantApiKey: "Qdrant API Key (optional)",
       preferences: "Interface Preferences",
-      language: "Display Language",
+      theme: "Color Theme",
+      themeDesc: "Switch between dark and light appearance",
+      themeDark: "Dark Mode",
+      themeLight: "Light Mode",
+      language: "Platform Language",
       languageDesc: "Choose your primary language for the dashboard and operations.",
       fontSize: "Typography Scale & Density",
       fontSizeDesc: "Adjust text density and font size for optimal reading comfort.",
@@ -531,7 +539,11 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       qdrantUrl: "Qdrant Cloud URL (опціонально)",
       qdrantApiKey: "Qdrant API Key (опціонально)",
       preferences: "Персоналізація інтерфейсу",
-      language: "Мова інтерфейсу",
+      theme: "Тема оформлення",
+      themeDesc: "Перемикання між темною та світлою темою",
+      themeDark: "Темна тема",
+      themeLight: "Світла тема",
+      language: "Мова платформи",
       languageDesc: "Оберіть основну мову для панелі керування та меню.",
       fontSize: "Масштаб шрифту",
       fontSizeDesc: "Налаштування щільності тексту та розміру шрифту для зручності читання.",
@@ -735,7 +747,11 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       qdrantUrl: "Qdrant Cloud URL (opcjonalnie)",
       qdrantApiKey: "Qdrant API Key (opcjonalnie)",
       preferences: "Preferencje interfejsu",
-      language: "Język interfejsu",
+      theme: "Motyw kolorystyczny",
+      themeDesc: "Przełączaj między ciemnym a jasnym motywem",
+      themeDark: "Ciemny motyw",
+      themeLight: "Jasny motyw",
+      language: "Język platformy",
       languageDesc: "Wybierz główny język panelu nawigacyjnego.",
       fontSize: "Rozmiar czcionki i gęstość",
       fontSizeDesc: "Dostosuj gęstość tekstu i wielkość liter dla wygody czytania.",
@@ -939,7 +955,11 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       qdrantUrl: "URL de Qdrant Cloud (opcional)",
       qdrantApiKey: "Clave API de Qdrant (opcional)",
       preferences: "Preferencias de interfaz",
-      language: "Idioma de la interfaz",
+      theme: "Tema de color",
+      themeDesc: "Alternar entre modo oscuro y claro",
+      themeDark: "Modo oscuro",
+      themeLight: "Modo claro",
+      language: "Idioma de la plataforma",
       languageDesc: "Seleccione el idioma principal para el panel y operaciones.",
       fontSize: "Escala de tipografía y densidad",
       fontSizeDesc: "Ajuste la densidad del texto y el tamaño de la fuente para mayor comodidad.",

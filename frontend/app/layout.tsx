@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 };
 
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -25,11 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark text-default" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground antialiased`} suppressHydrationWarning>
-        <LanguageProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </LanguageProvider>
+        </ThemeProvider>
         <Script
           src="https://scripts.simpleanalyticscdn.com/latest.js"
           strategy="afterInteractive"

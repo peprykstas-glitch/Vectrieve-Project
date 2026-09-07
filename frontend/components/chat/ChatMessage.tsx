@@ -22,7 +22,7 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
 
   if (inline) {
     return (
-      <code className="text-indigo-300 bg-zinc-900 border border-white/5 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+      <code className="text-primary bg-secondary/80 border border-border px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
         {children}
       </code>
     );
@@ -142,19 +142,19 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
 
   // Standard code block
   return (
-    <div className="relative my-3 rounded-xl overflow-hidden border border-white/10 bg-zinc-950/80 shadow-md">
-      <div className="flex items-center justify-between px-3.5 py-1.5 bg-zinc-900/60 border-b border-white/5 text-xs text-zinc-400">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+    <div className="relative my-3 rounded-xl overflow-hidden border border-border bg-card shadow-md">
+      <div className="flex items-center justify-between px-3.5 py-1.5 bg-muted/60 border-b border-border text-xs text-muted-foreground">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           {lang || "Code"}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer border-0 bg-transparent"
+          className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer border-0 bg-transparent"
         >
           {copied ? (
             <>
-              <Check className="w-3 h-3 text-emerald-400" />
-              <span className="text-emerald-400">Copied</span>
+              <Check className="w-3 h-3 text-emerald-500" />
+              <span className="text-emerald-500">Copied</span>
             </>
           ) : (
             <>
@@ -164,7 +164,7 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
           )}
         </button>
       </div>
-      <div className="p-3.5 overflow-x-auto custom-scrollbar font-mono text-xs leading-relaxed text-zinc-200">
+      <div className="p-3.5 overflow-x-auto custom-scrollbar font-mono text-xs leading-relaxed text-foreground/90">
         {textContent}
       </div>
     </div>
@@ -174,20 +174,20 @@ function CodeBlock({ node, inline, className, children, ...props }: any) {
 function Citation({ src }: { src: Source }) {
   const [isOpen, setIsOpen] = React.useState(false);
   return (
-    <div className="bg-zinc-900/40 border border-white/5 rounded-xl text-xs text-zinc-300 overflow-hidden transition-all duration-200 hover:border-zinc-700/50">
+    <div className="bg-card/70 border border-border rounded-xl text-xs text-foreground/80 overflow-hidden transition-all duration-200 hover:border-primary/30">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-2.5 text-left font-medium select-none flex items-center justify-between hover:bg-zinc-800/30 transition-colors border-0 bg-transparent cursor-pointer"
+        className="w-full p-2.5 text-left font-medium select-none flex items-center justify-between hover:bg-accent/40 transition-colors border-0 bg-transparent cursor-pointer"
       >
         <span className="flex items-center gap-2 truncate">
-          <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" /> 
-          <span className="truncate max-w-[220px] sm:max-w-sm text-zinc-300 text-xs">{src.filename}</span>
+          <FileText className="w-3.5 h-3.5 text-primary shrink-0" /> 
+          <span className="truncate max-w-[220px] sm:max-w-sm text-foreground/90 text-xs">{src.filename}</span>
         </span>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-zinc-500 text-[10px] bg-zinc-950 border border-white/5 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-muted-foreground text-[10px] bg-muted border border-border px-2 py-0.5 rounded-full font-semibold">
             Score: {src.score.toFixed(2)}
           </span>
-          <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
         </div>
       </button>
       <AnimatePresence initial={false}>
@@ -197,9 +197,9 @@ function Citation({ src }: { src: Source }) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-white/5 bg-zinc-950/60"
+            className="overflow-hidden border-t border-border bg-muted/30"
           >
-            <div className="p-3 font-mono text-[11px] leading-relaxed text-zinc-400 max-h-40 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+            <div className="p-3 font-mono text-[11px] leading-relaxed text-muted-foreground max-h-40 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
               {src.content}
             </div>
           </motion.div>
@@ -256,28 +256,28 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
         }`}>
           {/* User Message: Clean bubble on the right */}
           {msg.role === "user" ? (
-            <div className="bg-zinc-800/90 border border-zinc-700/50 text-zinc-100 rounded-2xl rounded-tr-md px-4 py-2.5 text-sm leading-relaxed shadow-md">
+            <div className="bg-primary/10 border border-primary/20 text-foreground rounded-2xl rounded-tr-md px-4 py-2.5 text-sm leading-relaxed shadow-sm">
               <div className="whitespace-pre-wrap font-normal">{msg.content}</div>
             </div>
           ) : (
             /* Assistant Message: Clean, open, transparent page flow */
-            <div className="w-full text-zinc-200 leading-relaxed">
+            <div className="w-full text-foreground leading-relaxed">
               {isThinking ? (
                 /* Bouncing Dots Thinking State (GPU-Accelerated CSS — Starts Instantly on 1st Query) */
                 <div className="flex gap-2 items-center justify-start py-2.5 px-0.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400/90 shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-typing-dot-1" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400/90 shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-typing-dot-2" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400/90 shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-typing-dot-3" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/60 animate-typing-dot-1" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/60 animate-typing-dot-2" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/60 animate-typing-dot-3" />
                 </div>
               ) : (
                 <>
                   {reasoning && (
-                    <details className="mb-3 bg-zinc-900/40 border border-zinc-800/60 rounded-xl overflow-hidden group/think" open={msg.isStreaming}>
-                      <summary className="px-3.5 py-1.5 text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 cursor-pointer select-none flex items-center gap-2 outline-none bg-zinc-900/20">
-                        <BrainCircuit className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+                    <details className="mb-3 bg-muted/40 border border-border rounded-xl overflow-hidden group/think" open={msg.isStreaming}>
+                      <summary className="px-3.5 py-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer select-none flex items-center gap-2 outline-none bg-muted/20">
+                        <BrainCircuit className="w-3.5 h-3.5 text-primary animate-pulse" />
                         <span>{msg.isStreaming && !rawContent.includes("</think>") ? "Thinking..." : "Thought Process"}</span>
                       </summary>
-                      <div className="px-3.5 pb-3 pt-2 text-xs leading-relaxed text-zinc-400 font-mono italic whitespace-pre-wrap border-t border-zinc-800/30">
+                      <div className="px-3.5 pb-3 pt-2 text-xs leading-relaxed text-muted-foreground font-mono italic whitespace-pre-wrap border-t border-border">
                         {reasoning}
                       </div>
                     </details>
@@ -337,13 +337,13 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
 
           {/* RAG Citations (Subtle chips at the bottom) */}
           {msg.sources && msg.sources.length > 0 && (
-            <div className="mt-3.5 flex flex-col gap-2 w-full pt-2 border-t border-white/5">
-              <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center justify-between">
+            <div className="mt-3.5 flex flex-col gap-2 w-full pt-2 border-t border-border">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
                 <span>Verified Sources ({msg.sources.length})</span>
                 {msg.sources.length > 2 && (
                   <button 
                     onClick={() => setShowAllSources(!showAllSources)}
-                    className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors border-0 bg-transparent cursor-pointer"
+                    className="text-[10px] text-primary hover:opacity-80 transition-colors border-0 bg-transparent cursor-pointer"
                   >
                     {showAllSources ? "Show less" : `+${msg.sources.length - 2} more`}
                   </button>

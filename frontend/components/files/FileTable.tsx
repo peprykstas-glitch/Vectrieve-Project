@@ -40,9 +40,9 @@ export function FileTable({
   const allFilteredSelected = files.length > 0 && files.every(f => selectedFileIds.has(f.id));
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-md shadow-2xl relative">
+    <div className="rounded-xl border border-border bg-card shadow-sm relative">
       <table className="w-full text-left text-sm whitespace-nowrap">
-        <thead className="uppercase tracking-wider border-b border-zinc-800 bg-zinc-900/80 text-[10px] text-zinc-500 font-bold">
+        <thead className="uppercase tracking-wider border-b border-border bg-muted/50 text-[10px] text-muted-foreground font-bold">
           <tr>
             <th className="px-6 py-4 w-12 text-center">
               <label className="relative flex h-4 w-4 cursor-pointer items-center justify-center mx-auto">
@@ -53,8 +53,8 @@ export function FileTable({
                   aria-label="Select all files" 
                   className="sr-only peer"
                 />
-                <div className="w-4 h-4 rounded border border-zinc-700 bg-zinc-900/50 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors flex items-center justify-center">
-                  <Check className="w-2.5 h-2.5 text-white hidden peer-checked:block" />
+                <div className="w-4 h-4 rounded border border-border bg-background peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-primary-foreground hidden peer-checked:block" />
                 </div>
               </label>
             </th>
@@ -66,13 +66,13 @@ export function FileTable({
             <th className="px-6 py-4 text-right">{t.files.colActions}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800/50">
+        <tbody className="divide-y divide-border">
           {files.map((file, idx) => {
             const ext = file.filename.split('.').pop()?.toUpperCase() || 'FILE';
             const dateStr = new Date(file.upload_timestamp).toLocaleString();
             const isNearBottom = idx >= files.length - 2 && files.length > 3;
             return (
-              <tr key={file.id} className="hover:bg-zinc-800/30 transition-colors group">
+              <tr key={file.id} className="hover:bg-accent/40 transition-colors group">
                 <td className="px-6 py-4 w-12 text-center">
                   <label className="relative flex h-4 w-4 cursor-pointer items-center justify-center mx-auto">
                     <input 
@@ -82,8 +82,8 @@ export function FileTable({
                       aria-label={`Select ${file.filename}`} 
                       className="sr-only peer"
                     />
-                    <div className="w-4 h-4 rounded border border-zinc-700 bg-zinc-900/50 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-white hidden peer-checked:block" />
+                    <div className="w-4 h-4 rounded border border-border bg-background peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-primary-foreground hidden peer-checked:block" />
                     </div>
                   </label>
                 </td>
@@ -91,12 +91,12 @@ export function FileTable({
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg border flex-shrink-0 transition-colors ${
                       ['MP3', 'WAV', 'M4A', 'OGG', 'AAC', 'FLAC'].includes(ext)
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 group-hover:border-amber-500/40'
+                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 group-hover:border-amber-500/40'
                         : ['MP4', 'MOV', 'MKV', 'WEBM', 'AVI'].includes(ext)
-                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 group-hover:border-purple-500/40'
+                        ? 'bg-purple-500/10 text-purple-500 border-purple-500/20 group-hover:border-purple-500/40'
                         : ['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext)
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:border-emerald-500/40'
-                        : 'bg-blue-500/10 text-blue-400 border-blue-500/20 group-hover:border-blue-500/40'
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 group-hover:border-emerald-500/40'
+                        : 'bg-primary/10 text-primary border-primary/20 group-hover:border-primary/40'
                     }`}>
                       {['MP3', 'WAV', 'M4A', 'OGG', 'AAC', 'FLAC'].includes(ext) ? (
                         <Music className="w-4 h-4" />
@@ -108,41 +108,41 @@ export function FileTable({
                         <FileText className="w-4 h-4" />
                       )}
                     </div>
-                    <span className="font-medium text-zinc-200 truncate">{file.filename}</span>
+                    <span className="font-medium text-foreground truncate">{file.filename}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-zinc-400">
-                  <span className="bg-zinc-800 text-[11px] px-2 py-0.5 rounded-md border border-zinc-700">{ext}</span>
+                <td className="px-6 py-4 text-muted-foreground">
+                  <span className="bg-muted text-[11px] px-2 py-0.5 rounded-md border border-border text-foreground/80">{ext}</span>
                 </td>
-                <td className="px-6 py-4 text-zinc-400 font-mono text-xs w-24">
+                <td className="px-6 py-4 text-muted-foreground font-mono text-xs w-24">
                   {file.file_size ? `${(file.file_size / (1024 * 1024) >= 1) ? (file.file_size / (1024 * 1024)).toFixed(1) + ' MB' : (file.file_size / 1024).toFixed(1) + ' KB'}` : '-'}
                 </td>
                 <td className="px-6 py-4 w-32">
                   {file.status === 'COMPLETED' ? (
                     <div className="inline-flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                      <span className="text-emerald-400 text-[11px] uppercase tracking-wider font-bold leading-none">{t.files.statusReady}</span>
+                      <span className="text-emerald-500 dark:text-emerald-400 text-[11px] uppercase tracking-wider font-bold leading-none">{t.files.statusReady}</span>
                     </div>
                   ) : file.status === 'FAILED' ? (
                     <div className="inline-flex items-center gap-2" title={file.error_log}>
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                      <span className="text-red-400 text-[11px] uppercase tracking-wider font-bold leading-none cursor-help">{t.files.statusFailed}</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0" />
+                      <span className="text-destructive text-[11px] uppercase tracking-wider font-bold leading-none cursor-help">{t.files.statusFailed}</span>
                     </div>
                   ) : (
                     <div className="inline-flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse flex-shrink-0" />
-                      <span className="text-indigo-400 text-[11px] uppercase tracking-wider font-bold leading-none">{t.files.statusProcessing}</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse flex-shrink-0" />
+                      <span className="text-primary text-[11px] uppercase tracking-wider font-bold leading-none">{t.files.statusProcessing}</span>
                     </div>
                   )}
                 </td>
-                <td className="px-6 py-4 text-zinc-500 text-xs">{dateStr}</td>
+                <td className="px-6 py-4 text-muted-foreground text-xs">{dateStr}</td>
                 <td className="px-6 py-4 text-right relative">
                   <Button 
                     onClick={() => setActiveDropdown(activeDropdown === file.id ? null : file.id)}
                     aria-label={`More actions for ${file.filename}`} 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 text-zinc-500 hover:text-white rounded-lg focus:bg-zinc-800"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg focus:bg-accent"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </Button>
@@ -150,29 +150,29 @@ export function FileTable({
                   {/* Custom Native Dropdown Menu */}
                   {activeDropdown === file.id && (
                     <div 
-                      className={`absolute right-6 z-50 w-48 rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col p-1 ${isNearBottom ? "bottom-10" : "top-10"}`}
+                      className={`absolute right-6 z-50 w-48 rounded-xl border border-border bg-card shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col p-1 ${isNearBottom ? "bottom-10" : "top-10"}`}
                       onMouseDown={(e) => e.stopPropagation()}
                     >
                       <button 
                         onMouseDown={(e) => { e.stopPropagation(); setViewDetailsDoc(file); setActiveDropdown(null); }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:bg-accent hover:text-foreground rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
                         <Eye className="w-4 h-4" /> {t.common.view}
                       </button>
                       <button 
                         onMouseDown={(e) => { e.stopPropagation(); handleReindex(file.id); setActiveDropdown(null); }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:bg-accent hover:text-foreground rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
                         <RefreshCw className="w-4 h-4" /> {t.files.reindex}
                       </button>
-                      <div className="h-px bg-zinc-800 my-1" />
+                      <div className="h-px bg-border my-1" />
                       <button 
                         onMouseDown={(e) => { 
                           e.stopPropagation(); 
                           handleDelete(file.id); 
                           setActiveDropdown(null); 
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-left cursor-pointer border-0 bg-transparent"
                       >
                         <Trash2 className="w-4 h-4" /> {t.common.delete}
                       </button>
@@ -188,7 +188,7 @@ export function FileTable({
       {/* Empty Search State */}
       {files.length === 0 && (
         <div className="py-16 text-center">
-          <p className="text-zinc-500 text-sm">No files matching &quot;{searchQuery}&quot; found.</p>
+          <p className="text-muted-foreground text-sm">No files matching &quot;{searchQuery}&quot; found.</p>
         </div>
       )}
     </div>

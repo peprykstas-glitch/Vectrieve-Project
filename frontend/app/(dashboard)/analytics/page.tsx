@@ -250,11 +250,11 @@ export default function AnalyticsPage() {
   if (isAdmin === false) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-8">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center mb-4">
-          <ShieldCheck className="w-8 h-8 text-zinc-500" />
+        <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-4">
+          <ShieldCheck className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Restricted Area</h2>
-        <p className="text-zinc-500 text-sm max-w-sm mb-6">
+        <h2 className="text-xl font-bold text-foreground mb-2">Restricted Area</h2>
+        <p className="text-muted-foreground text-sm max-w-sm mb-6">
           Analytics and user administration are restricted to system administrators.
         </p>
       </div>
@@ -269,16 +269,16 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100 font-sans overflow-y-auto custom-scrollbar">
+    <div className="flex flex-col h-full w-full bg-background text-foreground font-sans overflow-y-auto custom-scrollbar">
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-4 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-900 shrink-0">
+      <header className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-4 bg-background/90 backdrop-blur-md border-b border-border shrink-0">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white flex items-center gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-indigo-400" />
+          <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-primary" />
             {t.nav.analytics}
           </h1>
           {lastRefresh && (
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {t.analytics.title} &bull; {lastRefresh.toLocaleTimeString()}
             </p>
           )}
@@ -286,15 +286,15 @@ export default function AnalyticsPage() {
 
         <div className="flex items-center gap-2">
           {/* Period selector */}
-          <div className="flex items-center bg-zinc-900 border border-white/5 rounded-lg p-0.5 gap-0.5">
+          <div className="flex items-center bg-card border border-border rounded-lg p-0.5 gap-0.5">
             {periods.map(p => (
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
                 className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer ${
                   period === p.value
-                    ? "bg-indigo-600 text-white shadow"
-                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
                 {p.label}
@@ -307,7 +307,7 @@ export default function AnalyticsPage() {
             onClick={() => fetchData(period)}
             disabled={isLoading}
             title="Refresh"
-            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/5 transition-all cursor-pointer disabled:opacity-40"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent border border-border transition-all cursor-pointer disabled:opacity-40"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
           </button>
@@ -316,7 +316,7 @@ export default function AnalyticsPage() {
           {data && (
             <button
               onClick={() => exportMarkdown(data, period)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg border border-white/5 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg border border-border transition-all cursor-pointer"
             >
               <Download className="w-3 h-3" />
               Export .md
@@ -330,7 +330,7 @@ export default function AnalyticsPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
             <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-            <p className="text-zinc-500 text-xs">Loading metrics...</p>
+            <p className="text-muted-foreground text-xs">Loading metrics...</p>
           </div>
         ) : error ? (
           <div className="p-8 rounded-2xl bg-red-950/20 border border-red-900/30 text-center max-w-md mx-auto space-y-4">
@@ -393,34 +393,34 @@ export default function AnalyticsPage() {
                   sub: `since ${new Date(data.server.started_at).toLocaleDateString()}`,
                 },
               ].map((card, i) => (
-                <div key={i} className="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 hover:bg-zinc-900/70 transition-colors">
+                <div key={i} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{card.label}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{card.label}</span>
                     <div className={`w-7 h-7 ${card.bg} rounded-lg flex items-center justify-center`}>
                       <card.icon className={`w-3.5 h-3.5 ${card.color}`} />
                     </div>
                   </div>
-                  <p className="text-xl font-bold text-white tracking-tight">{card.value}</p>
-                  <p className="text-[10px] text-zinc-500 mt-1">{card.sub}</p>
+                  <p className="text-xl font-bold text-foreground tracking-tight">{card.value}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{card.sub}</p>
                 </div>
               ))}
             </div>
 
             {/* ── DAILY AREA CHART ── */}
-            <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-6">
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-[14px] font-semibold text-white flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-400" />
+                  <h2 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-primary" />
                     {t.analytics.dailyUsageTrend}
                   </h2>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">{t.analytics.dailyUsageDesc}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{t.analytics.dailyUsageDesc}</p>
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-medium">
-                  <span className="flex items-center gap-1.5 text-zinc-400">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />{t.analytics.queriesLegend}
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2 h-2 rounded-full bg-primary" />{t.analytics.queriesLegend}
                   </span>
-                  <span className="flex items-center gap-1.5 text-zinc-400">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
                     <span className="w-2 h-2 rounded-full bg-purple-500" />{t.analytics.docsLegend}
                   </span>
                 </div>
@@ -432,20 +432,20 @@ export default function AnalyticsPage() {
                     <AreaChart data={data.daily_series} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="queriesGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="docsGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                      <XAxis dataKey="date" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                      <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area type="monotone" dataKey="queries" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#queriesGrad)" />
-                      <Area type="monotone" dataKey="docs" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#docsGrad)" />
+                      <Area type="monotone" dataKey="queries" stroke="#818cf8" strokeWidth={2} fillOpacity={1} fill="url(#queriesGrad)" />
+                      <Area type="monotone" dataKey="docs" stroke="#a855f7" strokeWidth={2} fillOpacity={1} fill="url(#docsGrad)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -454,8 +454,8 @@ export default function AnalyticsPage() {
 
             {/* ── LATENCY BREAKDOWN & SYSTEM THROUGHPUT ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 bg-zinc-900/30 border border-white/5 rounded-3xl p-6">
-                <h3 className="text-[14px] font-semibold text-white flex items-center gap-2 mb-4">
+              <div className="lg:col-span-2 bg-card border border-border rounded-3xl p-6 shadow-sm">
+                <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2 mb-4">
                   <Clock className="w-4 h-4 text-orange-400" />
                   {t.analytics.ragLatencyBreakdown}
                 </h3>
@@ -471,12 +471,12 @@ export default function AnalyticsPage() {
                     return (
                       <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between text-xs">
-                          <span className="text-zinc-400">{item.label}</span>
-                          <span className="font-mono font-medium text-zinc-200">
+                          <span className="text-muted-foreground">{item.label}</span>
+                          <span className="font-mono font-medium text-foreground/90">
                             {item.ms ? `${(item.val * 1000).toFixed(0)} ms` : `${item.val.toFixed(2)} s`}
                           </span>
                         </div>
-                        <div className="w-full bg-zinc-800/80 rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                           <div
                             className={`h-full bg-gradient-to-r ${item.color} rounded-full transition-all duration-700`}
                             style={{ width: `${pct}%` }}
@@ -490,9 +490,9 @@ export default function AnalyticsPage() {
 
               {/* DB Pool + LLM Throughput */}
               <div className="flex flex-col gap-4">
-                <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-5 flex-1">
-                  <h3 className="text-[13px] font-semibold text-white flex items-center gap-2 mb-4">
-                    <Server className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="bg-card border border-border rounded-3xl p-5 flex-1 shadow-sm">
+                  <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2 mb-4">
+                    <Server className="w-3.5 h-3.5 text-emerald-500" />
                     {t.analytics.dbPoolTitle}
                   </h3>
                   <div className="space-y-2.5 text-xs">
@@ -503,12 +503,12 @@ export default function AnalyticsPage() {
                       { label: t.analytics.poolOverflow, val: Math.max(0, data.telemetry.pool.overflow ?? 0) },
                     ].map((r, i) => (
                       <div key={i} className="flex justify-between">
-                        <span className="text-zinc-400">{r.label}</span>
-                        <span className="font-semibold text-white">{r.val}</span>
+                        <span className="text-muted-foreground">{r.label}</span>
+                        <span className="font-semibold text-foreground">{r.val}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden mt-3">
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-3">
                     <div
                       className="h-full bg-emerald-500 rounded-full transition-all"
                       style={{ width: `${Math.min((data.telemetry.pool.checked_out / (data.telemetry.pool.size || 10)) * 100, 100)}%` }}
@@ -516,22 +516,22 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-5 flex-1">
-                  <h3 className="text-[13px] font-semibold text-white flex items-center gap-2 mb-4">
+                <div className="bg-card border border-border rounded-3xl p-5 flex-1 shadow-sm">
+                  <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2 mb-4">
                     <Zap className="w-3.5 h-3.5 text-yellow-400" />
                     {t.analytics.llmThroughput}
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5">{t.analytics.avgGenSpeed}</p>
-                      <p className="text-2xl font-bold text-white">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-0.5">{t.analytics.avgGenSpeed}</p>
+                      <p className="text-2xl font-bold text-foreground">
                         {data.telemetry.tokens_per_second_avg.toFixed(1)}
-                        <span className="text-sm font-medium text-zinc-400 ml-1">t/s</span>
+                        <span className="text-sm font-medium text-muted-foreground ml-1">t/s</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5">{t.analytics.totalTokensGen}</p>
-                      <p className="text-lg font-bold text-white">{data.telemetry.tokens_generated_total.toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-0.5">{t.analytics.totalTokensGen}</p>
+                      <p className="text-lg font-bold text-foreground">{data.telemetry.tokens_generated_total.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -539,23 +539,23 @@ export default function AnalyticsPage() {
             </div>
 
             {/* ─── USER ONBOARDING & ACCESS CONTROL ───────────────────────────── */}
-            <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-6 space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+            <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
                 <div>
-                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
                     {t.analytics.userManagement}
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {t.analytics.userManagementDesc}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 font-medium">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
                     {t.analytics.totalRegistered}: {users.length}
                   </span>
                   {users.filter(u => !u.is_approved).length > 0 && (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-medium animate-pulse">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 font-medium animate-pulse">
                       {users.filter(u => !u.is_approved).length} {t.analytics.pendingApproval}
                     </span>
                   )}
@@ -563,12 +563,12 @@ export default function AnalyticsPage() {
               </div>
 
               {users.length === 0 ? (
-                <p className="text-xs text-zinc-500 py-4 text-center">No registered users found.</p>
+                <p className="text-xs text-muted-foreground py-4 text-center">No registered users found.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-white/5 text-zinc-500 font-medium uppercase tracking-wider text-[10px]">
+                      <tr className="border-b border-border text-muted-foreground font-medium uppercase tracking-wider text-[10px]">
                         <th className="pb-3 pl-2">{t.analytics.colEmail}</th>
                         <th className="pb-3">{t.analytics.colRole}</th>
                         <th className="pb-3">{t.analytics.colApproval}</th>
@@ -577,31 +577,31 @@ export default function AnalyticsPage() {
                         <th className="pb-3 text-right pr-2">{t.analytics.colActions}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-border">
                       {users.map((u) => (
-                        <tr key={u.id} className="hover:bg-zinc-800/20 transition-colors">
-                          <td className="py-3.5 pl-2 font-mono text-zinc-200">
+                        <tr key={u.id} className="hover:bg-accent/40 transition-colors">
+                          <td className="py-3.5 pl-2 font-mono text-foreground/90">
                             {u.username}
                           </td>
                           <td className="py-3.5">
                             {u.is_admin ? (
-                              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-semibold text-[10px]">
+                              <span className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-semibold text-[10px]">
                                 {t.analytics.roleAdmin}
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px]">
+                              <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px]">
                                 {t.analytics.roleUser}
                               </span>
                             )}
                           </td>
                           <td className="py-3.5">
                             {u.is_approved ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
                                 <CheckCircle2 className="w-3 h-3" />
                                 {t.analytics.approved}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-medium">
                                 <AlertCircle className="w-3 h-3" />
                                 {t.analytics.pending}
                               </span>
@@ -609,12 +609,12 @@ export default function AnalyticsPage() {
                           </td>
                           <td className="py-3.5">
                             {u.is_active ? (
-                              <span className="text-zinc-300">{t.analytics.active}</span>
+                              <span className="text-foreground/80">{t.analytics.active}</span>
                             ) : (
-                              <span className="text-red-400 font-medium">{t.analytics.suspended}</span>
+                              <span className="text-destructive font-medium">{t.analytics.suspended}</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center text-zinc-400 font-mono">
+                          <td className="py-3.5 text-center text-muted-foreground font-mono">
                             {u.documents_count}
                           </td>
                           <td className="py-3.5 text-right pr-2 space-x-2">
@@ -622,7 +622,7 @@ export default function AnalyticsPage() {
                               <button
                                 onClick={() => handleApprove(u.id)}
                                 disabled={actionLoading === u.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black font-semibold text-[11px] border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-600 dark:text-emerald-300 hover:text-white font-semibold text-[11px] border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50"
                               >
                                 <UserCheck className="w-3 h-3" />
                                 {t.analytics.approve}
@@ -633,16 +633,16 @@ export default function AnalyticsPage() {
                                 <button
                                   onClick={() => handleToggleActive(u.id)}
                                   disabled={actionLoading === u.id}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground text-[11px] transition-colors cursor-pointer disabled:opacity-50"
                                   title={u.is_active ? "Suspend account" : "Re-activate account"}
                                 >
-                                  {u.is_active ? <UserX className="w-3 h-3 text-amber-400" /> : <UserCheck className="w-3 h-3 text-emerald-400" />}
+                                  {u.is_active ? <UserX className="w-3 h-3 text-amber-500" /> : <UserCheck className="w-3 h-3 text-emerald-500" />}
                                   {u.is_active ? t.analytics.suspend : t.analytics.activate}
                                 </button>
                                 <button
                                   onClick={() => handleDeleteUser(u.id, u.username)}
                                   disabled={actionLoading === u.id}
-                                  className="inline-flex items-center p-1 rounded-lg hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-50"
+                                  className="inline-flex items-center p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer disabled:opacity-50"
                                   title="Delete user"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -659,31 +659,31 @@ export default function AnalyticsPage() {
             </div>
 
             {/* ─── USER FEEDBACK & FEATURE REQUESTS BOARD ──────────────────────── */}
-            <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-6 space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+            <div className="bg-card border border-border rounded-3xl p-6 space-y-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
                 <div>
-                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-indigo-400" />
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-primary" />
                     {t.analytics.feedbackBoard}
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     User-submitted feature suggestions, optimization ideas, and bug reports.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 font-medium">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
                     Total: {feedbackList.length}
                   </span>
                 </div>
               </div>
 
               {feedbackList.length === 0 ? (
-                <p className="text-xs text-zinc-500 py-6 text-center">{t.analytics.noFeedback}</p>
+                <p className="text-xs text-muted-foreground py-6 text-center">{t.analytics.noFeedback}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-white/5 text-zinc-500 font-medium uppercase tracking-wider text-[10px]">
+                      <tr className="border-b border-border text-muted-foreground font-medium uppercase tracking-wider text-[10px]">
                         <th className="pb-3 pl-2">{t.common.type}</th>
                         <th className="pb-3">{t.analytics.colEmail}</th>
                         <th className="pb-3">Message</th>
@@ -692,40 +692,40 @@ export default function AnalyticsPage() {
                         <th className="pb-3 text-right pr-2">{t.analytics.colActions}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-border">
                       {feedbackList.map((item) => (
-                        <tr key={item.id} className="hover:bg-zinc-800/20 transition-colors">
+                        <tr key={item.id} className="hover:bg-accent/40 transition-colors">
                           <td className="py-3.5 pl-2">
                             {item.type === "IDEA" ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold text-[10px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 font-semibold text-[10px]">
                                 <Lightbulb className="w-3 h-3" /> {t.feedback.tabIdea}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 font-semibold text-[10px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive font-semibold text-[10px]">
                                 <Bug className="w-3 h-3" /> {t.feedback.tabBug}
                               </span>
                             )}
                           </td>
-                          <td className="py-3.5 font-mono text-zinc-300">
+                          <td className="py-3.5 font-mono text-foreground/80">
                             {item.user_email || `User #${item.user_id}`}
                           </td>
-                          <td className="py-3.5 text-zinc-200 max-w-md break-words">
+                          <td className="py-3.5 text-foreground/90 max-w-md break-words">
                             {item.message}
                           </td>
-                          <td className="py-3.5 text-zinc-500 whitespace-nowrap">
+                          <td className="py-3.5 text-muted-foreground whitespace-nowrap">
                             {new Date(item.created_at).toLocaleDateString()}
                           </td>
                           <td className="py-3.5">
                             {item.status === "RESOLVED" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
                                 <Check className="w-3 h-3" /> {t.analytics.statusResolved}
                               </span>
                             ) : item.status === "IN_PROGRESS" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[11px] font-medium">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-medium">
                                 <Clock className="w-3 h-3" /> {t.analytics.statusInProgress}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[11px]">
                                 {t.analytics.statusNew}
                               </span>
                             )}
@@ -734,7 +734,7 @@ export default function AnalyticsPage() {
                             {item.status !== "IN_PROGRESS" && item.status !== "RESOLVED" && (
                               <button
                                 onClick={() => handleUpdateFeedbackStatus(item.id, "IN_PROGRESS")}
-                                className="px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-indigo-300 text-[11px] transition-colors cursor-pointer"
+                                className="px-2 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-primary text-[11px] transition-colors cursor-pointer"
                               >
                                 {t.analytics.markInProgress}
                               </button>
@@ -742,14 +742,14 @@ export default function AnalyticsPage() {
                             {item.status !== "RESOLVED" && (
                               <button
                                 onClick={() => handleUpdateFeedbackStatus(item.id, "RESOLVED")}
-                                className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[11px] transition-colors cursor-pointer"
+                                className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] transition-colors cursor-pointer"
                               >
                                 {t.analytics.markResolved}
                               </button>
                             )}
                             <button
                               onClick={() => handleDeleteFeedback(item.id)}
-                              className="p-1 rounded-lg hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
                               title="Delete"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

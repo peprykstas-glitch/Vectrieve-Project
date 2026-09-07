@@ -25,10 +25,10 @@ export default function PrivacyPolicyPage() {
 
         <div className="flex items-center gap-3 mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-icon.png" alt="Neurach" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.4)]" />
+          <img src="/logo-icon.png" alt="Neurach" className="h-9 w-9 object-contain drop-shadow-[0_2px_8px_rgba(99,102,241,0.25)]" />
           <div className="flex items-center gap-2 font-bold tracking-tight">
             <span className="text-2xl font-bold tracking-tight text-white">Neurach</span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">PRIVACY</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">PRIVACY</span>
           </div>
         </div>
 
@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
 
           <section className="space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <EyeOff className="w-4 h-4 text-cyan-400" />
+              <EyeOff className="w-4 h-4 text-indigo-400" />
               2. Absolute Zero Model Training Guarantee
             </h2>
             <div className="grid md:grid-cols-2 gap-4">

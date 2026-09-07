@@ -71,30 +71,30 @@ export function SpaceSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-lg bg-zinc-950 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10"
+        className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10"
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/5 bg-zinc-900/40">
+        <div className="flex items-center justify-between p-5 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white tracking-tight">
+              <h3 className="text-base font-semibold text-foreground tracking-tight">
                 {t.nav.spaceSettings}
               </h3>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 {space.name}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors border-0 bg-transparent cursor-pointer"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors border-0 bg-transparent cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -103,14 +103,14 @@ export function SpaceSettingsModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
           {errorMsg && (
-            <div className="flex items-center gap-2 p-3 bg-red-950/30 border border-red-900/40 rounded-xl text-xs text-red-400">
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-xs text-destructive">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="flex items-center gap-2 p-3 bg-emerald-950/30 border border-emerald-900/40 rounded-xl text-xs text-emerald-400">
+            <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-600 dark:text-emerald-400">
               <Check className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
@@ -118,7 +118,7 @@ export function SpaceSettingsModal({
 
           {/* Space Name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">
+            <label className="text-xs font-semibold text-foreground/80">
               {t.spaces.createTitle}
             </label>
             <input
@@ -126,7 +126,7 @@ export function SpaceSettingsModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t.spaces.namePlaceholder}
-              className="w-full bg-zinc-900/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
               required
             />
           </div>
@@ -134,8 +134,8 @@ export function SpaceSettingsModal({
           {/* System Instructions / Prompt */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <label className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 {t.spaces.promptTitle}
               </label>
             </div>
@@ -144,27 +144,27 @@ export function SpaceSettingsModal({
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder={t.spaces.promptPlaceholder}
               rows={7}
-              className="w-full bg-zinc-900/70 border border-white/10 rounded-xl p-3.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 leading-relaxed custom-scrollbar resize-none font-mono"
+              className="w-full bg-background border border-border rounded-xl p-3.5 text-xs text-foreground/90 focus:outline-none focus:border-primary leading-relaxed custom-scrollbar resize-none font-mono"
             />
-            <p className="text-[11px] text-zinc-500 leading-normal">
+            <p className="text-[11px] text-muted-foreground leading-normal">
               {t.spaces.promptTip}
             </p>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/5">
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent"
+              className="px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-colors cursor-pointer border-0 bg-transparent"
             >
               {t.common.cancel}
             </button>
             <button
               type="submit"
               disabled={isSaving || !name.trim()}
-              className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-950/50 transition-all flex items-center gap-1.5 cursor-pointer border-0 disabled:opacity-50"
+              className="px-4 py-2 text-xs font-semibold bg-primary hover:opacity-90 text-primary-foreground rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer border-0 disabled:opacity-50"
             >
               {isSaving ? (
                 <>

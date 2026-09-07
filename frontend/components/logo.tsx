@@ -29,14 +29,14 @@ export function Logo({ className = "", iconOnly = false, size = "md", href }: Lo
       <img
         src="/logo-icon.png"
         alt="Neurach Icon"
-        className={`${iconSizes[size]} object-contain drop-shadow-[0_0_12px_rgba(0,212,255,0.35)] transition-transform duration-200 hover:scale-105`}
+        className={`${iconSizes[size]} object-contain drop-shadow-[0_0_8px_rgba(129,140,248,0.25)] transition-transform duration-200 hover:scale-105`}
       />
       {!iconOnly && (
         <div className="flex items-center gap-1.5 font-bold tracking-tight">
-          <span className={`${textSizes[size]} text-white font-sans tracking-tight`}>
+          <span className={`${textSizes[size]} text-foreground font-sans tracking-tight`}>
             Neurach
           </span>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">
             AI
           </span>
         </div>

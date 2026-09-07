@@ -100,12 +100,11 @@ export function LoginForm() {
   }
 
   return (
-    // Implementation of the Vercel/Linear design language: glassmorphism, subtle borders, deep shadows
-    <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+    <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="space-y-2 pb-6">
-          <CardTitle className="text-xl text-white tracking-tight">Welcome back</CardTitle>
-          <CardDescription className="text-zinc-400 text-sm">
+          <CardTitle className="text-xl text-foreground tracking-tight">Welcome back</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
             Sign in to access your secure knowledge base and RAG assistant.
           </CardDescription>
         </CardHeader>
@@ -115,7 +114,7 @@ export function LoginForm() {
             type="button"
             onClick={handleGoogleSignIn}
             variant="outline"
-            className="w-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 border-zinc-700/60 hover:border-zinc-500 h-11 rounded-xl font-medium flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm"
+            className="w-full bg-muted/60 hover:bg-muted text-foreground border-border hover:border-primary/40 h-11 rounded-xl font-medium flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm"
           >
             <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -127,29 +126,29 @@ export function LoginForm() {
           </Button>
 
           <div className="relative my-5 flex items-center justify-center">
-            <div className="border-t border-zinc-800/80 w-full" />
-            <span className="bg-[#0e0e0e] px-3 text-[11px] font-medium text-zinc-500 uppercase tracking-widest shrink-0 rounded-full">
+            <div className="border-t border-border w-full" />
+            <span className="bg-card px-3 text-[11px] font-medium text-muted-foreground uppercase tracking-widest shrink-0 rounded-full">
               or continue with email
             </span>
-            <div className="border-t border-zinc-800/80 w-full" />
+            <div className="border-t border-border w-full" />
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               {/* Conditional rendering of global, non-field-specific errors */}
               {justRegistered && (
-                <div className="p-3 text-sm text-emerald-400 bg-emerald-950/30 border border-emerald-900/50 rounded-lg flex items-center gap-2">
+                <div className="p-3 text-sm text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   Workspace provisioned successfully. Sign in to continue.
                 </div>
               )}
               {sessionExpired && !globalError && (
-                <div className="p-3 text-sm text-amber-400 bg-amber-950/30 border border-amber-900/50 rounded-lg">
+                <div className="p-3 text-sm text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   Your session has expired. Please sign in again.
                 </div>
               )}
               {oauthError && !globalError && (
-                <div className="p-3 text-sm text-amber-400 bg-amber-950/30 border border-amber-900/50 rounded-lg">
+                <div className="p-3 text-sm text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   {oauthError === 'oauth_cancelled'
                     ? 'Google sign-in was cancelled.'
                     : oauthError === 'server_error'
@@ -158,7 +157,7 @@ export function LoginForm() {
                 </div>
               )}
               {globalError && (
-                <div className="p-3 text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg">
+                <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                   {globalError}
                 </div>
               )}
@@ -168,15 +167,15 @@ export function LoginForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Work Email</FormLabel>
+                    <FormLabel className="text-foreground text-xs font-medium">Work Email</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="name@company.com" 
-                        className="bg-[#121212] border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                        className="bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                         {...field} 
                       />
                     </FormControl>
-                    <FormMessage className="text-red-400 opacity-90" />
+                    <FormMessage className="text-destructive opacity-90" />
                   </FormItem>
                 )}
               />
@@ -187,19 +186,19 @@ export function LoginForm() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-zinc-300">Password</FormLabel>
-                      <a href="/forgot-password" className="text-xs text-zinc-500 hover:text-white transition-colors">
+                      <FormLabel className="text-foreground text-xs font-medium">Password</FormLabel>
+                      <a href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                         Forgot password?
                       </a>
                     </div>
                     <FormControl>
                       <Input 
                         type="password" 
-                        className="bg-[#121212] border-white/10 text-white focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                        className="bg-background border-border text-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                         {...field} 
                       />
                     </FormControl>
-                    <FormMessage className="text-red-400 opacity-90" />
+                    <FormMessage className="text-destructive opacity-90" />
                   </FormItem>
                 )}
               />
@@ -212,17 +211,17 @@ export function LoginForm() {
                 onExpire={handleExpire}
               />
 
-              {/* High contrast primary button with loading state micro-interactions */}
+              {/* Primary button with loading state micro-interactions */}
               <Button 
                 type="submit" 
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-all h-11 mt-2 rounded-xl font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting || !turnstileToken}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : !turnstileToken ? (
-                  <span className="flex items-center text-zinc-500 text-sm">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-500" />
+                  <span className="flex items-center text-muted-foreground text-sm">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
                     Verifying security...
                   </span>
                 ) : (
@@ -251,18 +250,18 @@ export function LoginForm() {
                     }
                   }}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-200 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
+                  className="w-full py-2.5 px-4 rounded-xl border border-border bg-accent/40 hover:bg-accent/70 text-foreground text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
                   <span>Explore Interactive Demo (Instant Access)</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-0.5 text-zinc-400" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5 text-muted-foreground" />
                 </button>
               </div>
             </form>
           </Form>
           <div className="mt-6 text-center">
-            <span className="text-sm text-zinc-500">Don&apos;t have an account? </span>
-            <a href="/register" className="text-sm text-white font-medium hover:underline underline-offset-4 transition-all">
+            <span className="text-sm text-muted-foreground">Don&apos;t have an account? </span>
+            <a href="/register" className="text-sm text-primary font-medium hover:underline underline-offset-4 transition-all">
               Sign up
             </a>
           </div>

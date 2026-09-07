@@ -11,31 +11,30 @@ export const metadata: Metadata = {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0a0a0a] selection:bg-white/20 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground relative overflow-hidden py-12 px-4 transition-colors">
       <div
-        className="absolute inset-0 z-0 opacity-20 pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #333 0%, transparent 50%)' }}
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/10 blur-[120px] rounded-full pointer-events-none"
       />
 
-      <div className="z-10 w-full max-w-md px-6 flex flex-col items-center">
+      <div className="z-10 w-full max-w-md flex flex-col items-center">
         <Link
           href="/login"
-          className="flex items-center gap-1.5 text-zinc-600 hover:text-zinc-400 text-sm mb-10 self-start transition-colors"
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-8 self-start transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Login
         </Link>
 
         <div className="flex items-center gap-2 mb-8">
-          <span className="text-2xl font-bold tracking-tight text-white font-sans">
+          <span className="text-2xl font-bold tracking-tight text-foreground font-sans">
             Neurach
           </span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 tracking-widest uppercase">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 tracking-widest uppercase">
             AI
           </span>
         </div>
 
-        <Suspense fallback={<div className="text-zinc-500 text-sm">Loading...</div>}>
+        <Suspense fallback={<div className="text-muted-foreground text-sm">Loading...</div>}>
           <ResetPasswordForm />
         </Suspense>
       </div>

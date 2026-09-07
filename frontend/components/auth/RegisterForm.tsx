@@ -86,11 +86,11 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+    <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="space-y-2 pb-6">
-          <CardTitle className="text-xl text-white tracking-tight">Provision Enterprise Workspace</CardTitle>
-          <CardDescription className="text-zinc-400 text-sm">
+          <CardTitle className="text-xl text-foreground tracking-tight">Provision Enterprise Workspace</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
             Establish a secure, isolated RAG environment for your organization.
           </CardDescription>
         </CardHeader>
@@ -102,7 +102,7 @@ export function RegisterForm() {
               window.location.href = '/api/auth/google/url';
             }}
             variant="outline"
-            className="w-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 border-zinc-700/60 hover:border-zinc-500 h-11 rounded-xl font-medium flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm"
+            className="w-full bg-muted/60 hover:bg-muted text-foreground border-border hover:border-primary/40 h-11 rounded-xl font-medium flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm"
           >
             <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -114,17 +114,17 @@ export function RegisterForm() {
           </Button>
 
           <div className="relative my-5 flex items-center justify-center">
-            <div className="border-t border-zinc-800/80 w-full" />
-            <span className="bg-[#0e0e0e] px-3 text-[11px] font-medium text-zinc-500 uppercase tracking-widest shrink-0 rounded-full">
+            <div className="border-t border-border w-full" />
+            <span className="bg-card px-3 text-[11px] font-medium text-muted-foreground uppercase tracking-widest shrink-0 rounded-full">
               or register with email
             </span>
-            <div className="border-t border-zinc-800/80 w-full" />
+            <div className="border-t border-border w-full" />
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               {globalError && (
-                <div className="p-3 text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg">
+                <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                   {globalError}
                 </div>
               )}
@@ -134,15 +134,15 @@ export function RegisterForm() {
                 name="fullName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Full Name</FormLabel>
+                    <FormLabel className="text-foreground text-xs font-medium">Full Name</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Jane Doe" 
-                        className="bg-[#121212] border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                        className="bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                         {...field} 
                       />
                     </FormControl>
-                    <FormMessage className="text-red-400 opacity-90 text-xs" />
+                    <FormMessage className="text-destructive opacity-90 text-xs" />
                   </FormItem>
                 )}
               />
@@ -154,15 +154,15 @@ export function RegisterForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-300">Corporate Email</FormLabel>
+                      <FormLabel className="text-foreground text-xs font-medium">Corporate Email</FormLabel>
                       <FormControl>
                         <Input 
                           placeholder="jane@company.com" 
-                          className="bg-[#121212] border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                          className="bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                           {...field} 
                         />
                       </FormControl>
-                      <FormMessage className="text-red-400 opacity-90 text-xs" />
+                      <FormMessage className="text-destructive opacity-90 text-xs" />
                     </FormItem>
                   )}
                 />
@@ -172,18 +172,18 @@ export function RegisterForm() {
                   name="company"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-300">Organization <span className="text-zinc-600 text-xs">(Optional)</span></FormLabel>
+                      <FormLabel className="text-foreground text-xs font-medium">Organization <span className="text-muted-foreground text-xs">(Optional)</span></FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Building className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                          <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input 
                             placeholder="Acme Corp" 
-                            className="pl-9 bg-[#121212] border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                            className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                             {...field} 
                           />
                         </div>
                       </FormControl>
-                      <FormMessage className="text-red-400 opacity-90 text-xs" />
+                      <FormMessage className="text-destructive opacity-90 text-xs" />
                     </FormItem>
                   )}
                 />
@@ -194,18 +194,18 @@ export function RegisterForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Master Password</FormLabel>
+                    <FormLabel className="text-foreground text-xs font-medium">Master Password</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
-                        className="bg-[#121212] border-white/10 text-white focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                        className="bg-background border-border text-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                         {...field} 
                       />
                     </FormControl>
-                    <FormDescription className="text-zinc-600 text-xs mt-1">
+                    <FormDescription className="text-muted-foreground text-xs mt-1">
                       Strict cryptographic policy: Minimum 12 characters, uppercase, number, and special symbol.
                     </FormDescription>
-                    <FormMessage className="text-red-400 opacity-90 text-xs" />
+                    <FormMessage className="text-destructive opacity-90 text-xs" />
                   </FormItem>
                 )}
               />
@@ -220,14 +220,14 @@ export function RegisterForm() {
 
               <Button 
                 type="submit" 
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-all h-11 mt-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 disabled={isSubmitting || !turnstileToken}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : !turnstileToken ? (
-                  <span className="flex items-center text-zinc-500 text-sm">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-500" />
+                  <span className="flex items-center text-muted-foreground text-sm">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
                     Verifying security...
                   </span>
                 ) : (
@@ -237,8 +237,8 @@ export function RegisterForm() {
             </form>
           </Form>
           <div className="mt-6 text-center">
-            <span className="text-sm text-zinc-500">Already possess an active workspace? </span>
-            <a href="/login" className="text-sm text-white hover:underline underline-offset-4 transition-all">
+            <span className="text-sm text-muted-foreground">Already possess an active workspace? </span>
+            <a href="/login" className="text-sm text-primary font-medium hover:underline underline-offset-4 transition-all">
               Sign in securely
             </a>
           </div>

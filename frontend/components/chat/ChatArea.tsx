@@ -228,7 +228,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
             ? "bg-red-500/10 text-red-400 border-red-500/25 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
             : trialRemaining <= 8
               ? "bg-amber-500/10 text-amber-400 border-amber-500/25 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
-              : "bg-zinc-900/40 text-zinc-400 border-white/10"
+              : "bg-muted/50 text-muted-foreground border-border"
             }`}>
             <Zap className="w-3 h-3 text-amber-400" />
             <span>{trialRemaining} trial left</span>
@@ -237,10 +237,10 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
         <button
           onClick={exportAsMarkdown}
-          className="h-7.5 px-3 bg-zinc-900/40 hover:bg-zinc-800/60 backdrop-blur-xl border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+          className="h-7.5 px-3 bg-card/60 hover:bg-card/90 backdrop-blur-xl border border-border text-foreground/80 hover:text-foreground text-[11px] font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
           title="Export as Markdown"
         >
-          <Download className="w-3 h-3 text-zinc-400" />
+          <Download className="w-3 h-3 text-muted-foreground" />
           <span>MD</span>
         </button>
 
@@ -259,7 +259,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
   }, [showWelcomeHero, sessionId, messages.length, trialRemaining, exportAsMarkdown, exportAsPDF, setHeaderRightAction]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-zinc-950 relative overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-background relative overflow-hidden">
 
       {/* Trial Expired Modal */}
       <AnimatePresence>
@@ -268,34 +268,34 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-6"
+            className="absolute inset-0 z-50 bg-background/90 backdrop-blur-md flex items-center justify-center p-6"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-8 shadow-2xl space-y-6"
+              className="max-w-md w-full bg-card border border-border rounded-3xl p-8 shadow-2xl space-y-6"
             >
               <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto">
                 <Zap className="w-6 h-6 text-amber-400" />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-lg font-bold text-white">{t.chat.trialExhaustedTitle}</h2>
-                <p className="text-sm text-zinc-400 leading-relaxed">
+                <h2 className="text-lg font-bold text-foreground">{t.chat.trialExhaustedTitle}</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {t.chat.trialExhaustedDesc}
                 </p>
               </div>
 
-              <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4 space-y-2">
-                <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">{t.chat.setupApiKeyTitle}</p>
+              <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-2">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{t.chat.setupApiKeyTitle}</p>
                 {[
                   { step: "1", text: "Open console.groq.com" },
                   { step: "2", text: "Sign up for free (no card needed)" },
                   { step: "3", text: "Go to API Keys → Create API Key" },
                   { step: "4", text: 'Paste it in Settings → Save' },
                 ].map((item) => (
-                  <div key={item.step} className="flex items-center gap-3 text-xs text-zinc-300">
-                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">{item.step}</span>
+                  <div key={item.step} className="flex items-center gap-3 text-xs text-foreground/80">
+                    <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{item.step}</span>
                     {item.text}
                   </div>
                 ))}
@@ -306,14 +306,14 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                   href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-900/30 transition-all cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-primary hover:opacity-90 text-primary-foreground text-xs font-semibold shadow-lg shadow-primary/30 transition-all cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Get API Key
                 </a>
                 <button
                   onClick={() => router.push("/settings")}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-white/10 transition-all cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-semibold border border-border transition-all cursor-pointer"
                 >
                   <Settings2 className="w-3.5 h-3.5" />
                   {t.chat.goToSettings}
@@ -322,7 +322,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
 
               <button
                 onClick={() => setTrialExpired(false)}
-                className="w-full text-center text-xs text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {t.common.close}
               </button>
@@ -348,21 +348,21 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                 {/* Floating Neurach Brand Mark with Ambient Glow (no box/tile) */}
                 <div className="relative mb-6 group flex items-center justify-center">
                   {/* Soft radial glow aura */}
-                  <div className="absolute w-28 h-28 bg-gradient-to-tr from-cyan-500/25 via-violet-500/30 to-indigo-500/20 rounded-full blur-2xl pointer-events-none transition-all duration-700 group-hover:scale-125 group-hover:opacity-100" />
+                  <div className="absolute w-28 h-28 bg-gradient-to-tr from-primary/20 via-primary/30 to-violet-500/20 rounded-full blur-2xl pointer-events-none transition-all duration-700 group-hover:scale-125 group-hover:opacity-100" />
 
                   {/* Floating Logo Icon */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/logo-icon.png"
                     alt="Neurach"
-                    className="relative w-14 h-14 object-contain drop-shadow-[0_0_20px_rgba(0,212,255,0.45)] transition-transform duration-300 group-hover:scale-110 select-none pointer-events-none"
+                    className="relative w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(129,140,248,0.25)] transition-transform duration-300 group-hover:scale-110 select-none pointer-events-none"
                   />
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
                   {t.chat.emptyTitle}
                 </h2>
-                <p className="text-zinc-500 text-sm max-w-md mb-10 leading-relaxed">
+                <p className="text-muted-foreground text-sm max-w-md mb-10 leading-relaxed">
                   {t.chat.emptySubtitle}
                 </p>
 
@@ -375,14 +375,14 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.08 + 0.2, type: "spring", stiffness: 200 }}
                       onClick={() => submitQuery(action.prompt, [])}
-                      className={`group flex items-start gap-4 p-4 rounded-2xl border border-white/5 bg-zinc-900/30 backdrop-blur-sm text-left transition-all duration-300 ${action.border} hover:scale-[1.02] active:scale-[0.98] shadow-md cursor-pointer`}
+                      className={`group flex items-start gap-4 p-4 rounded-2xl border border-border bg-card/60 backdrop-blur-sm text-left transition-all duration-300 ${action.border} hover:scale-[1.02] active:scale-[0.98] shadow-sm cursor-pointer`}
                     >
-                      <div className={`p-2.5 rounded-xl bg-zinc-950 border border-white/5 ${action.color} transition-colors`}>
+                      <div className={`p-2.5 rounded-xl bg-background border border-border ${action.color} transition-colors`}>
                         <action.icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-zinc-200 group-hover:text-white transition-colors">{action.title}</h4>
-                        <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">{action.desc}</p>
+                        <h4 className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">{action.title}</h4>
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{action.desc}</p>
                       </div>
                     </motion.button>
                   ))}
@@ -407,16 +407,16 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-6 flex flex-col gap-3 w-full"
                   >
-                    <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-3">
+                    <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-3">
                       <span>Suggested Follow-ups</span>
-                      <div className="h-px bg-white/5 flex-1" />
+                      <div className="h-px bg-border flex-1" />
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {(messages[messages.length - 1].suggestions || getFollowUpPrompts(messages[messages.length - 1].content, aiPersona)).map((prompt, idx) => (
                         <button
                           key={idx}
                           onClick={() => submitQuery(prompt, [])}
-                          className="text-xs bg-zinc-900/40 hover:bg-indigo-600/10 hover:text-indigo-400 border border-white/5 hover:border-indigo-500/20 px-3.5 py-2.5 rounded-2xl transition-all duration-300 text-left text-zinc-400 cursor-pointer shadow-sm active:scale-[0.98]"
+                          className="text-xs bg-card/60 hover:bg-primary/10 hover:text-primary border border-border hover:border-primary/30 px-3.5 py-2.5 rounded-2xl transition-all duration-300 text-left text-muted-foreground cursor-pointer shadow-sm active:scale-[0.98]"
                         >
                           {prompt}
                         </button>
@@ -433,7 +433,7 @@ export function ChatArea({ initialSessionId, initialSpaceId }: ChatAreaProps) {
       </div>
 
       {/* FLOATING ADAPTIVE INPUT CAPSULE (ChatGPT / Claude Floating Design) */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent pt-10 pb-4 px-4 flex justify-center">
+      <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none bg-gradient-to-t from-background via-background/80 to-transparent pt-10 pb-4 px-4 flex justify-center">
         <div className="w-full max-w-4xl pointer-events-auto">
           <ChatInput isLoading={isLoading} isProcessingFiles={isProcessingFiles} onSubmit={submitQuery} />
         </div>

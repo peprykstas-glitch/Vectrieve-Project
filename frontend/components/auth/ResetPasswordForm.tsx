@@ -57,21 +57,21 @@ export function ResetPasswordForm() {
   // If there's no token in URL — show an error immediately
   if (!token) {
     return (
-      <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+      <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
         <Card className="bg-transparent border-none shadow-none">
           <CardContent className="pt-8 pb-6 flex flex-col items-center gap-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20">
-              <XCircle className="h-7 w-7 text-red-400" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 border border-destructive/20">
+              <XCircle className="h-7 w-7 text-destructive" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Invalid reset link</h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Invalid reset link</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 This password reset link is invalid or has expired. Please request a new one.
               </p>
             </div>
             <Button
               onClick={() => router.push('/forgot-password')}
-              className="mt-2 bg-white text-black hover:bg-zinc-200 rounded-xl font-medium"
+              className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium cursor-pointer shadow-sm"
             >
               Request New Link
             </Button>
@@ -83,21 +83,21 @@ export function ResetPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+      <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
         <Card className="bg-transparent border-none shadow-none">
           <CardContent className="pt-8 pb-6 flex flex-col items-center gap-4 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+              <CheckCircle2 className="h-7 w-7 text-emerald-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Password updated!</h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Password updated!</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Your password has been successfully reset. You can now sign in with your new credentials.
               </p>
             </div>
             <Button
               onClick={() => router.push('/login')}
-              className="mt-2 bg-white text-black hover:bg-zinc-200 rounded-xl font-medium"
+              className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium cursor-pointer shadow-sm"
             >
               Sign In
             </Button>
@@ -134,11 +134,11 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden">
+    <div className="w-full bg-card/90 backdrop-blur-xl border border-border shadow-xl rounded-2xl overflow-hidden">
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="space-y-2 pb-6">
-          <CardTitle className="text-xl text-white tracking-tight">Set new password</CardTitle>
-          <CardDescription className="text-zinc-400 text-sm">
+          <CardTitle className="text-xl text-foreground tracking-tight">Set new password</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
             Choose a strong password for your workspace.
           </CardDescription>
         </CardHeader>
@@ -146,7 +146,7 @@ export function ResetPasswordForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               {globalError && (
-                <div className="p-3 text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg">
+                <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                   {globalError}
                 </div>
               )}
@@ -156,27 +156,27 @@ export function ResetPasswordForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">New Password</FormLabel>
+                    <FormLabel className="text-foreground text-xs font-medium">New Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? 'text' : 'password'}
-                          className="pr-10 bg-[#121212] border-white/10 text-white focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                          className="pr-10 bg-background border-border text-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                           {...field}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((v) => !v)}
-                          className="absolute right-3 top-2.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
                     </FormControl>
-                    <FormDescription className="text-zinc-600 text-xs mt-1">
+                    <FormDescription className="text-muted-foreground text-xs mt-1">
                       Min 12 characters, uppercase letter, number, and special symbol.
                     </FormDescription>
-                    <FormMessage className="text-red-400 opacity-90 text-xs" />
+                    <FormMessage className="text-destructive opacity-90 text-xs" />
                   </FormItem>
                 )}
               />
@@ -186,31 +186,31 @@ export function ResetPasswordForm() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Confirm Password</FormLabel>
+                    <FormLabel className="text-foreground text-xs font-medium">Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showConfirm ? 'text' : 'password'}
-                          className="pr-10 bg-[#121212] border-white/10 text-white focus-visible:ring-1 focus-visible:ring-white/20 transition-all"
+                          className="pr-10 bg-background border-border text-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
                           {...field}
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirm((v) => !v)}
-                          className="absolute right-3 top-2.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
                     </FormControl>
-                    <FormMessage className="text-red-400 opacity-90 text-xs" />
+                    <FormMessage className="text-destructive opacity-90 text-xs" />
                   </FormItem>
                 )}
               />
 
               <Button
                 type="submit"
-                className="w-full bg-white text-black hover:bg-zinc-200 transition-colors h-11 mt-2 rounded-xl font-medium"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-all h-11 mt-2 rounded-xl font-medium cursor-pointer"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

@@ -36,7 +36,7 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   
-  /* РЕЄСТРАЦІЯ КОЛЬОРІВ ДЛЯ ГРАФІКІВ (TAILWIND V4) */
+  /* CHART COLOR REGISTRATION (TAILWIND V4) */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -44,79 +44,85 @@
   --color-chart-5: var(--chart-5);
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT THEME — Warm stone/neutral palette
+   ═══════════════════════════════════════════════════════════════════ */
 :root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(240 10% 3.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(240 10% 3.9%);
+  --background: hsl(40 20% 98%);           /* warm off-white #fafaf7 */
+  --foreground: hsl(20 14% 14%);           /* warm near-black */
+  --card: hsl(0 0% 100%);                  /* pure white cards */
+  --card-foreground: hsl(20 14% 14%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(240 10% 3.9%);
-  --primary: hsl(240 5.9% 10%);
-  --primary-foreground: hsl(0 0% 98%);
-  --secondary: hsl(240 4.8% 95.9%);
-  --secondary-foreground: hsl(240 5.9% 10%);
-  --muted: hsl(240 4.8% 95.9%);
-  --muted-foreground: hsl(240 3.8% 46.1%);
-  --accent: hsl(240 4.8% 95.9%);
-  --accent-foreground: hsl(240 5.9% 10%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
-  --ring: hsl(240 10% 3.9%);
-  --radius: 0.5rem;
-  --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  
-  /* ЗНАЧЕННЯ ДЛЯ ГРАФІКІВ (СВІТЛА ТЕМА) */
-  --chart-1: 221.2 83.2% 53.3%;
-  --chart-2: 262.1 83.3% 57.8%;
-  --chart-3: 316 73% 52%;
-  --chart-4: 21 86% 55%;
-  --chart-5: 160 84% 39%;
+  --popover-foreground: hsl(20 14% 14%);
+  --primary: hsl(234 62% 52%);             /* deep indigo-600 */
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(40 18% 95%);            /* warm light surface */
+  --secondary-foreground: hsl(20 14% 14%);
+  --muted: hsl(40 14% 93%);               /* subtle warm muted */
+  --muted-foreground: hsl(20 8% 46%);
+  --accent: hsl(40 14% 93%);
+  --accent-foreground: hsl(20 14% 14%);
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(30 12% 89%);              /* warm stone border */
+  --input: hsl(30 12% 89%);
+  --ring: hsl(234 62% 52%);
+  --radius: 0.625rem;
+  --sidebar: hsl(40 16% 96%);             /* stone-100 sidebar */
+  --sidebar-foreground: hsl(20 12% 28%);
+  --sidebar-primary: hsl(234 62% 52%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(40 14% 93%);
+  --sidebar-accent-foreground: hsl(20 14% 14%);
+  --sidebar-border: hsl(30 12% 89%);
+  --sidebar-ring: hsl(234 62% 52%);
+
+  /* CHART COLORS (LIGHT THEME) */
+  --chart-1: 234 62% 52%;
+  --chart-2: 262 60% 55%;
+  --chart-3: 316 60% 50%;
+  --chart-4: 21 72% 50%;
+  --chart-5: 160 64% 38%;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   DARK THEME — Refined warm blue-black palette
+   ═══════════════════════════════════════════════════════════════════ */
 .dark {
-  --background: hsl(240 10% 3.9%);
-  --foreground: hsl(0 0% 98%);
-  --card: hsl(240 10% 3.9%);
-  --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(240 10% 3.9%);
-  --popover-foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
-  --primary-foreground: hsl(240 5.9% 10%);
-  --secondary: hsl(240 3.7% 15.9%);
-  --secondary-foreground: hsl(0 0% 98%);
-  --muted: hsl(240 3.7% 15.9%);
-  --muted-foreground: hsl(240 5% 64.9%);
-  --accent: hsl(240 3.7% 15.9%);
-  --accent-foreground: hsl(0 0% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
+  --background: hsl(228 20% 6%);           /* warm blue-black #0c0d14 */
+  --foreground: hsl(220 13% 91%);          /* soft off-white #e2e4ea */
+  --card: hsl(228 18% 9%);                 /* slightly lifted #13141d */
+  --card-foreground: hsl(220 13% 91%);
+  --popover: hsl(228 18% 9%);
+  --popover-foreground: hsl(220 13% 91%);
+  --primary: hsl(234 89% 74%);             /* indigo-400 #818cf8 */
+  --primary-foreground: hsl(228 20% 6%);
+  --secondary: hsl(228 14% 14%);           /* subtle elevated surface */
+  --secondary-foreground: hsl(220 13% 91%);
+  --muted: hsl(228 14% 14%);
+  --muted-foreground: hsl(220 9% 56%);     /* muted text — readable but calm */
+  --accent: hsl(228 14% 16%);
+  --accent-foreground: hsl(220 13% 91%);
+  --destructive: hsl(0 62% 35%);
   --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(240 3.7% 15.9%);
-  --input: hsl(240 3.7% 15.9%);
-  --ring: hsl(240 4.9% 83.9%);
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --border: hsl(228 12% 16%);             /* subtle border */
+  --input: hsl(228 12% 16%);
+  --ring: hsl(234 89% 74%);
+  --sidebar: hsl(228 20% 7%);             /* slightly different from bg */
+  --sidebar-foreground: hsl(220 13% 85%);
+  --sidebar-primary: hsl(234 89% 74%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  
-  /* ЗНАЧЕННЯ ДЛЯ ГРАФІКІВ (ТЕМНА ТЕМА) */
-  --chart-1: 217.2 91.2% 59.8%;
-  --chart-2: 270 91.2% 65%;
-  --chart-3: 316 73% 52%;
-  --chart-4: 21 86% 55%;
-  --chart-5: 160 84% 39%;
+  --sidebar-accent: hsl(228 14% 14%);
+  --sidebar-accent-foreground: hsl(220 13% 91%);
+  --sidebar-border: hsl(228 12% 16%);
+  --sidebar-ring: hsl(234 89% 74%);
+
+  /* CHART COLORS (DARK THEME) */
+  --chart-1: 234 89% 74%;
+  --chart-2: 270 75% 68%;
+  --chart-3: 316 60% 55%;
+  --chart-4: 21 78% 58%;
+  --chart-5: 160 70% 42%;
 }
 
 @layer base {
@@ -129,7 +135,9 @@
   }
 }
 
-/* Sleek Premium Dark-Mode Scrollbars — Forced Global Overrides */
+/* ═══════════════════════════════════════════════════════════════════
+   SCROLLBARS — Theme-aware
+   ═══════════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar {
   width: 8px !important;
   height: 8px !important;
@@ -139,48 +147,70 @@
   background: transparent !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(82, 82, 91, 0.45) !important; /* zinc-600 */
+/* Dark scrollbar */
+.dark ::-webkit-scrollbar-thumb,
+.dark::-webkit-scrollbar-thumb {
+  background: rgba(100, 110, 140, 0.35) !important;
   border-radius: 9999px !important;
-  border: 2px solid transparent !important; /* creates padding around scrollbar thumb */
+  border: 2px solid transparent !important;
   background-clip: padding-box !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.6) !important; /* indigo-500 */
+.dark ::-webkit-scrollbar-thumb:hover,
+.dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.45) !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+/* Light scrollbar */
+.light ::-webkit-scrollbar-thumb,
+.light::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.25) !important;
+  border-radius: 9999px !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+.light ::-webkit-scrollbar-thumb:hover,
+.light::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 70, 229, 0.35) !important;
   border: 2px solid transparent !important;
   background-clip: padding-box !important;
 }
 
 /* Firefox Scrollbar Fallback */
-* {
+.dark * {
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(82, 82, 91, 0.45) transparent !important;
+  scrollbar-color: rgba(100, 110, 140, 0.35) transparent !important;
+}
+
+.light * {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(120, 113, 108, 0.25) transparent !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   NEURACH CHAT PROSE — Gemini / ChatGPT / Claude-grade Typography
+   NEURACH CHAT PROSE — Theme-Aware Typography
    ═══════════════════════════════════════════════════════════════════ */
 
 .chat-prose {
-  /* Font Rendering — crisp on Windows & macOS */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 
-  /* Base text — 14.5px with comfortable 1.75 line-height like Gemini / Claude */
   font-size: 14.5px;
   line-height: 1.75;
-  color: #d4d4d8; /* zinc-300 */
+  color: var(--foreground);
   letter-spacing: -0.005em;
   word-spacing: 0.015em;
 }
 
-/* ── Paragraphs ── */
+/* -- Paragraphs -- */
 .chat-prose p {
   margin: 0.65em 0;
-  color: #d4d4d8;
+  color: var(--foreground);
 }
 
 .chat-prose > p:first-child {
@@ -191,51 +221,78 @@
   margin-bottom: 0;
 }
 
-/* ── Headings: Clean, modern hierarchy like ChatGPT / Claude / Gemini ── */
+/* -- Headings -- */
 .chat-prose h1 {
   font-size: 1.35em;
   font-weight: 700;
-  color: #ffffff;
   margin: 1.3em 0 0.5em 0;
   letter-spacing: -0.015em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 0.3em;
+}
+
+/* Dark headings */
+.dark .chat-prose h1 {
+  color: #e8e8ed;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Light headings */
+.light .chat-prose h1 {
+  color: #1c1917;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .chat-prose h2 {
   font-size: 1.18em;
   font-weight: 700;
-  color: #f4f4f5;
   margin: 1.2em 0 0.45em 0;
   letter-spacing: -0.01em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   padding-bottom: 0.25em;
+}
+
+.dark .chat-prose h2 {
+  color: #e0e0e5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.light .chat-prose h2 {
+  color: #292524;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .chat-prose h3 {
   font-size: 1.05em;
   font-weight: 600;
-  color: #f4f4f5;
   margin: 1.05em 0 0.35em 0;
   letter-spacing: -0.005em;
   text-transform: none;
 }
 
+.dark .chat-prose h3 { color: #e0e0e5; }
+.light .chat-prose h3 { color: #292524; }
+
 .chat-prose h4 {
   font-size: 0.98em;
   font-weight: 600;
-  color: #e4e4e7;
   margin: 0.9em 0 0.3em 0;
 }
 
-/* ── Bold — high-contrast lead keywords ── */
+.dark .chat-prose h4 { color: #d4d4db; }
+.light .chat-prose h4 { color: #44403c; }
+
+/* -- Bold -- */
 .chat-prose strong,
 .chat-prose b {
   font-weight: 600;
-  color: #ffffff; /* pure white accent */
 }
 
-/* ── Lists — spacious and structured ── */
+.dark .chat-prose strong,
+.dark .chat-prose b { color: #eaeaf0; }
+
+.light .chat-prose strong,
+.light .chat-prose b { color: #1c1917; }
+
+/* -- Lists -- */
 .chat-prose ul,
 .chat-prose ol {
   margin: 0.55em 0;
@@ -253,15 +310,14 @@
 .chat-prose li {
   margin: 0.35em 0;
   line-height: 1.7;
-  color: #d4d4d8;
+  color: var(--foreground);
   padding-left: 0.15em;
 }
 
-.chat-prose li::marker {
-  color: #818cf8; /* indigo-400 marker dots */
-}
+.dark .chat-prose li::marker { color: #818cf8; }
+.light .chat-prose li::marker { color: #6366f1; }
 
-/* Nested lists (Claude / ChatGPT style) */
+/* Nested lists */
 .chat-prose li > ul,
 .chat-prose li > ol {
   margin-top: 0.3em;
@@ -273,20 +329,27 @@
   list-style-type: circle;
 }
 
-.chat-prose ul ul li::marker {
-  color: #a5b4fc; /* subtle indigo ring */
-}
+.dark .chat-prose ul ul li::marker { color: #a5b4fc; }
+.light .chat-prose ul ul li::marker { color: #818cf8; }
 
-/* ── Blockquote ── */
+/* -- Blockquote -- */
 .chat-prose blockquote {
-  border-left: 3px solid #6366f1;
   padding: 0.3em 0 0.3em 1em;
   margin: 0.8em 0;
-  color: #a1a1aa; /* zinc-400 */
   font-style: italic;
 }
 
-/* ── Tables ── */
+.dark .chat-prose blockquote {
+  border-left: 3px solid #6366f1;
+  color: #9ca3af;
+}
+
+.light .chat-prose blockquote {
+  border-left: 3px solid #818cf8;
+  color: #78716c;
+}
+
+/* -- Tables -- */
 .chat-prose table {
   margin: 1em 0;
   border-collapse: collapse;
@@ -296,34 +359,54 @@
 
 .chat-prose th {
   font-weight: 600;
-  color: #fafafa;
-  border-bottom: 2px solid #3f3f46; /* zinc-700 */
   padding: 0.5em 0.75em;
   text-align: left;
 }
 
-.chat-prose td {
-  border-bottom: 1px solid #27272a; /* zinc-800 */
-  padding: 0.5em 0.75em;
-  color: #d4d4d8;
+.dark .chat-prose th {
+  color: #eaeaf0;
+  border-bottom: 2px solid #2a2a35;
 }
 
-/* ── Horizontal rule ── */
+.light .chat-prose th {
+  color: #1c1917;
+  border-bottom: 2px solid #d6d3d1;
+}
+
+.chat-prose td {
+  padding: 0.5em 0.75em;
+}
+
+.dark .chat-prose td {
+  border-bottom: 1px solid #1e1e28;
+  color: var(--foreground);
+}
+
+.light .chat-prose td {
+  border-bottom: 1px solid #e7e5e4;
+  color: var(--foreground);
+}
+
+/* -- Horizontal rule -- */
 .chat-prose hr {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
   margin: 1.5em 0;
 }
 
-/* ── Links ── */
+.dark .chat-prose hr { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+.light .chat-prose hr { border-top: 1px solid rgba(0, 0, 0, 0.08); }
+
+/* -- Links -- */
 .chat-prose a {
-  color: #818cf8;
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 0.15s;
 }
 
-/* ── Collapsed sidebar: precision center alignment ── */
+.dark .chat-prose a { color: #818cf8; }
+.light .chat-prose a { color: #4f46e5; }
+
+/* -- Collapsed sidebar: precision center alignment -- */
 [data-collapsible="icon"] [data-sidebar="sidebar"] {
   display: flex !important;
   flex-direction: column !important;
@@ -366,7 +449,7 @@
   margin: 0 auto !important;
 }
 
-/* ── Typography Scale & Text Density Modifiers ── */
+/* -- Typography Scale & Text Density Modifiers -- */
 html.text-compact {
   font-size: 13.5px;
 }
@@ -379,7 +462,7 @@ html.text-large {
   font-size: 16px;
 }
 
-/* ── Native Typing / Thinking Indicator Keyframes ── */
+/* -- Native Typing / Thinking Indicator Keyframes -- */
 @keyframes typing-dot-bounce {
   0%, 80%, 100% {
     transform: translateY(0);
@@ -404,4 +487,4 @@ html.text-large {
 .animate-typing-dot-3 {
   animation: typing-dot-bounce 1.05s infinite ease-in-out;
   animation-delay: 0.36s;
-}
+}

@@ -51,8 +51,8 @@ const FEATURES = [
   },
   {
     icon: Layers3,
-    color: "from-cyan-500 to-blue-600",
-    glow: "shadow-cyan-500/25",
+    color: "from-indigo-500 to-blue-500",
+    glow: "shadow-indigo-500/15",
     title: "Isolated Knowledge Spaces",
     badge: "Zero Cross-Bleed",
     description:
@@ -151,11 +151,11 @@ export default function LandingPage() {
             <img
               src="/logo-icon.png"
               alt="Neurach"
-              className="h-8 w-8 object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] transition-transform duration-200 group-hover:scale-105"
+              className="h-8 w-8 object-contain drop-shadow-[0_2px_8px_rgba(99,102,241,0.25)] transition-transform duration-200 group-hover:scale-105"
             />
             <div className="flex items-center gap-1.5 font-bold tracking-tight">
               <span className="text-white text-lg tracking-tight">Neurach</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">CORE</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/25">CORE</span>
             </div>
           </Link>
 
@@ -174,7 +174,7 @@ export default function LandingPage() {
               disabled={isDemoLoading}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
               <span>{isDemoLoading ? "Loading..." : "Live Demo"}</span>
             </button>
             <Link
@@ -196,19 +196,19 @@ export default function LandingPage() {
       {/* ── HERO SECTION ─────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-24 px-6 text-center overflow-hidden">
         {/* Glowing Background Radial Blobs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-indigo-600/20 via-purple-600/15 to-cyan-500/20 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-indigo-600/15 via-purple-600/10 to-blue-500/15 rounded-full blur-[140px] pointer-events-none -z-10" />
 
         <div className="relative mx-auto max-w-5xl space-y-7">
           {/* Keynote Pill */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-950/40 px-4 py-1.5 text-xs text-indigo-300 shadow-inner">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/25 bg-indigo-950/30 px-4 py-1.5 text-xs text-indigo-300 shadow-inner">
+            <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
             <span className="font-semibold tracking-wide">NEURACH · ENTERPRISE HYBRID RAG 2.4</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.1]">
             <span className="text-white">Private Knowledge Intelligence</span>
             <br />
-            <span className="bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-indigo-200 bg-clip-text text-transparent">
               at the Speed of Light.
             </span>
           </h1>
@@ -216,7 +216,7 @@ export default function LandingPage() {
           <p className="max-w-3xl mx-auto text-base sm:text-lg text-zinc-400 leading-relaxed font-normal">
             Stop pasting sensitive documents into generic AI. Neurach establishes cryptographically isolated{" "}
             <span className="text-white font-medium">Knowledge Spaces</span>, indexes documents and meeting recordings, and synthesizes answers with{" "}
-            <span className="text-cyan-300 font-medium">verifiable source citations</span> powered by Groq LPU inference.
+            <span className="text-indigo-300 font-medium">verifiable source citations</span> powered by Groq LPU inference.
           </p>
 
           {/* Primary Action Buttons */}
@@ -226,7 +226,7 @@ export default function LandingPage() {
               disabled={isDemoLoading}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-950/40 hover:scale-[1.02] active:scale-98 cursor-pointer text-sm"
             >
-              <Sparkles className="w-4 h-4 text-cyan-300" />
+              <Sparkles className="w-4 h-4 text-indigo-200" />
               <span>{isDemoLoading ? "Starting Demo..." : "Explore Interactive Demo"}</span>
               <ChevronRight className="w-4 h-4 text-indigo-200 ml-0.5" />
             </button>
@@ -318,9 +318,9 @@ export default function LandingPage() {
                       <div className="rounded-2xl rounded-tl-sm border border-white/5 bg-zinc-900/80 p-4 text-zinc-200 leading-relaxed">
                         Based on §4.2 of the audited agreement:
                         <ul className="list-disc pl-5 mt-2 space-y-1 text-zinc-300">
-                          <li><strong>SLA Guarantee:</strong> Minimum <span className="text-cyan-300 font-semibold">99.9% monthly uptime</span> with automated failover.</li>
-                          <li><strong>Data Governance:</strong> All customer data is processed under strict <span className="text-emerald-300 font-semibold">Zero-Data-Retention (ZDR)</span> terms.</li>
-                          <li><strong>Breach Notification:</strong> Mandatory reporting within <span className="text-amber-300 font-semibold">24 hours</span> of detection.</li>
+                          <li><strong>SLA Guarantee:</strong> Minimum <span className="text-indigo-300 font-semibold">99.9% monthly uptime</span> with automated failover.</li>
+                          <li><strong>Data Governance:</strong> All customer data is processed under strict <span className="text-indigo-300 font-semibold">Zero-Data-Retention (ZDR)</span> terms.</li>
+                          <li><strong>Breach Notification:</strong> Mandatory reporting within <span className="text-indigo-300 font-semibold">24 hours</span> of detection.</li>
                         </ul>
                       </div>
 
@@ -329,8 +329,8 @@ export default function LandingPage() {
                           <FileText className="w-3 h-3 text-indigo-400" />
                           Master_Services_Agreement_2026.pdf · §4.2 (Score: 0.94)
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                          <FileText className="w-3 h-3 text-cyan-400" />
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                          <FileText className="w-3 h-3 text-indigo-400" />
                           SLA_Compliance_Annex.pdf · §1.1 (Score: 0.91)
                         </div>
                       </div>
@@ -342,19 +342,19 @@ export default function LandingPage() {
               {activeDemoTab === "meeting" && (
                 <>
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-emerald-600/25 border border-emerald-500/30 px-4 py-2.5 text-zinc-100">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-indigo-600/30 border border-indigo-500/30 px-4 py-2.5 text-zinc-100">
                       Summarize the key decisions and Action Items from yesterday's product sync recording.
                     </div>
                   </div>
 
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                      <Mic className="w-4 h-4 text-emerald-400" />
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                      <Mic className="w-4 h-4 text-indigo-400" />
                     </div>
                     <div className="flex-1 space-y-3">
-                      <div className="rounded-2xl rounded-tl-sm border border-emerald-500/20 bg-emerald-950/20 p-4 text-zinc-200 leading-relaxed">
-                        <div className="text-xs font-bold text-emerald-300 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <div className="rounded-2xl rounded-tl-sm border border-indigo-500/20 bg-indigo-950/20 p-4 text-zinc-200 leading-relaxed">
+                        <div className="text-xs font-bold text-indigo-300 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
                           <span>Meeting Intelligence Brief · Audio Recording Parsed</span>
                         </div>
                         <ul className="space-y-1.5 text-zinc-300 text-xs">
@@ -364,8 +364,8 @@ export default function LandingPage() {
                         </ul>
                       </div>
 
-                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                        <Mic className="w-3 h-3 text-emerald-400" />
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                        <Mic className="w-3 h-3 text-indigo-400" />
                         Audio_Sync_2026-08-19.mp3 · 44.5s · Ukrainian Whisper v3
                       </div>
                     </div>
@@ -376,17 +376,17 @@ export default function LandingPage() {
               {activeDemoTab === "architect" && (
                 <>
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-purple-600/30 border border-purple-500/30 px-4 py-2.5 text-zinc-100">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-indigo-600/30 border border-indigo-500/30 px-4 py-2.5 text-zinc-100">
                       Evaluate our hybrid RAG scaling limits with 100,000 documents in Qdrant and PostgreSQL.
                     </div>
                   </div>
 
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center shrink-0">
-                      <Cpu className="w-4 h-4 text-purple-400" />
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                      <Cpu className="w-4 h-4 text-indigo-400" />
                     </div>
                     <div className="flex-1 space-y-3">
-                      <div className="rounded-2xl rounded-tl-sm border border-purple-500/20 bg-purple-950/20 p-4 text-zinc-200 leading-relaxed">
+                      <div className="rounded-2xl rounded-tl-sm border border-indigo-500/20 bg-indigo-950/20 p-4 text-zinc-200 leading-relaxed">
                         <strong>Architectural Assessment:</strong>
                         <p className="mt-1 text-zinc-300">
                           With HNSW indexing in Qdrant and payload partitioning per `space_id`, 100k vectors require &lt; 400MB RAM. FastEmbed ONNX processes ~1,200 chunks/sec on CPU without GPU overhead.
@@ -405,31 +405,31 @@ export default function LandingPage() {
       <section id="benchmarks" className="py-14 px-6 border-y border-white/5 bg-[#09090d]">
         <div className="mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div className="space-y-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-violet-400">
               10x
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Faster Document Search & Audits</div>
+            <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Faster Document Search</div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-violet-400">
               100%
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Grounded Answers with Citations</div>
+            <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Grounded Citations</div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-violet-400">
               0%
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Zero Public AI Model Training</div>
+            <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Public Model Training</div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-              &lt; 1s
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-violet-400">
+              150ms
             </div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Sub-Second Response Latency</div>
+            <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Time to First Token</div>
           </div>
         </div>
       </section>
@@ -438,7 +438,7 @@ export default function LandingPage() {
       <section id="architecture" className="py-24 px-6">
         <div className="mx-auto max-w-5xl">
           <div className="text-center space-y-3 mb-16">
-            <p className="text-xs font-bold text-cyan-400 tracking-widest uppercase">System Design</p>
+            <p className="text-xs font-bold text-indigo-400 tracking-widest uppercase">System Design</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold">Engineered for Enterprise Truth</h2>
             <p className="text-zinc-400 text-sm max-w-2xl mx-auto">
               How Neurach transforms unstructured documents into verifiable intelligence in three automated stages.
@@ -502,38 +502,37 @@ export default function LandingPage() {
       <section id="compare" className="py-24 px-6">
         <div className="mx-auto max-w-4xl">
           <div className="text-center space-y-3 mb-14">
-            <p className="text-xs font-bold text-purple-400 tracking-widest uppercase">Competitive Matrix</p>
+            <p className="text-xs font-bold text-indigo-400 tracking-widest uppercase">Competitive Matrix</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold">Neurach vs Generic AI</h2>
           </div>
 
           <div className="rounded-2xl border border-white/10 overflow-hidden bg-zinc-900/40 shadow-xl">
             <div className="overflow-x-auto">
               <div className="min-w-[600px]">
-                <div className="grid grid-cols-4 border-b border-white/10 bg-zinc-950/80 px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  <div className="col-span-1">Feature</div>
-                  <div className="text-center">ChatGPT</div>
-                  <div className="text-center">Gemini</div>
-                  <div className="text-center text-cyan-300 font-extrabold">Neurach</div>
+                <div className="grid grid-cols-12 border-b border-white/10 bg-zinc-950/80 px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  <div className="col-span-6">Feature</div>
+                  <div className="col-span-2 text-center">ChatGPT</div>
+                  <div className="col-span-2 text-center">Gemini</div>
+                  <div className="col-span-2 text-center text-indigo-300 font-extrabold">Neurach</div>
                 </div>
 
-                {COMPARISON.map((row, i) => (
+                {COMPARISON.map((row, idx) => (
                   <div
-                    key={i}
-                    className="grid grid-cols-4 border-b border-white/5 last:border-0 px-6 py-3.5 text-xs text-zinc-300 items-center hover:bg-white/[0.02] transition-colors"
+                    key={idx}
+                    className={`grid grid-cols-12 px-6 py-4 items-center text-sm ${idx % 2 === 0 ? "bg-white/[0.01]" : "bg-transparent"
+                      }`}
                   >
-                    <div className="col-span-1 font-medium">{row.feature}</div>
-                    <div className="flex justify-center">
-                      {row.gpt ? <Check className="w-4 h-4 text-emerald-400" /> : <X className="w-4 h-4 text-zinc-700" />}
+                    <div className="col-span-6 font-medium text-zinc-300">{row.feature}</div>
+                    <div className="col-span-2 text-center flex justify-center">
+                      <X className="w-4 h-4 text-zinc-600" />
                     </div>
-                    <div className="flex justify-center">
-                      {row.gemini ? <Check className="w-4 h-4 text-emerald-400" /> : <X className="w-4 h-4 text-zinc-700" />}
+                    <div className="col-span-2 text-center flex justify-center">
+                      <X className="w-4 h-4 text-zinc-600" />
                     </div>
-                    <div className="flex justify-center">
-                      {row.core ? (
-                        <Check className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
-                      ) : (
-                        <X className="w-4 h-4 text-zinc-700" />
-                      )}
+                    <div className="col-span-2 text-center flex justify-center">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-500/15 border border-indigo-500/30">
+                        <Check className="w-4 h-4 text-indigo-300" />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -545,30 +544,28 @@ export default function LandingPage() {
 
       {/* ── FOOTER CTA ────────────────────────────────────────────────────── */}
       <section className="py-28 px-6 relative overflow-hidden border-t border-white/5 bg-gradient-to-b from-transparent to-indigo-950/20 text-center">
-        <div className="relative mx-auto max-w-3xl space-y-6">
-          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            Ready to experience
-            <br />
-            <span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
-              Zero-Hallucination Intelligence?
-            </span>
+        <div className="relative mx-auto max-w-4xl mt-36 p-12 rounded-3xl border border-white/10 bg-gradient-to-b from-[#111116] to-[#0a0a0d] shadow-2xl text-center space-y-6 overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.12),transparent_70%)] pointer-events-none" />
+
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+            Ready to deploy your private knowledge base?
           </h2>
           <p className="text-zinc-400 text-sm max-w-xl mx-auto">
-            Test the live sandbox demo immediately or provision an enterprise workspace for your organization.
+            Test with the live sandbox demo or provision a cryptographically isolated workspace for your organization in seconds.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
               onClick={handleLaunchDemo}
               disabled={isDemoLoading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-semibold px-7 py-3.5 rounded-xl transition-all text-sm shadow-xl active:scale-98 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-950/50 cursor-pointer text-sm"
             >
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span>{isDemoLoading ? "Starting Demo..." : "Explore Interactive Demo"}</span>
+              <Sparkles className="w-4 h-4 text-indigo-200" />
+              <span>Launch Interactive Demo</span>
             </button>
             <Link
               href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-all text-sm active:scale-98"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white font-medium px-8 py-3.5 rounded-xl transition-all text-sm"
             >
               <span>Create Account</span>
               <ChevronRight className="w-4 h-4" />
